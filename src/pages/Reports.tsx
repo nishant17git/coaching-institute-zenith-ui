@@ -1,4 +1,5 @@
 
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,20 +21,107 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { monthlyFeeCollections, monthlyAttendance, classDistribution } from "@/mock/data";
+import { toast } from "sonner";
+import html2canvas from "html2canvas";
+import { exportReportToPDF } from "@/services/pdfService";
+
+// Logo placeholder
+const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
 
 export default function Reports() {
   const COLORS = ["#0A84FF", "#30D158", "#5E5CE6", "#FF9F0A", "#FF453A", "#BF5AF2", "#64D2FF"];
+  const [activeTab, setActiveTab] = useState("fees");
+  
+  const feeChartRef = useRef<HTMLDivElement>(null);
+  const attendanceChartRef = useRef<HTMLDivElement>(null);
+  const studentChartRef = useRef<HTMLDivElement>(null);
+  
+  // Export current report as PDF
+  const exportReport = async () => {
+    let chartImages: string[] = [];
+    let title = "Report";
+    let summary: { label: string, value: string }[] = [];
+    
+    if (activeTab === "fees") {
+      title = "Fee Collection Report";
+      summary = [
+        { label: "Total Collection", value: "₹" + monthlyFeeCollections.reduce((sum, month) => sum + month.amount, 0).toLocaleString() },
+        { label: "Collection Rate", value: "75%" },
+        { label: "Outstanding Amount", value: "₹80,000" }
+      ];
+      
+      if (feeChartRef.current) {
+        try {
+          const canvas = await html2canvas(feeChartRef.current);
+          chartImages.push(canvas.toDataURL("image/png"));
+        } catch (error) {
+          console.error("Failed to capture chart:", error);
+        }
+      }
+    } 
+    else if (activeTab === "attendance") {
+      title = "Attendance Report";
+      summary = [
+        { label: "Average Attendance", value: "85%" },
+        { label: "Present Days", value: "85%" },
+        { label: "Absent Days", value: "10%" },
+        { label: "Leave Days", value: "5%" }
+      ];
+      
+      if (attendanceChartRef.current) {
+        try {
+          const canvas = await html2canvas(attendanceChartRef.current);
+          chartImages.push(canvas.toDataURL("image/png"));
+        } catch (error) {
+          console.error("Failed to capture chart:", error);
+        }
+      }
+    }
+    else if (activeTab === "students") {
+      title = "Student Distribution Report";
+      summary = [
+        { label: "Total Students", value: classDistribution.reduce((sum, item) => sum + item.value, 0).toString() },
+        { label: "Most Populated Class", value: "Class 10" },
+        { label: "Average Attendance", value: "87%" },
+        { label: "Average Fee Collection", value: "82%" }
+      ];
+      
+      if (studentChartRef.current) {
+        try {
+          const canvas = await html2canvas(studentChartRef.current);
+          chartImages.push(canvas.toDataURL("image/png"));
+        } catch (error) {
+          console.error("Failed to capture chart:", error);
+        }
+      }
+    }
+    
+    exportReportToPDF(
+      title,
+      chartImages,
+      summary,
+      "Infinity Classes",
+      INSTITUTE_LOGO
+    );
+    
+    toast.success("Report exported successfully!");
+  };
   
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Reports & Analytics</h1>
-        <Button className="bg-apple-blue hover:bg-blue-600">
+        <Button className="bg-apple-blue hover:bg-blue-600" onClick={exportReport}>
           <Download className="h-4 w-4 mr-2" /> Export Reports
         </Button>
       </div>
 
-      <Tabs defaultValue="fees" className="space-y-4">
+      <Tabs 
+        defaultValue="fees" 
+        value={activeTab}
+        onValueChange={setActiveTab} 
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="fees">Fee Collection</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
@@ -49,7 +137,7 @@ export default function Reports() {
                   Monthly fee collection for the current year
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
+              <CardContent className="h-[400px]" ref={feeChartRef}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyFeeCollections}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -163,7 +251,7 @@ export default function Reports() {
                 Attendance percentage over the months
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px]">
+            <CardContent className="h-[400px]" ref={attendanceChartRef}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyAttendance}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -268,7 +356,7 @@ export default function Reports() {
                   Number of students in each class
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[350px]">
+              <CardContent className="h-[350px]" ref={studentChartRef}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie

@@ -1,27 +1,23 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { 
   ArrowLeft, 
   Phone, 
   MessageSquare, 
-  MapPin, 
   Clock, 
   CreditCard, 
   CalendarDays,
   Edit3,
   Download,
-  Save,
-  Plus,
-  Trash2,
-  X
+  Trash2
 } from "lucide-react";
 import { 
   PieChart,
@@ -75,6 +71,20 @@ export default function StudentDetail() {
   const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false);
   const [feeToEdit, setFeeToEdit] = useState<string | null>(null);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+
+  // Phone call handler
+  const handlePhoneCall = () => {
+    if (!student?.phoneNumber) return;
+    window.open(`tel:${student.phoneNumber}`, "_blank");
+    toast.success(`Calling ${student.name}`);
+  };
+
+  // WhatsApp handler
+  const handleWhatsApp = () => {
+    if (!student?.phoneNumber) return;
+    window.open(`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`, "_blank");
+    toast.success(`Opening WhatsApp for ${student.name}`);
+  };
   
   // Attendance data for pie chart
   const attendanceData = [
@@ -137,7 +147,8 @@ export default function StudentDetail() {
         class: student?.class || '',
         fatherName: student?.fatherName || '',
         motherName: student?.motherName || '',
-        address: student?.address || '',
+        phoneNumber: student?.phoneNumber || '',
+        whatsappNumber: student?.whatsappNumber || '',
         totalFees: student?.totalFees || 0,
       }
     });
@@ -223,18 +234,33 @@ export default function StudentDetail() {
             />
           </div>
           
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="Address" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Phone number" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="whatsappNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="WhatsApp number" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
           
           <FormField
             control={form.control}
@@ -504,22 +530,20 @@ export default function StudentDetail() {
               <div>{student.motherName}</div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" className="flex gap-2">
-                <Phone className="h-4 w-4" />
-                Call
-              </Button>
-              <Button variant="outline" size="sm" className="flex gap-2">
-                <MessageSquare className="h-4 w-4" />
-                WhatsApp
-              </Button>
-            </div>
-            
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <MapPin className="h-4 w-4" /> Address
+                <Phone className="h-4 w-4" /> Contact
               </div>
-              <div>{student.address}</div>
+              <div className="flex items-center gap-4 mt-2">
+                <Button variant="outline" size="sm" className="flex gap-2" onClick={handlePhoneCall}>
+                  <Phone className="h-4 w-4 text-apple-blue" />
+                  Call
+                </Button>
+                <Button variant="outline" size="sm" className="flex gap-2" onClick={handleWhatsApp}>
+                  <MessageSquare className="h-4 w-4 text-apple-green" />
+                  WhatsApp
+                </Button>
+              </div>
             </div>
             
             <div className="space-y-1">

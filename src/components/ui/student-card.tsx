@@ -12,6 +12,18 @@ interface StudentCardProps {
 }
 
 export function StudentCard({ student, onViewDetails }: StudentCardProps) {
+  // Phone call handler
+  const handlePhoneCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`tel:${student.phoneNumber}`, "_blank");
+  };
+
+  // WhatsApp handler
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`, "_blank");
+  };
+
   return (
     <Card className="glass-card overflow-hidden hover-lift transition-all animate-fade-in shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between p-4 pb-0 space-y-0">
@@ -48,10 +60,20 @@ export function StudentCard({ student, onViewDetails }: StudentCardProps) {
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Contact:</span>
             <div className="flex space-x-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-apple-blue/10 hover:text-apple-blue transition-colors">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full hover:bg-apple-blue/10 hover:text-apple-blue transition-colors"
+                onClick={handlePhoneCall}
+              >
                 <Phone className="h-4 w-4 text-apple-blue" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-apple-green/10 hover:text-apple-green transition-colors">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full hover:bg-apple-green/10 hover:text-apple-green transition-colors"
+                onClick={handleWhatsApp}
+              >
                 <MessageCircle className="h-4 w-4 text-apple-green" />
               </Button>
             </div>

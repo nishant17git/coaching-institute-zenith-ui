@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,8 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { attendanceRecords, students, classes } from "@/mock/data";
 import { format, subDays, addDays } from "date-fns";
+import { useData } from "@/contexts/DataContext";
+import { toast } from "sonner";
+import { exportAttendanceToPDF } from "@/services/pdfService";
+import html2canvas from "html2canvas";
+
+// Logo placeholder
+const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -19,6 +25,9 @@ export default function Attendance() {
     name: string;
     status: "Present" | "Absent" | "Leave" | "Holiday";
   }>>([]);
+
+  const { students, attendanceRecords, classes } = useData();
+  const attendanceChartRef = useRef<HTMLDivElement>(null);
 
   // Get attendance records for the selected date
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function Attendance() {
     });
     
     setDayAttendance(studentsWithStatus);
-  }, [selectedDate, selectedClass]);
+  }, [selectedDate, selectedClass, students, attendanceRecords]);
 
   // Calculate attendance statistics
   const presentCount = dayAttendance.filter(s => s.status === "Present").length;
@@ -65,11 +74,55 @@ export default function Attendance() {
     setSelectedDate(new Date());
   };
 
+  // Export attendance report
+  const exportAttendanceReport = async () => {
+    // Get class students
+    const classStudents = students.filter(student => student.class === selectedClass);
+    
+    // Get all attendance records for these students
+    const studentIds = classStudents.map(s => s.id);
+    const records = attendanceRecords.filter(record => studentIds.includes(record.studentId));
+    
+    // Generate chart image if available
+    let chartImages: string[] = [];
+    if (attendanceChartRef.current) {
+      try {
+        const canvas = await html2canvas(attendanceChartRef.current);
+        chartImages.push(canvas.toDataURL('image/png'));
+      } catch (error) {
+        console.error('Failed to capture chart:', error);
+      }
+    }
+    
+    // Summary data
+    const summary = [
+      { label: 'Class', value: selectedClass },
+      { label: 'Total Students', value: classStudents.length.toString() },
+      { label: 'Average Attendance', value: `${attendancePercentage}%` },
+      { label: 'Date Range', value: `${new Date().toLocaleDateString()}` }
+    ];
+    
+    // Export to PDF
+    exportAttendanceToPDF(
+      records,
+      { 
+        ...classStudents[0], 
+        name: selectedClass, 
+        attendancePercentage 
+      },
+      `${selectedClass} Attendance Report`,
+      `Total Students: ${classStudents.length}`,
+      INSTITUTE_LOGO
+    );
+    
+    toast.success("Attendance report exported successfully!");
+  };
+
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
-        <Button className="bg-apple-blue hover:bg-blue-600">
+        <Button className="bg-apple-blue hover:bg-blue-600" onClick={exportAttendanceReport}>
           <Download className="h-4 w-4 mr-2" /> Export
         </Button>
       </div>
@@ -122,7 +175,7 @@ export default function Attendance() {
                 <h3 className="text-lg font-medium">{format(selectedDate, "EEEE, d MMMM yyyy")}</h3>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+              <div ref={attendanceChartRef} className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
                 <div className="bg-green-50 text-apple-green rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold">{presentCount}</div>
                   <div className="text-xs">Present</div>
