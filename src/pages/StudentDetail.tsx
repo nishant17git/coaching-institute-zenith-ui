@@ -137,117 +137,119 @@ export default function StudentDetail() {
                 <TabsTrigger value="fees">Fees</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="fees" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="py-2">
+                      <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="py-2">
+                      <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-semibold text-apple-green">
+                        ₹{student.paidFees.toLocaleString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2">Fee Transactions</h3>
+                  <div className="space-y-3">
+                    {studentFees.map((fee) => (
+                      <div key={fee.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{fee.purpose}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" /> {fee.paymentMode}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
+                          <div className="text-sm text-muted-foreground">{new Date(fee.date).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="attendance" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-4">Attendance Summary</h3>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={attendanceData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={60}
+                          dataKey="value"
+                          label={({ name }) => name}
+                        >
+                          {attendanceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} days`, ``]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium mb-4">Monthly Trend</h3>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <LineChart data={calculateMonthlyAttendance().slice(0, 7)}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                        <Line type="monotone" dataKey="percentage" stroke="#0A84FF" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Recent Attendance</h3>
+                  <div className="space-y-2">
+                    {studentAttendance.slice(0, 10).map((record) => (
+                      <div 
+                        key={record.id} 
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                          <div>{new Date(record.date).toLocaleDateString()}</div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={
+                            record.status === "Present" ? "border-apple-green text-apple-green" :
+                            record.status === "Absent" ? "border-apple-red text-apple-red" :
+                            record.status === "Leave" ? "border-apple-orange text-apple-orange" :
+                            "border-apple-gray text-apple-gray"
+                          }
+                        >
+                          {record.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </CardHeader>
           <CardContent>
-            <TabsContent value="fees" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-semibold text-apple-green">
-                      ₹{student.paidFees.toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Fee Transactions</h3>
-                <div className="space-y-3">
-                  {studentFees.map((fee) => (
-                    <div key={fee.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{fee.purpose}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <CreditCard className="h-3 w-3" /> {fee.paymentMode}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
-                        <div className="text-sm text-muted-foreground">{new Date(fee.date).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="attendance" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-4">Attendance Summary</h3>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart>
-                      <Pie
-                        data={attendanceData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={60}
-                        dataKey="value"
-                        label={({ name }) => name}
-                      >
-                        {attendanceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [`${value} days`, ``]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium mb-4">Monthly Trend</h3>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={calculateMonthlyAttendance().slice(0, 7)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
-                      <Line type="monotone" dataKey="percentage" stroke="#0A84FF" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Recent Attendance</h3>
-                <div className="space-y-2">
-                  {studentAttendance.slice(0, 10).map((record) => (
-                    <div 
-                      key={record.id} 
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        <div>{new Date(record.date).toLocaleDateString()}</div>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          record.status === "Present" ? "border-apple-green text-apple-green" :
-                          record.status === "Absent" ? "border-apple-red text-apple-red" :
-                          record.status === "Leave" ? "border-apple-orange text-apple-orange" :
-                          "border-apple-gray text-apple-gray"
-                        }
-                      >
-                        {record.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
+            {/* Content moved inside TabsContent components above */}
           </CardContent>
         </Card>
       </div>
