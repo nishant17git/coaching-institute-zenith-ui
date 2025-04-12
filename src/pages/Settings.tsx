@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,30 +8,112 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Settings as SettingsIcon, User, Bell, ShieldCheck, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { getStoredData, storeData, STORAGE_KEYS } from "@/services/storageService";
 
-export default function Settings() {
-  const { user, logout } = useAuth();
-  
-  const [instituteName, setInstituteName] = useState("Zenith Coaching Institute");
-  const [email, setEmail] = useState(user?.email || "admin@example.com");
-  const [phone, setPhone] = useState("+91 9876543210");
-  const [address, setAddress] = useState("123, Education Lane, Knowledge City");
-  
-  const [notifications, setNotifications] = useState({
+interface InstituteSettings {
+  instituteName: string;
+  email: string;
+  phone: string;
+  address: string;
+  logo?: string;
+}
+
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  feeReminders: boolean;
+  attendanceAlerts: boolean;
+  systemUpdates: boolean;
+}
+
+interface AppSettings {
+  institute: InstituteSettings;
+  notifications: NotificationSettings;
+  theme: "light" | "dark" | "system";
+  exportSettings: {
+    includeInstituteLogo: boolean;
+    includeContactInfo: boolean;
+    defaultFooterText: string;
+  };
+}
+
+// Default settings
+const defaultSettings: AppSettings = {
+  institute: {
+    instituteName: "Infinity Classes",
+    email: "admin@infinityclasses.edu",
+    phone: "+91 9876543210",
+    address: "123, Education Lane, Knowledge City",
+    logo: "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC"
+  },
+  notifications: {
     email: true,
     push: true,
     feeReminders: true,
     attendanceAlerts: true,
     systemUpdates: false,
-  });
+  },
+  theme: "system",
+  exportSettings: {
+    includeInstituteLogo: true,
+    includeContactInfo: true,
+    defaultFooterText: "Thank you for choosing Infinity Classes."
+  }
+};
+
+export default function Settings() {
+  const { user, logout } = useAuth();
   
-  const handleSaveProfile = () => {
-    toast.success("Profile settings saved successfully!");
+  // Load settings from local storage or use defaults
+  const [settings, setSettings] = useState<AppSettings>(
+    getStoredData(STORAGE_KEYS.SETTINGS, defaultSettings)
+  );
+  
+  const [activeSection, setActiveSection] = useState("general");
+  const [logoPreview, setLogoPreview] = useState<string | undefined>(settings.institute.logo);
+  
+  // Update localStorage when settings change
+  useEffect(() => {
+    storeData(STORAGE_KEYS.SETTINGS, settings);
+  }, [settings]);
+  
+  const handleSaveInstitute = () => {
+    storeData(STORAGE_KEYS.SETTINGS, settings);
+    toast.success("Institute settings saved successfully!");
   };
   
   const handleSaveNotifications = () => {
+    storeData(STORAGE_KEYS.SETTINGS, settings);
     toast.success("Notification preferences saved!");
+  };
+  
+  const handleSaveExportSettings = () => {
+    storeData(STORAGE_KEYS.SETTINGS, settings);
+    toast.success("Export settings saved successfully!");
+  };
+  
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const logoDataUrl = event.target.result as string;
+          setLogoPreview(logoDataUrl);
+          setSettings(prev => ({
+            ...prev,
+            institute: {
+              ...prev.institute,
+              logo: logoDataUrl
+            }
+          }));
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
   };
   
   return (
@@ -46,7 +128,7 @@ export default function Settings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">A</span>
+                  <span className="text-white font-bold text-lg">{user?.name?.charAt(0) || "A"}</span>
                 </div>
                 <div>
                   <h3 className="font-medium">{user?.name || "Admin User"}</h3>
@@ -56,21 +138,33 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="p-0">
               <nav className="text-sm">
-                <div className="bg-primary/10 p-3 text-primary font-medium flex items-center gap-3">
+                <div 
+                  className={`${activeSection === "general" ? "bg-primary/10 text-primary" : "hover:bg-secondary"} p-3 font-medium flex items-center gap-3 cursor-pointer transition-colors`}
+                  onClick={() => setActiveSection("general")}
+                >
                   <SettingsIcon className="h-4 w-4" />
-                  General Settings
+                  Institute Settings
                 </div>
-                <div className="hover:bg-secondary p-3 flex items-center gap-3">
+                <div 
+                  className={`${activeSection === "profile" ? "bg-primary/10 text-primary" : "hover:bg-secondary"} p-3 flex items-center gap-3 cursor-pointer transition-colors`}
+                  onClick={() => setActiveSection("profile")}
+                >
                   <User className="h-4 w-4" />
                   Profile
                 </div>
-                <div className="hover:bg-secondary p-3 flex items-center gap-3">
+                <div 
+                  className={`${activeSection === "notifications" ? "bg-primary/10 text-primary" : "hover:bg-secondary"} p-3 flex items-center gap-3 cursor-pointer transition-colors`}
+                  onClick={() => setActiveSection("notifications")}
+                >
                   <Bell className="h-4 w-4" />
                   Notifications
                 </div>
-                <div className="hover:bg-secondary p-3 flex items-center gap-3">
+                <div 
+                  className={`${activeSection === "export" ? "bg-primary/10 text-primary" : "hover:bg-secondary"} p-3 flex items-center gap-3 cursor-pointer transition-colors`}
+                  onClick={() => setActiveSection("export")}
+                >
                   <ShieldCheck className="h-4 w-4" />
-                  Security
+                  Export Settings
                 </div>
               </nav>
             </CardContent>
@@ -87,138 +181,298 @@ export default function Settings() {
         </div>
         
         <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Institute Profile</CardTitle>
-              <CardDescription>
-                Manage your institute's information and contact details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="instituteName">Institute Name</Label>
-                <Input
-                  id="instituteName"
-                  value={instituteName}
-                  onChange={(e) => setInstituteName(e.target.value)}
-                />
-              </div>
+          {activeSection === "general" && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Institute Profile</CardTitle>
+                <CardDescription>
+                  Manage your institute's information and contact details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col items-center mb-6">
+                  <div className="w-32 h-32 rounded-lg overflow-hidden border mb-4">
+                    <img 
+                      src={logoPreview || "https://placehold.co/200x200/4F46E5/FFFFFF?text=LOGO"} 
+                      alt="Institute Logo" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <Label 
+                    htmlFor="logo-upload" 
+                    className="cursor-pointer bg-muted hover:bg-muted/80 py-2 px-4 rounded-md flex gap-2 items-center transition-colors"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Logo
+                  </Label>
+                  <Input 
+                    id="logo-upload" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageUpload}
+                    className="hidden" 
+                  />
+                </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveProfile}>Save Changes</Button>
-            </CardFooter>
-          </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="instituteName">Institute Name</Label>
+                  <Input
+                    id="instituteName"
+                    value={settings.institute.instituteName}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev, 
+                      institute: { ...prev.institute, instituteName: e.target.value }
+                    }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={settings.institute.email}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev, 
+                      institute: { ...prev.institute, email: e.target.value }
+                    }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={settings.institute.phone}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev, 
+                      institute: { ...prev.institute, phone: e.target.value }
+                    }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={settings.institute.address}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev, 
+                      institute: { ...prev.institute, address: e.target.value }
+                    }))}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveInstitute} className="animate-pulse">Save Changes</Button>
+              </CardFooter>
+            </Card>
+          )}
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Configure how and when you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="font-medium">Notification Channels</h3>
+          {activeSection === "profile" && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Your Profile</CardTitle>
+                <CardDescription>
+                  Manage your personal information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userName">Name</Label>
+                  <Input
+                    id="userName"
+                    value={user?.name || "Admin User"}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="userEmail">Email</Label>
+                  <Input
+                    id="userEmail"
+                    type="email"
+                    value={user?.email || "admin@example.com"}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value="********"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={() => toast.success("Profile information updated!")}>
+                  Update Profile
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+          
+          {activeSection === "notifications" && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>
+                  Configure how and when you receive notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Notification Channels</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div>Email Notifications</div>
+                      <div className="text-sm text-muted-foreground">
+                        Receive notifications via email
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notifications.email}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, email: checked }
+                      }))}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div>Push Notifications</div>
+                      <div className="text-sm text-muted-foreground">
+                        Receive push notifications on your device
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notifications.push}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, push: checked }
+                      }))}
+                    />
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium">Notification Types</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div>Fee Reminders</div>
+                      <div className="text-sm text-muted-foreground">
+                        Notifications about pending fees and payments
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notifications.feeReminders}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, feeReminders: checked }
+                      }))}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div>Attendance Alerts</div>
+                      <div className="text-sm text-muted-foreground">
+                        Notifications about student attendance issues
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notifications.attendanceAlerts}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, attendanceAlerts: checked }
+                      }))}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div>System Updates</div>
+                      <div className="text-sm text-muted-foreground">
+                        Notifications about new features and updates
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notifications.systemUpdates}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, systemUpdates: checked }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveNotifications}>Save Preferences</Button>
+              </CardFooter>
+            </Card>
+          )}
+          
+          {activeSection === "export" && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Export Settings</CardTitle>
+                <CardDescription>
+                  Configure defaults for PDF exports and reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <div>Email Notifications</div>
+                    <div>Include Institute Logo</div>
                     <div className="text-sm text-muted-foreground">
-                      Receive notifications via email
+                      Add the institute logo to all exports
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.email}
-                    onCheckedChange={(checked) => setNotifications({...notifications, email: checked})}
+                    checked={settings.exportSettings.includeInstituteLogo}
+                    onCheckedChange={(checked) => setSettings(prev => ({
+                      ...prev,
+                      exportSettings: { ...prev.exportSettings, includeInstituteLogo: checked }
+                    }))}
                   />
                 </div>
+                
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <div>Push Notifications</div>
+                    <div>Include Contact Information</div>
                     <div className="text-sm text-muted-foreground">
-                      Receive push notifications on your device
+                      Add institute contact details to exports
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.push}
-                    onCheckedChange={(checked) => setNotifications({...notifications, push: checked})}
+                    checked={settings.exportSettings.includeContactInfo}
+                    onCheckedChange={(checked) => setSettings(prev => ({
+                      ...prev,
+                      exportSettings: { ...prev.exportSettings, includeContactInfo: checked }
+                    }))}
                   />
                 </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="font-medium">Notification Types</h3>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div>Fee Reminders</div>
-                    <div className="text-sm text-muted-foreground">
-                      Notifications about pending fees and payments
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={notifications.feeReminders}
-                    onCheckedChange={(checked) => setNotifications({...notifications, feeReminders: checked})}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="footerText">Default Footer Text</Label>
+                  <Input
+                    id="footerText"
+                    value={settings.exportSettings.defaultFooterText}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev, 
+                      exportSettings: { ...prev.exportSettings, defaultFooterText: e.target.value }
+                    }))}
                   />
+                  <p className="text-sm text-muted-foreground">
+                    This text will appear at the bottom of all exported documents
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div>Attendance Alerts</div>
-                    <div className="text-sm text-muted-foreground">
-                      Notifications about student attendance issues
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={notifications.attendanceAlerts}
-                    onCheckedChange={(checked) => setNotifications({...notifications, attendanceAlerts: checked})}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div>System Updates</div>
-                    <div className="text-sm text-muted-foreground">
-                      Notifications about new features and updates
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={notifications.systemUpdates}
-                    onCheckedChange={(checked) => setNotifications({...notifications, systemUpdates: checked})}
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveNotifications}>Save Preferences</Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveExportSettings}>Save Settings</Button>
+              </CardFooter>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -5,16 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentCard } from "@/components/ui/student-card";
-import { Search, Plus, Filter } from "lucide-react";
-import { students, classes } from "@/mock/data";
-import { Student } from "@/types";
+import { Search, Plus, Filter, Download } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddStudentForm } from "@/components/ui/add-student-form";
+import { useData } from "@/contexts/DataContext";
+import { exportStudentsToPDF } from "@/services/pdfService";
+import { toast } from "sonner";
+
+// Institute logo (placeholder)
+const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
 
 export default function Students() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState("all");
   const [currentView, setCurrentView] = useState<"all" | "pending">("all");
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const navigate = useNavigate();
+  
+  const { students, classes } = useData();
 
   // Filter students based on search query, class, and view
   const filteredStudents = students.filter((student) => {
@@ -33,15 +41,60 @@ export default function Students() {
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
+  
+  const handleExportPDF = () => {
+    if (filteredStudents.length === 0) {
+      toast.error("No students to export");
+      return;
+    }
+    
+    // Create title based on filters
+    let title = "Student List";
+    let subtitle = "";
+    
+    if (selectedClass !== "all") {
+      title += ` - ${selectedClass}`;
+    }
+    
+    if (currentView === "pending") {
+      subtitle = "Fee Pending Students";
+    }
+    
+    exportStudentsToPDF(
+      filteredStudents,
+      title,
+      subtitle,
+      INSTITUTE_LOGO
+    );
+    
+    toast.success("Student list exported successfully!");
+  };
 
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
-        <Button className="bg-apple-blue hover:bg-blue-600">
-          <Plus className="h-4 w-4 mr-2" /> Add Student
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleExportPDF}
+            className="hidden sm:flex gap-2"
+          >
+            <Download className="h-4 w-4" /> Export PDF
+          </Button>
+          <Button 
+            onClick={() => setIsAddStudentOpen(true)}
+            className="bg-apple-blue hover:bg-blue-600"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Student
+          </Button>
+        </div>
       </div>
+      
+      <AddStudentForm
+        open={isAddStudentOpen}
+        onOpenChange={setIsAddStudentOpen}
+      />
       
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
@@ -77,7 +130,7 @@ export default function Students() {
       </Tabs>
       
       {filteredStudents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
           <Search className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No students found</h3>
           <p className="text-muted-foreground">
@@ -95,6 +148,16 @@ export default function Students() {
           ))}
         </div>
       )}
+      
+      <div className="sm:hidden flex justify-center mt-4">
+        <Button 
+          variant="outline"
+          onClick={handleExportPDF}
+          className="w-full flex gap-2 justify-center"
+        >
+          <Download className="h-4 w-4" /> Export PDF
+        </Button>
+      </div>
     </div>
   );
 }
