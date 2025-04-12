@@ -22,9 +22,9 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 bottom-0 w-[280px] bg-white/70 backdrop-blur-md border-r border-gray-200 flex flex-col p-6 z-50">
       <div className="flex items-center gap-3 mb-8">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center">
-          <span className="text-white font-bold text-lg">Z</span>
+          <span className="text-white font-bold text-lg">IC</span>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Zenith</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Infinity Classes</h1>
       </div>
       
       <nav className="flex-1">

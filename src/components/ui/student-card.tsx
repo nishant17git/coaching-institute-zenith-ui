@@ -13,10 +13,10 @@ interface StudentCardProps {
 
 export function StudentCard({ student, onViewDetails }: StudentCardProps) {
   return (
-    <Card className="glass-card overflow-hidden hover-lift transition-all animate-fade-in">
+    <Card className="glass-card overflow-hidden hover-lift transition-all animate-fade-in shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between p-4 pb-0 space-y-0">
         <div className="flex space-x-2">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/10 to-primary/30 flex items-center justify-center text-primary font-medium text-lg">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-apple-blue to-apple-indigo flex items-center justify-center text-white font-medium text-lg shadow-sm">
             {student.name.charAt(0)}
           </div>
           <div className="space-y-1">
@@ -28,8 +28,8 @@ export function StudentCard({ student, onViewDetails }: StudentCardProps) {
           variant={student.feeStatus === "Paid" ? "outline" : "destructive"} 
           className={
             student.feeStatus === "Paid" 
-              ? "border-apple-green text-apple-green animate-fade-in" 
-              : "animate-pulse"
+              ? "border-apple-green text-apple-green animate-fade-in rounded-full" 
+              : "animate-pulse rounded-full"
           }
         >
           {student.feeStatus}
@@ -39,11 +39,11 @@ export function StudentCard({ student, onViewDetails }: StudentCardProps) {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Father's Name:</span>
-            <span>{student.fatherName}</span>
+            <span className="font-medium">{student.fatherName}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Mother's Name:</span>
-            <span>{student.motherName}</span>
+            <span className="font-medium">{student.motherName}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Contact:</span>
@@ -59,16 +59,16 @@ export function StudentCard({ student, onViewDetails }: StudentCardProps) {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Attendance:</span>
             <span className={
-              student.attendancePercentage >= 80 ? "text-apple-green" : 
-              student.attendancePercentage >= 60 ? "text-apple-orange" : 
-              "text-apple-red"
+              student.attendancePercentage >= 80 ? "text-apple-green font-medium" : 
+              student.attendancePercentage >= 60 ? "text-apple-orange font-medium" : 
+              "text-apple-red font-medium"
             }>
               {student.attendancePercentage}%
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Fees:</span>
-            <span>₹{student.paidFees.toLocaleString()} / ₹{student.totalFees.toLocaleString()}</span>
+            <span className="font-medium">₹{student.paidFees.toLocaleString()} / ₹{student.totalFees.toLocaleString()}</span>
           </div>
         </div>
         <Button 
