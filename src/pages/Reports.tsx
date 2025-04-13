@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +29,7 @@ import {
 import { monthlyFeeCollections, monthlyAttendance, classDistribution } from "@/mock/data";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
-import { exportReportToPDF } from "@/services/pdfService";
+import { exportReportToPDF, type ReportPDFOptions } from "@/services/pdfService";
 
 // Logo placeholder
 const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
@@ -154,13 +153,15 @@ export default function Reports() {
       }
     }
     
-    exportReportToPDF(
+    const options: ReportPDFOptions = {
       title,
       chartImages,
       summary,
-      "Infinity Classes",
-      INSTITUTE_LOGO
-    );
+      instituteName: "Infinity Classes",
+      logo: INSTITUTE_LOGO
+    };
+    
+    exportReportToPDF(options);
     
     toast.success("Report exported successfully!");
   };
@@ -504,79 +505,79 @@ export default function Reports() {
                     hide={true}
                   />
                 </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Attendance Distribution</CardTitle>
-                <CardDescription>
-                  Breakdown of daily attendance status
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Attendance Distribution</CardTitle>
+                  <CardDescription>
+                    Breakdown of daily attendance status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Present', value: 85 },
+                          { name: 'Absent', value: 10 },
+                          { name: 'Leave', value: 5 },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        <Cell fill="#30D158" />
+                        <Cell fill="#FF453A" />
+                        <Cell fill="#FF9F0A" />
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Attendance by Class</CardTitle>
+                  <CardDescription>
+                    Average attendance percentage by class
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
                       data={[
-                        { name: 'Present', value: 85 },
-                        { name: 'Absent', value: 10 },
-                        { name: 'Leave', value: 5 },
+                        { name: 'Class 9', value: 92 },
+                        { name: 'Class 10', value: 88 },
+                        { name: 'Class 11 S', value: 85 },
+                        { name: 'Class 12 S', value: 90 },
+                        { name: 'Class 11 C', value: 82 },
+                        { name: 'Class 12 C', value: 86 },
                       ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
-                      <Cell fill="#30D158" />
-                      <Cell fill="#FF453A" />
-                      <Cell fill="#FF9F0A" />
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Attendance by Class</CardTitle>
-                <CardDescription>
-                  Average attendance percentage by class
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { name: 'Class 9', value: 92 },
-                      { name: 'Class 10', value: 88 },
-                      { name: 'Class 11 S', value: 85 },
-                      { name: 'Class 12 S', value: 90 },
-                      { name: 'Class 11 C', value: 82 },
-                      { name: 'Class 12 C', value: 86 },
-                    ]}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
-                    <Bar dataKey="value" name="Attendance %" fill="#5E5CE6" radius={[4, 4, 0, 0]}>
-                      {[0, 1, 2, 3, 4, 5].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                      <Bar dataKey="value" name="Attendance %" fill="#5E5CE6" radius={[4, 4, 0, 0]}>
+                        {[0, 1, 2, 3, 4, 5].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
         
@@ -771,7 +772,7 @@ export default function Reports() {
                   <Bar dataKey="Class 11-S" name="Class 11-S" fill="#5E5CE6" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Class 12-S" name="Class 12-S" fill="#FF9F0A" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </CardContent>
             </CardContent>
           </Card>
           

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -38,7 +37,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { 
   exportAttendanceToPDF, 
-  exportFeeInvoicePDF 
+  exportFeeInvoicePDF,
+  type AttendancePDFOptions,
+  type FeeInvoicePDFOptions
 } from "@/services/pdfService";
 
 // Logo placeholder
@@ -60,34 +61,28 @@ export default function StudentDetail() {
     deleteFeeTransaction
   } = useData();
   
-  // Find student by ID
   const student = students.find((s) => s.id === id);
   
-  // Get student fee transactions and attendance records
   const studentFees = feeTransactions.filter((fee) => fee.studentId === id);
   const studentAttendance = attendanceRecords.filter((record) => record.studentId === id);
   
-  // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false);
   const [feeToEdit, setFeeToEdit] = useState<string | null>(null);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
 
-  // Phone call handler
   const handlePhoneCall = () => {
     if (!student?.phoneNumber) return;
     window.open(`tel:${student.phoneNumber}`, "_blank");
     toast.success(`Calling ${student.name}`);
   };
 
-  // WhatsApp handler
   const handleWhatsApp = () => {
     if (!student?.phoneNumber) return;
     window.open(`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`, "_blank");
     toast.success(`Opening WhatsApp for ${student.name}`);
   };
   
-  // Attendance data for pie chart
   const attendanceData = [
     { name: "Present", value: studentAttendance.filter((r) => r.status === "Present").length },
     { name: "Absent", value: studentAttendance.filter((r) => r.status === "Absent").length },
@@ -96,7 +91,6 @@ export default function StudentDetail() {
   
   const COLORS = ["#30D158", "#FF453A", "#FF9F0A"];
   
-  // Monthly attendance percentage
   const calculateMonthlyAttendance = () => {
     if (!student) return [];
     
@@ -109,38 +103,39 @@ export default function StudentDetail() {
     });
   };
   
-  // Export attendance report
   const handleExportAttendance = () => {
     if (!student) return;
     
-    exportAttendanceToPDF(
-      studentAttendance,
-      student,
-      `Attendance Report - ${student.name}`,
-      `Class: ${student.class}`,
-      INSTITUTE_LOGO
-    );
+    const options: AttendancePDFOptions = {
+      records: studentAttendance,
+      studentData: student,
+      title: `Attendance Report - ${student.name}`,
+      subtitle: `Class: ${student.class}`,
+      logo: INSTITUTE_LOGO
+    };
+    
+    exportAttendanceToPDF(options);
     
     toast.success("Attendance report exported successfully!");
   };
   
-  // Export fee invoice
   const handleExportInvoice = (transaction: any) => {
     if (!student) return;
     
-    exportFeeInvoicePDF(
+    const options: FeeInvoicePDFOptions = {
       transaction,
       student,
-      'Infinity Classes',
-      '123 Education Lane, Knowledge City',
-      '+91 9876543210',
-      INSTITUTE_LOGO
-    );
+      instituteName: 'Infinity Classes',
+      instituteAddress: '123 Education Lane, Knowledge City',
+      institutePhone: '+91 9876543210',
+      logo: INSTITUTE_LOGO
+    };
+    
+    exportFeeInvoicePDF(options);
     
     toast.success("Fee invoice exported successfully!");
   };
 
-  // Student edit form
   const StudentEditForm = () => {
     const form = useForm({
       defaultValues: {
@@ -289,7 +284,6 @@ export default function StudentDetail() {
     );
   };
   
-  // Fee transaction form
   const FeeTransactionForm = () => {
     const feeToEditData = feeToEdit 
       ? feeTransactions.find(fee => fee.id === feeToEdit) 
@@ -308,14 +302,12 @@ export default function StudentDetail() {
       if (!student) return;
       
       if (feeToEdit) {
-        // Update existing transaction
         updateFeeTransaction(feeToEdit, {
           ...data,
           amount: Number(data.amount)
         });
         toast.success("Fee transaction updated successfully!");
       } else {
-        // Add new transaction
         addFeeTransaction({
           studentId: student.id,
           ...data,
@@ -510,7 +502,6 @@ export default function StudentDetail() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Student Info Card */}
         <Card className="glass-card md:col-span-1 animate-fade-in">
           <CardHeader>
             <CardTitle>Student Information</CardTitle>
@@ -556,7 +547,6 @@ export default function StudentDetail() {
           </CardContent>
         </Card>
         
-        {/* Tabs for Fees and Attendance */}
         <Card className="glass-card md:col-span-2">
           <CardHeader className="pb-2">
             <Tabs defaultValue="fees">

@@ -9,7 +9,7 @@ import { Search, Plus, Filter, Download } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddStudentForm } from "@/components/ui/add-student-form";
 import { useData } from "@/contexts/DataContext";
-import { exportStudentsToPDF } from "@/services/pdfService";
+import { exportStudentsToPDF, type StudentPDFOptions } from "@/services/pdfService";
 import { toast } from "sonner";
 
 // Institute logo (placeholder)
@@ -60,12 +60,14 @@ export default function Students() {
       subtitle = "Fee Pending Students";
     }
     
-    exportStudentsToPDF(
-      filteredStudents,
+    const options: StudentPDFOptions = {
+      students: filteredStudents,
       title,
       subtitle,
-      INSTITUTE_LOGO
-    );
+      logo: INSTITUTE_LOGO
+    };
+    
+    exportStudentsToPDF(options);
     
     toast.success("Student list exported successfully!");
   };
