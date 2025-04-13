@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
@@ -50,7 +50,7 @@ const App = () => (
                   <Route path="/settings" element={<Settings />} />
                 </Route>
                 
-                <Route path="/" element={<Login />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </DataProvider>
