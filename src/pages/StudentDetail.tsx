@@ -17,7 +17,8 @@ import {
   CalendarDays,
   Edit3,
   Download,
-  Trash2
+  Trash2,
+  Plus
 } from "lucide-react";
 import { 
   PieChart,

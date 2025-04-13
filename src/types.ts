@@ -5,8 +5,8 @@ export interface Student {
   class: string;
   fatherName: string;
   motherName: string;
-  phone: string;
-  whatsapp: string;
+  phoneNumber: string;
+  whatsappNumber: string;
   address: string;
   feeStatus: "Paid" | "Pending" | "Partial";
   totalFees: number;
