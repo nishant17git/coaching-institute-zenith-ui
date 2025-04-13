@@ -162,11 +162,11 @@ export default function Attendance() {
     const records = attendanceRecords.filter(record => studentIds.includes(record.studentId));
     
     // Generate chart image if available
-    let chartImages: string[] = [];
+    let chartImage = null;
     if (attendanceChartRef.current) {
       try {
         const canvas = await html2canvas(attendanceChartRef.current);
-        chartImages.push(canvas.toDataURL('image/png'));
+        chartImage = canvas.toDataURL('image/png');
       } catch (error) {
         console.error('Failed to capture chart:', error);
       }
@@ -181,19 +181,19 @@ export default function Attendance() {
       { label: 'Attendance', value: `${attendancePercentage}%` }
     ];
     
-    // Export to PDF
-    exportAttendanceToPDF(
+    // Export to PDF - Fix the arguments here
+    exportAttendanceToPDF({
       records,
-      { 
+      studentData: { 
         ...classStudents[0], 
         name: filterType === "student" ? selectedStudentDetails?.name || "" : selectedClass, 
         attendancePercentage 
       },
       title,
-      `Attendance Report for ${format(selectedDate, 'd MMMM yyyy')}`,
-      INSTITUTE_LOGO,
-      chartImages
-    );
+      subtitle: `Attendance Report for ${format(selectedDate, 'd MMMM yyyy')}`,
+      logo: INSTITUTE_LOGO,
+      chartImage
+    });
     
     toast.success("Attendance report exported successfully!");
   };
