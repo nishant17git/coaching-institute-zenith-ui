@@ -16,6 +16,7 @@ import Students from "./pages/Students";
 import StudentDetail from "./pages/StudentDetail";
 import Fees from "./pages/Fees";
 import Attendance from "./pages/Attendance";
+import TestRecord from "./pages/TestRecord";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => (
                   <Route path="/students/:id" element={<StudentDetail />} />
                   <Route path="/fees" element={<Fees />} />
                   <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/tests" element={<TestRecord />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
                 </Route>

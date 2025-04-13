@@ -58,7 +58,7 @@ export function ClassAttendanceTable({ students, onStatusChange }: ClassAttendan
                         onClick={() => onStatusChange(student.id, "Present")}
                       >
                         <Check className="mr-1 h-3.5 w-3.5" />
-                        Present
+                        <span className="sm:inline hidden">Present</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -72,7 +72,7 @@ export function ClassAttendanceTable({ students, onStatusChange }: ClassAttendan
                         onClick={() => onStatusChange(student.id, "Absent")}
                       >
                         <X className="mr-1 h-3.5 w-3.5" />
-                        Absent
+                        <span className="sm:inline hidden">Absent</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -86,7 +86,7 @@ export function ClassAttendanceTable({ students, onStatusChange }: ClassAttendan
                         onClick={() => onStatusChange(student.id, "Leave")}
                       >
                         <Clock className="mr-1 h-3.5 w-3.5" />
-                        Leave
+                        <span className="sm:inline hidden">Leave</span>
                       </Button>
                     </div>
                   </TableCell>

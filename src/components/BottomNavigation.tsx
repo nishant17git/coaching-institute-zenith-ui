@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, CreditCard, CalendarDays, BarChart2, Settings } from "lucide-react";
+import { Home, Users, CreditCard, CalendarDays, BarChart2, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -13,8 +13,8 @@ export function BottomNavigation() {
     { name: "Students", path: "/students", icon: Users },
     { name: "Fees", path: "/fees", icon: CreditCard },
     { name: "Attendance", path: "/attendance", icon: CalendarDays },
+    { name: "Tests", path: "/tests", icon: FileText },
     { name: "Reports", path: "/reports", icon: BarChart2 },
-    { name: "Settings", path: "/settings", icon: Settings },
   ];
 
   return (
