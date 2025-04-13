@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClassAttendanceTableProps {
   students: Array<{
