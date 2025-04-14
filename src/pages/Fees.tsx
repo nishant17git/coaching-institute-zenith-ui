@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowUpDown, Download, Calendar, Plus, Loader2 } from "lucide-react";
 import { 
@@ -414,16 +414,14 @@ export default function Fees() {
   };
 
   // Update the button click handlers to use paymentForm instead of form
-  const handlePayButtonClick = (student: StudentRecord) => {
-    // We need to ensure the student object has the correct type for fee_status
-    // by using a type assertion for the entire object
-    const typedStudent = student as unknown as {
-      id: string;
-      full_name: string;
-      class: number;
-      total_fees: number;
-      paid_fees: number;
-      fee_status: "Paid" | "Pending" | "Partial";
+  const handlePayButtonClick = (student: any) => {
+    // We need to ensure the student has the correct type for fee_status
+    // Type assertion to fix the issue
+    const validFeeStatus = student.fee_status as "Paid" | "Pending" | "Partial";
+    
+    const typedStudent: StudentRecord = {
+      ...student,
+      fee_status: validFeeStatus
     };
     
     paymentForm.reset({
