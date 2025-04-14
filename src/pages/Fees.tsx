@@ -415,10 +415,15 @@ export default function Fees() {
 
   // Update the button click handlers to use paymentForm instead of form
   const handlePayButtonClick = (student: StudentRecord) => {
-    // Fix the type error by asserting fee_status as the correct type
-    const typedStudent = {
-      ...student,
-      fee_status: student.fee_status as "Paid" | "Pending" | "Partial"
+    // We need to ensure the student object has the correct type for fee_status
+    // by using a type assertion for the entire object
+    const typedStudent = student as unknown as {
+      id: string;
+      full_name: string;
+      class: number;
+      total_fees: number;
+      paid_fees: number;
+      fee_status: "Paid" | "Pending" | "Partial";
     };
     
     paymentForm.reset({
