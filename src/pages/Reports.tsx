@@ -280,38 +280,8 @@ export default function Reports() {
             <TabsTrigger value="fees">Fees</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
           </TabsList>
-        </Tabs>
-        
-        <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-              <SelectItem key={cls} value={cls.toString()}>
-                Class {cls}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <div className="w-full sm:w-[180px]">
-          <input 
-            type="month" 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
-      
-      {studentsLoading || attendanceLoading || feesLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
+          
+          {/* Wrapped all TabsContent components inside the Tabs component */}
           {/* Attendance Report */}
           <TabsContent value="attendance" className="m-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -513,8 +483,37 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-        </>
-      )}
+        </Tabs>
+        
+        <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filter by class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+              <SelectItem key={cls} value={cls.toString()}>
+                Class {cls}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <div className="w-full sm:w-[180px]">
+          <input 
+            type="month" 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+      
+      {studentsLoading || attendanceLoading || feesLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : null}
     </div>
   );
 }
