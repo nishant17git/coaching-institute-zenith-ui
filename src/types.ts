@@ -37,3 +37,16 @@ export interface Class {
   name: string;
   totalStudents: number;
 }
+
+export interface StudentRecord {
+  id: string;
+  full_name: string;
+  class: number;
+  roll_number: number;
+  date_of_birth: string;
+  address: string;
+  guardian_name: string;
+  contact_number: string;
+  created_at: string;
+  updated_at: string;
+}

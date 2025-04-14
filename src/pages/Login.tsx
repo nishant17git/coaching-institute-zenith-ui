@@ -25,15 +25,15 @@ export default function Login() {
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-all duration-300">
             <BookOpen className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent animate-fade-in">Infinity Classes</h1>
-          <p className="text-muted-foreground mt-1">Student Management System</p>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent animate-fade-in">Student Management</h1>
+          <p className="text-muted-foreground mt-1">Classes 2-10</p>
         </div>
         
         <Card className="glass-card shadow-lg border-opacity-40 animate-slide-up">
           <CardHeader>
             <CardTitle className="text-center">Admin Login</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access the dashboard
+              Enter your admin credentials to access the dashboard
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -91,7 +91,7 @@ export default function Login() {
         </Card>
         
         <p className="text-center text-sm text-muted-foreground mt-4">
-          For demo purposes: Email containing "admin" and password "password"
+          Contact administrator for access credentials
         </p>
       </div>
     </div>
