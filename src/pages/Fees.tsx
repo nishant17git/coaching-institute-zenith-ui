@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,18 @@ export default function Fees() {
   const [sortField, setSortField] = useState<"date" | "amount">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
+  // Create a form instance to use throughout the component
+  const paymentForm = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      student_id: "",
+      amount: 0,
+      date: format(new Date(), "yyyy-MM-dd"),
+      payment_mode: "Cash",
+      receipt_number: generateReceiptNumber(),
+      purpose: "Fee Payment"
+    }
+  });
   
   const queryClient = useQueryClient();
 
@@ -173,7 +184,7 @@ export default function Fees() {
     return `REC${dateStr}${randomNum}`;
   };
 
-  // Add fee payment form
+  // Add fee payment form schema
   const paymentSchema = z.object({
     student_id: z.string({ required_error: "Student is required" }),
     amount: z.coerce.number().min(1, "Amount must be greater than 0"),
@@ -400,6 +411,19 @@ export default function Fees() {
     }
   };
 
+  // Update the button click handlers to use paymentForm instead of form
+  const handlePayButtonClick = (student: StudentRecord) => {
+    paymentForm.reset({
+      student_id: student.id,
+      amount: student.total_fees - student.paid_fees,
+      date: format(new Date(), "yyyy-MM-dd"),
+      payment_mode: "Cash",
+      receipt_number: generateReceiptNumber(),
+      purpose: "Fee Payment"
+    });
+    setIsAddPaymentDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -609,17 +633,7 @@ export default function Fees() {
                           <span className="text-apple-red font-medium">₹{(student.total_fees - student.paid_fees).toLocaleString()}</span>
                           <Button 
                             size="sm" 
-                            onClick={() => {
-                              form.reset({
-                                student_id: student.id,
-                                amount: student.total_fees - student.paid_fees,
-                                date: format(new Date(), "yyyy-MM-dd"),
-                                payment_mode: "Cash",
-                                receipt_number: generateReceiptNumber(),
-                                purpose: "Fee Payment"
-                              });
-                              setIsAddPaymentDialogOpen(true);
-                            }}
+                            onClick={() => handlePayButtonClick(student)}
                           >
                             <Plus className="h-4 w-4 mr-1" /> Pay
                           </Button>
@@ -627,17 +641,7 @@ export default function Fees() {
                         <div className="sm:hidden mt-2">
                           <Button 
                             className="w-full"
-                            onClick={() => {
-                              form.reset({
-                                student_id: student.id,
-                                amount: student.total_fees - student.paid_fees,
-                                date: format(new Date(), "yyyy-MM-dd"),
-                                payment_mode: "Cash",
-                                receipt_number: generateReceiptNumber(),
-                                purpose: "Fee Payment"
-                              });
-                              setIsAddPaymentDialogOpen(true);
-                            }}
+                            onClick={() => handlePayButtonClick(student)}
                           >
                             <Plus className="h-4 w-4 mr-1" /> Pay Fees
                           </Button>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -159,7 +158,8 @@ export default function Attendance() {
       return {
         id: student.id,
         name: student.full_name,
-        status: record?.status || "Absent"
+        // Explicitly cast the status to one of the allowed values, with a default of "Absent"
+        status: (record?.status as "Present" | "Absent" | "Leave" | "Holiday") || "Absent"
       };
     });
     
