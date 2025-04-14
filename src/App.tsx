@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AppLayout } from "@/components/AppLayout";
 import * as React from "react";
@@ -36,22 +37,24 @@ const App = () => (
         <Toaster />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              
-              <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/students" element={<Students />} />
-                <Route path="/students/:id" element={<StudentDetail />} />
-                <Route path="/fees" element={<Fees />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/tests" element={<TestRecord />} />
-                <Route path="/reports" element={<Reports />} />
-              </Route>
-              
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <DataProvider>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                
+                <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/students/:id" element={<StudentDetail />} />
+                  <Route path="/fees" element={<Fees />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/tests" element={<TestRecord />} />
+                  <Route path="/reports" element={<Reports />} />
+                </Route>
+                
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </DataProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
