@@ -5,8 +5,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
+// Define an extended user type that includes the optional name field
+interface ExtendedUser extends User {
+  name?: string;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -17,7 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -26,15 +31,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Add name property to user when setting state
+        const extendedUser = session?.user ? {
+          ...session.user,
+          name: session.user.email?.split('@')[0] || 'Admin User'
+        } : null;
+        
         setSession(session);
-        setUser(session?.user ?? null);
+        setUser(extendedUser);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // Add name property to user when setting state
+      const extendedUser = session?.user ? {
+        ...session.user,
+        name: session.user.email?.split('@')[0] || 'Admin User'
+      } : null;
+      
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(extendedUser);
       setIsLoading(false);
     });
 
