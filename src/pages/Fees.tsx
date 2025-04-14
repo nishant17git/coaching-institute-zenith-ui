@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,31 @@ export default function Fees() {
   const [sortField, setSortField] = useState<"date" | "amount">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
+
+  // Generate receipt number (current date + random 4 digits)
+  const generateReceiptNumber = () => {
+    const date = new Date();
+    const dateStr = format(date, 'yyyyMMdd');
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `REC${dateStr}${randomNum}`;
+  };
+
+  // Add fee payment form schema
+  const paymentSchema = z.object({
+    student_id: z.string({ required_error: "Student is required" }),
+    amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+    date: z.string().refine(val => new Date(val) <= new Date(), { 
+      message: "Date cannot be in the future" 
+    }),
+    payment_mode: z.string().refine(val => ["Cash", "Online", "Cheque"].includes(val), {
+      message: "Invalid payment mode"
+    }),
+    receipt_number: z.string().min(3, "Receipt number is required"),
+    purpose: z.string().optional()
+  });
+
+  type PaymentFormValues = z.infer<typeof paymentSchema>;
+
   // Create a form instance to use throughout the component
   const paymentForm = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
@@ -100,7 +126,7 @@ export default function Fees() {
           .from('students')
           .update({ 
             paid_fees: newPaidFees,
-            fee_status: newFeeStatus
+            fee_status: newFeeStatus as "Paid" | "Partial" | "Pending"
           })
           .eq('id', student.id);
         
@@ -176,30 +202,6 @@ export default function Fees() {
     }
   };
   
-  // Generate receipt number (current date + random 4 digits)
-  const generateReceiptNumber = () => {
-    const date = new Date();
-    const dateStr = format(date, 'yyyyMMdd');
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `REC${dateStr}${randomNum}`;
-  };
-
-  // Add fee payment form schema
-  const paymentSchema = z.object({
-    student_id: z.string({ required_error: "Student is required" }),
-    amount: z.coerce.number().min(1, "Amount must be greater than 0"),
-    date: z.string().refine(val => new Date(val) <= new Date(), { 
-      message: "Date cannot be in the future" 
-    }),
-    payment_mode: z.string().refine(val => ["Cash", "Online", "Cheque"].includes(val), {
-      message: "Invalid payment mode"
-    }),
-    receipt_number: z.string().min(3, "Receipt number is required"),
-    purpose: z.string().optional()
-  });
-
-  type PaymentFormValues = z.infer<typeof paymentSchema>;
-
   const AddPaymentForm = () => {
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
@@ -413,9 +415,15 @@ export default function Fees() {
 
   // Update the button click handlers to use paymentForm instead of form
   const handlePayButtonClick = (student: StudentRecord) => {
+    // Fix the type error by asserting fee_status as the correct type
+    const typedStudent = {
+      ...student,
+      fee_status: student.fee_status as "Paid" | "Pending" | "Partial"
+    };
+    
     paymentForm.reset({
-      student_id: student.id,
-      amount: student.total_fees - student.paid_fees,
+      student_id: typedStudent.id,
+      amount: typedStudent.total_fees - typedStudent.paid_fees,
       date: format(new Date(), "yyyy-MM-dd"),
       payment_mode: "Cash",
       receipt_number: generateReceiptNumber(),
