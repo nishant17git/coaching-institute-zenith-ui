@@ -35,7 +35,7 @@ export default function Login() {
           className="flex flex-col items-center mb-8"
         >
           <div className="h-20 w-20 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg">
-            <img src="/logo.png" alt="Infinity Classes" className="h-12 w-12 object-contain" />
+            <img src="/src/pages/icon.png" alt="Infinity Classes" className="h-12 w-12 object-contain" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent">
             Infinity Classes
