@@ -8,6 +8,7 @@ import { User, Session } from "@supabase/supabase-js";
 // Define an extended user type that includes the optional name field
 interface ExtendedUser extends User {
   name?: string;
+  first_name?: string;
 }
 
 interface AuthContextType {
@@ -31,23 +32,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
+        
         // Add name property to user when setting state
         const extendedUser = session?.user ? {
           ...session.user,
-          name: session.user.email?.split('@')[0] || 'Admin User'
+          name: session.user.email?.split('@')[0] || 'Admin User',
+          first_name: session.user.email?.split('@')[0] || 'Admin'
         } : null;
         
         setSession(session);
         setUser(extendedUser);
+        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Retrieved session:", session?.user?.email);
+      
       // Add name property to user when setting state
       const extendedUser = session?.user ? {
         ...session.user,
-        name: session.user.email?.split('@')[0] || 'Admin User'
+        name: session.user.email?.split('@')[0] || 'Admin User',
+        first_name: session.user.email?.split('@')[0] || 'Admin'
       } : null;
       
       setSession(session);
@@ -69,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       
       toast.success("Login successful");
-      navigate("/dashboard");
+      
+      // Navigate will be handled by the useEffect in the Login component
     } catch (error: any) {
       toast.error(error.message || "Login failed. Please check your credentials.");
       console.error(error);

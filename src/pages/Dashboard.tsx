@@ -19,12 +19,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [classDistribution, setClassDistribution] = useState<any[]>([]);
   const [pendingFees, setPendingFees] = useState<any[]>([]);
+  const isMobile = useIsMobile();
 
   // Fetch students data from Supabase
   const { data: students = [], isLoading: studentsLoading } = useQuery({
@@ -120,12 +122,14 @@ export default function Dashboard() {
       className="space-y-6"
     >
       <div className="flex items-center justify-between">
-        <motion.h1 
-          variants={item}
-          className="text-2xl font-semibold tracking-tight"
-        >
-          Dashboard
-        </motion.h1>
+        <motion.div variants={item} className="flex flex-col">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {user?.first_name ? `Welcome, ${user.first_name} Sir` : 'Dashboard'}
+          </h1>
+          <p className="text-muted-foreground">
+            Your academic institute management dashboard
+          </p>
+        </motion.div>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -198,17 +202,29 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <div className="h-[300px]">
+            <div className="h-[300px] w-full overflow-x-hidden">
               {studentsLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading chart data...</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={classDistribution}>
+                  <BarChart 
+                    data={classDistribution} 
+                    margin={isMobile ? { top: 5, right: 10, left: 0, bottom: 5 } : { top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="class" />
-                    <YAxis allowDecimals={false} />
+                    <XAxis 
+                      dataKey="class" 
+                      fontSize={isMobile ? 10 : 12} 
+                      tick={{fill: '#888'}}
+                      interval={isMobile ? 1 : 0}
+                    />
+                    <YAxis 
+                      allowDecimals={false} 
+                      fontSize={isMobile ? 10 : 12}
+                      width={isMobile ? 25 : 40}
+                    />
                     <Tooltip />
                     <Bar dataKey="count" name="Students" fill="#0A84FF" radius={[4, 4, 0, 0]} />
                   </BarChart>
