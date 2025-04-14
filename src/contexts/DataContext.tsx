@@ -1,13 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getStoredData, storeData, STORAGE_KEYS } from '@/services/storageService';
+import { useQuery } from '@tanstack/react-query';
+import { studentService } from '@/services/studentService';
 import { 
   Student, 
   FeeTransaction,
   AttendanceRecord,
   Class
 } from '@/types';
-import { students as initialStudents, feeTransactions as initialFees, attendanceRecords as initialAttendance, classes } from '@/mock/data';
 import { toast } from 'sonner';
 
 interface DataContextType {
@@ -17,203 +17,183 @@ interface DataContextType {
   classes: Class[];
   
   // Student methods
-  addStudent: (student: Omit<Student, 'id'>) => string;
-  updateStudent: (id: string, data: Partial<Student>) => void;
-  deleteStudent: (id: string) => void;
+  addStudent: (student: Omit<Student, 'id'>) => Promise<string>;
+  updateStudent: (id: string, data: Partial<Student>) => Promise<void>;
+  deleteStudent: (id: string) => Promise<void>;
   
   // Fee methods
-  addFeeTransaction: (transaction: Omit<FeeTransaction, 'id'>) => string;
-  updateFeeTransaction: (id: string, data: Partial<FeeTransaction>) => void;
-  deleteFeeTransaction: (id: string) => void;
+  addFeeTransaction: (transaction: Omit<FeeTransaction, 'id'>) => Promise<string>;
+  updateFeeTransaction: (id: string, data: Partial<FeeTransaction>) => Promise<void>;
+  deleteFeeTransaction: (id: string) => Promise<void>;
   
   // Attendance methods
-  addAttendanceRecord: (record: Omit<AttendanceRecord, 'id'>) => string;
-  updateAttendanceRecord: (id: string, data: Partial<AttendanceRecord>) => void;
-  bulkAddAttendance: (records: Omit<AttendanceRecord, 'id'>[]) => void;
+  addAttendanceRecord: (record: Omit<AttendanceRecord, 'id'>) => Promise<string>;
+  updateAttendanceRecord: (id: string, data: Partial<AttendanceRecord>) => Promise<void>;
+  bulkAddAttendance: (records: Omit<AttendanceRecord, 'id'>[]) => Promise<void>;
+
+  // Loading state
+  isLoading: boolean;
 }
 
 export const DataContext = createContext<DataContextType | null>(null);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize state with localStorage data or defaults
-  const [students, setStudents] = useState<Student[]>(
-    getStoredData(STORAGE_KEYS.STUDENTS, initialStudents)
-  );
+  const [classes, setClasses] = useState<Class[]>([]);
   
-  const [feeTransactions, setFeeTransactions] = useState<FeeTransaction[]>(
-    getStoredData(STORAGE_KEYS.FEES, initialFees)
-  );
+  // Fetch students data from Supabase using React Query
+  const { 
+    data: studentsData = [], 
+    isLoading: isLoadingStudents,
+    refetch: refetchStudents
+  } = useQuery({
+    queryKey: ['students'],
+    queryFn: studentService.getStudents
+  });
   
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(
-    getStoredData(STORAGE_KEYS.ATTENDANCE, initialAttendance)
-  );
-
-  // Persist data whenever it changes
+  // Convert Supabase records to our frontend model
+  const students = studentsData.map(record => studentService.mapToStudentModel(record));
+  
+  // Calculate class data when students change
   useEffect(() => {
-    storeData(STORAGE_KEYS.STUDENTS, students);
+    if (students.length > 0) {
+      // Group students by class
+      const classGroups = students.reduce((groups: Record<string, Student[]>, student) => {
+        const className = student.class;
+        if (!groups[className]) {
+          groups[className] = [];
+        }
+        groups[className].push(student);
+        return groups;
+      }, {});
+      
+      // Create class objects
+      const classData = Object.keys(classGroups).map(className => ({
+        id: className.toLowerCase().replace(' ', '-'),
+        name: className,
+        totalStudents: classGroups[className].length
+      }));
+      
+      setClasses(classData);
+    }
   }, [students]);
   
-  useEffect(() => {
-    storeData(STORAGE_KEYS.FEES, feeTransactions);
-  }, [feeTransactions]);
-  
-  useEffect(() => {
-    storeData(STORAGE_KEYS.ATTENDANCE, attendanceRecords);
-  }, [attendanceRecords]);
-
-  // Generate a simple unique ID for new entries
-  const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-  };
+  // Initially we won't load all transactions and attendance records - they'll be loaded on demand
+  const [feeTransactions, setFeeTransactions] = useState<FeeTransaction[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
   // Student CRUD operations
-  const addStudent = (studentData: Omit<Student, 'id'>): string => {
-    const id = generateId();
-    const newStudent: Student = { ...studentData, id };
-    setStudents(prev => [...prev, newStudent]);
-    toast.success(`Added student: ${studentData.name}`);
-    return id;
+  const addStudent = async (studentData: Omit<Student, 'id'>): Promise<string> => {
+    try {
+      const studentRecord = studentService.mapToStudentRecord(studentData);
+      const newStudent = await studentService.createStudent(studentRecord);
+      
+      // Refresh students data
+      refetchStudents();
+      
+      toast.success(`Added student: ${studentData.name}`);
+      return newStudent.id;
+    } catch (error) {
+      toast.error(`Failed to add student: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
-  const updateStudent = (id: string, data: Partial<Student>): void => {
-    setStudents(prev => 
-      prev.map(student => student.id === id ? { ...student, ...data } : student)
-    );
-    toast.success(`Updated student information`);
+  const updateStudent = async (id: string, data: Partial<Student>): Promise<void> => {
+    try {
+      const studentRecord = studentService.mapToStudentRecord({
+        ...students.find(s => s.id === id)!,
+        ...data
+      });
+      
+      await studentService.updateStudent(id, studentRecord);
+      
+      // Refresh students data
+      refetchStudents();
+      
+      toast.success(`Updated student information`);
+    } catch (error) {
+      toast.error(`Failed to update student: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
-  const deleteStudent = (id: string): void => {
-    const studentToDelete = students.find(s => s.id === id);
-    setStudents(prev => prev.filter(student => student.id !== id));
-    
-    // Also clean up related records
-    setFeeTransactions(prev => prev.filter(fee => fee.studentId !== id));
-    setAttendanceRecords(prev => prev.filter(record => record.studentId !== id));
-    
-    toast.success(`Removed student: ${studentToDelete?.name || 'Unknown'}`);
+  const deleteStudent = async (id: string): Promise<void> => {
+    try {
+      const studentToDelete = students.find(s => s.id === id);
+      await studentService.deleteStudent(id);
+      
+      // Refresh students data
+      refetchStudents();
+      
+      toast.success(`Removed student: ${studentToDelete?.name || 'Unknown'}`);
+    } catch (error) {
+      toast.error(`Failed to delete student: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   // Fee CRUD operations
-  const addFeeTransaction = (transactionData: Omit<FeeTransaction, 'id'>): string => {
-    const id = generateId();
-    const newTransaction: FeeTransaction = { ...transactionData, id };
-    setFeeTransactions(prev => [...prev, newTransaction]);
-    
-    // Update student's fee status if needed
-    if (transactionData.paymentMode) {
-      const studentToUpdate = students.find(s => s.id === transactionData.studentId);
-      if (studentToUpdate) {
-        const paidFees = feeTransactions.filter(fee => 
-          fee.studentId === transactionData.studentId && fee.paymentMode
-        ).reduce((sum, fee) => sum + fee.amount, 0) + transactionData.amount;
-        
-        const isPaidInFull = paidFees >= studentToUpdate.totalFees;
-        
-        updateStudent(transactionData.studentId, { 
-          paidFees, 
-          feeStatus: isPaidInFull ? 'Paid' : 'Pending' 
-        });
-      }
+  const addFeeTransaction = async (transactionData: Omit<FeeTransaction, 'id'>): Promise<string> => {
+    try {
+      const newTransaction = await studentService.addFeeTransaction(transactionData);
+      
+      // Refresh the students to get updated fee status
+      refetchStudents();
+      
+      toast.success(`Added fee transaction of ₹${transactionData.amount}`);
+      return newTransaction.id;
+    } catch (error) {
+      toast.error(`Failed to add transaction: ${(error as Error).message}`);
+      throw error;
     }
-    
-    toast.success(`Added fee transaction of ₹${transactionData.amount}`);
-    return id;
   };
 
-  const updateFeeTransaction = (id: string, data: Partial<FeeTransaction>): void => {
-    setFeeTransactions(prev => 
-      prev.map(transaction => transaction.id === id ? { ...transaction, ...data } : transaction)
-    );
-    toast.success(`Updated fee transaction`);
+  const updateFeeTransaction = async (id: string, data: Partial<FeeTransaction>): Promise<void> => {
+    // Not implemented in the Supabase service yet
+    toast.error("Updating fee transactions is not implemented yet");
+    throw new Error("Not implemented");
   };
 
-  const deleteFeeTransaction = (id: string): void => {
-    const transactionToDelete = feeTransactions.find(fee => fee.id === id);
-    setFeeTransactions(prev => prev.filter(fee => fee.id !== id));
-    
-    // Update student's fee status if needed
-    if (transactionToDelete && transactionToDelete.studentId && transactionToDelete.paymentMode) {
-      const studentToUpdate = students.find(s => s.id === transactionToDelete.studentId);
-      if (studentToUpdate) {
-        const paidFees = feeTransactions
-          .filter(fee => fee.studentId === transactionToDelete.studentId && 
-                      fee.paymentMode && 
-                      fee.id !== id)
-          .reduce((sum, fee) => sum + fee.amount, 0);
-        
-        const isPaidInFull = paidFees >= studentToUpdate.totalFees;
-        
-        updateStudent(transactionToDelete.studentId, { 
-          paidFees, 
-          feeStatus: isPaidInFull ? 'Paid' : 'Pending' 
-        });
-      }
-    }
-    
-    toast.success(`Removed fee transaction`);
+  const deleteFeeTransaction = async (id: string): Promise<void> => {
+    // Not implemented in the Supabase service yet
+    toast.error("Deleting fee transactions is not implemented yet");
+    throw new Error("Not implemented");
   };
 
   // Attendance CRUD operations
-  const addAttendanceRecord = (recordData: Omit<AttendanceRecord, 'id'>): string => {
-    const id = generateId();
-    const newRecord: AttendanceRecord = { ...recordData, id };
-    setAttendanceRecords(prev => [...prev, newRecord]);
-    
-    // Calculate and update attendance percentage
-    updateAttendancePercentage(recordData.studentId);
-    
-    toast.success(`Added attendance record for ${new Date(recordData.date).toLocaleDateString()}`);
-    return id;
-  };
-
-  const updateAttendanceRecord = (id: string, data: Partial<AttendanceRecord>): void => {
-    const previousRecord = attendanceRecords.find(record => record.id === id);
-    
-    setAttendanceRecords(prev => 
-      prev.map(record => record.id === id ? { ...record, ...data } : record)
-    );
-    
-    // Update attendance percentage if student ID or status changed
-    if (previousRecord && 
-       (data.studentId || data.status) && 
-       previousRecord.studentId) {
-      updateAttendancePercentage(previousRecord.studentId);
+  const addAttendanceRecord = async (recordData: Omit<AttendanceRecord, 'id'>): Promise<string> => {
+    try {
+      await studentService.markAttendance([recordData]);
       
-      // If student ID changed, update both students
-      if (data.studentId && previousRecord.studentId !== data.studentId) {
-        updateAttendancePercentage(data.studentId);
-      }
+      // Refresh students to get updated attendance percentage
+      refetchStudents();
+      
+      toast.success(`Added attendance record for ${new Date(recordData.date).toLocaleDateString()}`);
+      return ""; // We don't get the ID back from the markAttendance method
+    } catch (error) {
+      toast.error(`Failed to add attendance record: ${(error as Error).message}`);
+      throw error;
     }
-    
-    toast.success(`Updated attendance record`);
   };
 
-  const bulkAddAttendance = (records: Omit<AttendanceRecord, 'id'>[]): void => {
-    const newRecords = records.map(record => ({
-      ...record,
-      id: generateId()
-    }));
-    
-    setAttendanceRecords(prev => [...prev, ...newRecords]);
-    
-    // Update attendance percentages for all affected students
-    const affectedStudentIds = [...new Set(records.map(record => record.studentId))];
-    affectedStudentIds.forEach(updateAttendancePercentage);
-    
-    toast.success(`Added ${records.length} attendance records`);
+  const updateAttendanceRecord = async (id: string, data: Partial<AttendanceRecord>): Promise<void> => {
+    // Not implemented in the Supabase service yet
+    toast.error("Updating attendance records is not implemented yet");
+    throw new Error("Not implemented");
   };
 
-  // Helper function to calculate and update attendance percentage for a student
-  const updateAttendancePercentage = (studentId: string): void => {
-    const studentRecords = attendanceRecords.filter(record => record.studentId === studentId);
-    if (studentRecords.length === 0) return;
-    
-    const totalDays = studentRecords.length;
-    const presentDays = studentRecords.filter(record => record.status === "Present").length;
-    const attendancePercentage = Math.round((presentDays / totalDays) * 100);
-    
-    // Update the student with new attendance percentage
-    updateStudent(studentId, { attendancePercentage });
+  const bulkAddAttendance = async (records: Omit<AttendanceRecord, 'id'>[]): Promise<void> => {
+    try {
+      await studentService.markAttendance(records);
+      
+      // Refresh students to get updated attendance percentages
+      refetchStudents();
+      
+      toast.success(`Added ${records.length} attendance records`);
+    } catch (error) {
+      toast.error(`Failed to add attendance records: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   return (
@@ -230,7 +210,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       deleteFeeTransaction,
       addAttendanceRecord,
       updateAttendanceRecord,
-      bulkAddAttendance
+      bulkAddAttendance,
+      isLoading: isLoadingStudents
     }}>
       {children}
     </DataContext.Provider>

@@ -47,6 +47,11 @@ export interface StudentRecord {
   address: string;
   guardian_name: string;
   contact_number: string;
+  fee_status: "Paid" | "Pending" | "Partial";
+  total_fees: number;
+  paid_fees: number;
+  attendance_percentage: number;
+  join_date: string;
   created_at: string;
   updated_at: string;
 }
