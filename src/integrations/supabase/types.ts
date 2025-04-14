@@ -9,7 +9,139 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attendance_records: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          status: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          status: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          id: string
+          payment_mode: string
+          purpose: string | null
+          receipt_number: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          id?: string
+          payment_mode: string
+          purpose?: string | null
+          receipt_number: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          payment_mode?: string
+          purpose?: string | null
+          receipt_number?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_transactions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          address: string | null
+          attendance_percentage: number | null
+          class: number
+          contact_number: string
+          created_at: string | null
+          date_of_birth: string
+          fee_status: string | null
+          full_name: string
+          guardian_name: string
+          id: string
+          join_date: string | null
+          paid_fees: number | null
+          roll_number: number
+          total_fees: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          attendance_percentage?: number | null
+          class: number
+          contact_number: string
+          created_at?: string | null
+          date_of_birth: string
+          fee_status?: string | null
+          full_name: string
+          guardian_name: string
+          id?: string
+          join_date?: string | null
+          paid_fees?: number | null
+          roll_number: number
+          total_fees?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          attendance_percentage?: number | null
+          class?: number
+          contact_number?: string
+          created_at?: string | null
+          date_of_birth?: string
+          fee_status?: string | null
+          full_name?: string
+          guardian_name?: string
+          id?: string
+          join_date?: string | null
+          paid_fees?: number | null
+          roll_number?: number
+          total_fees?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

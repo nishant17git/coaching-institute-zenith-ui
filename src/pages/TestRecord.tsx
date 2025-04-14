@@ -1,337 +1,263 @@
 
 import { useState } from "react";
+import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, UserPlus, CheckCircle, Search, Filter, Download } from "lucide-react";
-import { students } from "@/mock/data";
-import { toast } from "sonner";
-
-// Sample test data
-const testRecords = [
-  { 
-    id: "1", 
-    name: "Mid Term Test - Math", 
-    date: "2024-03-15", 
-    class: "Class 10",
-    subject: "Mathematics",
-    maxMarks: 100
-  },
-  { 
-    id: "2", 
-    name: "Science Quarterly", 
-    date: "2024-02-22", 
-    class: "Class 8",
-    subject: "Science",
-    maxMarks: 50
-  },
-  { 
-    id: "3", 
-    name: "English Essay Competition", 
-    date: "2024-01-10", 
-    class: "Class 9",
-    subject: "English",
-    maxMarks: 25
-  },
-  { 
-    id: "4", 
-    name: "History Final", 
-    date: "2023-12-05", 
-    class: "Class 7",
-    subject: "Social Studies",
-    maxMarks: 75
-  },
-];
-
-// Generate random marks for students
-const studentMarks = students.map(student => ({
-  studentId: student.id,
-  studentName: student.name,
-  class: student.class,
-  testRecords: [
-    { testId: "1", marks: Math.floor(Math.random() * 30) + 70 }, // 70-100 range
-    { testId: "2", marks: Math.floor(Math.random() * 20) + 30 }, // 30-50 range
-    { testId: "3", marks: Math.floor(Math.random() * 10) + 15 }, // 15-25 range
-    { testId: "4", marks: Math.floor(Math.random() * 25) + 50 }, // 50-75 range
-  ]
-}));
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Plus, Loader2, FileSpreadsheet } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 export default function TestRecord() {
-  const [activeTab, setActiveTab] = useState("view");
-  const [selectedTest, setSelectedTest] = useState(testRecords[0].id);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterClass, setFilterClass] = useState("all");
+  const { students, isLoading } = useData();
+  const [selectedClass, setSelectedClass] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  // Filter students based on search and class filter
-  const filteredStudents = studentMarks.filter(student => {
-    const matchesSearch = student.studentName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = filterClass === "all" || student.class === filterClass;
+  // Sample test data - in a real app, this would come from the database
+  const testRecords = [
+    { id: 1, name: "Rahul Sharma", class: "Class 10", subject: "Mathematics", marks: 85, totalMarks: 100, date: "2023-09-15" },
+    { id: 2, name: "Priya Patel", class: "Class 11", subject: "Physics", marks: 78, totalMarks: 100, date: "2023-09-15" },
+    { id: 3, name: "Amit Singh", class: "Class 12", subject: "Chemistry", marks: 72, totalMarks: 100, date: "2023-09-15" },
+    { id: 4, name: "Neha Verma", class: "Class 9", subject: "English", marks: 95, totalMarks: 100, date: "2023-09-14" },
+    { id: 5, name: "Rohit Agarwal", class: "Class 12", subject: "Biology", marks: 88, totalMarks: 100, date: "2023-09-14" },
+    { id: 6, name: "Ananya Mehta", class: "Class 11", subject: "History", marks: 76, totalMarks: 100, date: "2023-09-14" },
+  ];
+  
+  // Filter test records based on search term and class
+  const filteredRecords = testRecords.filter(record => {
+    const matchesSearch = 
+      record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesClass = selectedClass === "all" || record.class === `Class ${selectedClass}`;
+    
     return matchesSearch && matchesClass;
   });
   
-  // Find the currently selected test
-  const currentTest = testRecords.find(test => test.id === selectedTest);
-  
-  // Handle mark change
-  const handleMarkChange = (studentId: string, newMark: string) => {
-    const mark = parseInt(newMark);
-    if (isNaN(mark)) return;
+  // Form for adding new test records
+  const AddTestRecordForm = () => {
+    const form = useForm({
+      defaultValues: {
+        student: "",
+        subject: "",
+        marks: "",
+        totalMarks: "100",
+        date: new Date().toISOString().split('T')[0],
+      }
+    });
     
-    if (mark < 0 || mark > (currentTest?.maxMarks || 100)) {
-      toast.error(`Marks must be between 0 and ${currentTest?.maxMarks || 100}`);
-      return;
-    }
+    const onSubmit = (data: any) => {
+      console.log("Adding test record:", data);
+      // In a real app, this would add the record to the database
+      setIsAddDialogOpen(false);
+    };
     
-    // In a real app, this would update the mark in the database
-    toast.success(`Updated marks for student ID: ${studentId}`);
-  };
-  
-  // Export test record
-  const exportTestRecord = () => {
-    toast.success("Test record exported successfully!");
-  };
-
-  return (
-    <div className="space-y-6 animate-slide-up pb-16 md:pb-0">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Test Records</h1>
-      </div>
-      
-      <Tabs defaultValue="view" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
-          <TabsTrigger value="view" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            View Test Records
-          </TabsTrigger>
-          <TabsTrigger value="new" className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4" />
-            New Test
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="view" className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 justify-between">
-            <div className="flex-1 space-y-4">
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search students..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Select value={filterClass} onValueChange={setFilterClass}>
-                    <SelectTrigger className="w-[180px]">
-                      <div className="flex items-center gap-2">
-                        <Filter className="h-3.5 w-3.5" />
-                        <SelectValue placeholder="Filter by class" />
-                      </div>
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="student"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Student</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select student" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Classes</SelectItem>
-                      <SelectItem value="Class 2">Class 2</SelectItem>
-                      <SelectItem value="Class 3">Class 3</SelectItem>
-                      <SelectItem value="Class 4">Class 4</SelectItem>
-                      <SelectItem value="Class 5">Class 5</SelectItem>
-                      <SelectItem value="Class 6">Class 6</SelectItem>
-                      <SelectItem value="Class 7">Class 7</SelectItem>
-                      <SelectItem value="Class 8">Class 8</SelectItem>
-                      <SelectItem value="Class 9">Class 9</SelectItem>
-                      <SelectItem value="Class 10">Class 10</SelectItem>
+                      {students.map(student => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name} ({student.class})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={exportTestRecord}
-                    className="shrink-0"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <Select value={selectedTest} onValueChange={setSelectedTest}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a test" />
-                </SelectTrigger>
-                <SelectContent>
-                  {testRecords.map((test) => (
-                    <SelectItem key={test.id} value={test.id}>
-                      {test.name} - {test.class} ({test.date})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          {currentTest && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>{currentTest.name}</CardTitle>
-                <CardDescription>
-                  {currentTest.class} • {currentTest.subject} • {currentTest.date} • Max Marks: {currentTest.maxMarks}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Student</TableHead>
-                          <TableHead>Class</TableHead>
-                          <TableHead className="text-right">Marks</TableHead>
-                          <TableHead className="text-right">Percentage</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredStudents.length > 0 ? (
-                          filteredStudents.map((student) => {
-                            const testMark = student.testRecords.find(
-                              (test) => test.testId === selectedTest
-                            );
-                            const percentage = testMark
-                              ? ((testMark.marks / currentTest.maxMarks) * 100).toFixed(1)
-                              : "0";
-                              
-                            return (
-                              <TableRow key={student.studentId}>
-                                <TableCell className="font-medium">
-                                  {student.studentName}
-                                </TableCell>
-                                <TableCell>{student.class}</TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <Input
-                                      type="number"
-                                      className="w-16 text-right"
-                                      defaultValue={testMark?.marks || 0}
-                                      onChange={(e) => handleMarkChange(student.studentId, e.target.value)}
-                                      min={0}
-                                      max={currentTest.maxMarks}
-                                    />
-                                    <span className="text-xs text-muted-foreground">
-                                      / {currentTest.maxMarks}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <span
-                                    className={
-                                      parseInt(percentage) >= 75
-                                        ? "text-green-600"
-                                        : parseInt(percentage) >= 50
-                                        ? "text-amber-600"
-                                        : "text-red-600"
-                                    }
-                                  >
-                                    {percentage}%
-                                  </span>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                              No students match the current filter criteria.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="new" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Test</CardTitle>
-              <CardDescription>Add a new test record to the system</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="testName" className="text-sm font-medium">Test Name</label>
-                  <Input id="testName" placeholder="e.g., Mid Term Math Test" />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="testDate" className="text-sm font-medium">Test Date</label>
-                  <Input id="testDate" type="date" />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="testClass" className="text-sm font-medium">Class</label>
-                  <Select>
-                    <SelectTrigger id="testClass">
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Class 2">Class 2</SelectItem>
-                      <SelectItem value="Class 3">Class 3</SelectItem>
-                      <SelectItem value="Class 4">Class 4</SelectItem>
-                      <SelectItem value="Class 5">Class 5</SelectItem>
-                      <SelectItem value="Class 6">Class 6</SelectItem>
-                      <SelectItem value="Class 7">Class 7</SelectItem>
-                      <SelectItem value="Class 8">Class 8</SelectItem>
-                      <SelectItem value="Class 9">Class 9</SelectItem>
-                      <SelectItem value="Class 10">Class 10</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="testSubject" className="text-sm font-medium">Subject</label>
-                  <Select>
-                    <SelectTrigger id="testSubject">
+          <FormField
+            control={form.control}
+            name="subject"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Subject</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Mathematics">Mathematics</SelectItem>
-                      <SelectItem value="Science">Science</SelectItem>
                       <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Science">Science</SelectItem>
                       <SelectItem value="Social Studies">Social Studies</SelectItem>
-                      <SelectItem value="Hindi">Hindi</SelectItem>
+                      <SelectItem value="Physics">Physics</SelectItem>
+                      <SelectItem value="Chemistry">Chemistry</SelectItem>
+                      <SelectItem value="Biology">Biology</SelectItem>
                       <SelectItem value="Computer Science">Computer Science</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="maxMarks" className="text-sm font-medium">Maximum Marks</label>
-                  <Input id="maxMarks" type="number" min="1" placeholder="e.g., 100" />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="testDuration" className="text-sm font-medium">Duration (minutes)</label>
-                  <Input id="testDuration" type="number" min="15" placeholder="e.g., 120" />
-                </div>
-              </div>
-            </CardContent>
-            <div className="px-6 py-4 flex justify-end">
-              <Button className="flex items-center gap-2" onClick={() => toast.success("New test created successfully!")}>
-                <CheckCircle className="w-4 h-4" />
-                Create Test
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="marks"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Marks Obtained</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} required min="0" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="totalMarks"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total Marks</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} required min="1" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Test Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} required />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Add Record</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Test Records</h1>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Test
+        </Button>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by student name or subject..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Filter by class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+              <SelectItem key={cls} value={cls.toString()}>
+                Class {cls}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredRecords.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 flex flex-col items-center justify-center">
+            <FileSpreadsheet className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center">
+              No test records found. {!searchTerm && selectedClass === "all" && "Add a new test record by clicking the 'Add Test' button."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead className="hidden sm:table-cell">Class</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead className="text-right">Marks</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRecords.map((record) => (
+                <TableRow key={record.id}>
+                  <TableCell className="font-medium">{record.name}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{record.class}</TableCell>
+                  <TableCell>{record.subject}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={
+                      (record.marks / record.totalMarks) >= 0.75 ? "text-apple-green" :
+                      (record.marks / record.totalMarks) >= 0.50 ? "text-apple-yellow" :
+                      "text-apple-red"
+                    }>
+                      {record.marks}/{record.totalMarks}
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {new Date(record.date).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      
+      {/* Add Test Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Test Record</DialogTitle>
+            <DialogDescription>
+              Enter the test details for the student.
+            </DialogDescription>
+          </DialogHeader>
+          <AddTestRecordForm />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

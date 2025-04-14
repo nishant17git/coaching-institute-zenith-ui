@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { EyeIcon, EyeOffIcon, BookOpen } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,11 +22,13 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4">
       <div className="w-full max-w-md animate-scale-in">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-all duration-300">
-            <BookOpen className="h-8 w-8 text-white" />
+          <div className="h-20 w-20 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-all duration-300">
+            <img src="/logo.png" alt="Infinity Classes" className="h-12 w-12 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent animate-fade-in">Student Management</h1>
-          <p className="text-muted-foreground mt-1">Classes 2-10</p>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent animate-fade-in">
+            Infinity Classes
+          </h1>
+          <p className="text-muted-foreground mt-1">Excellence in Education</p>
         </div>
         
         <Card className="glass-card shadow-lg border-opacity-40 animate-slide-up">
