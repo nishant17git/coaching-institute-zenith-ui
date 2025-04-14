@@ -502,75 +502,77 @@ export default function Students() {
           </CardContent>
         </Card>
       ) : (
-        <TabsContent value="grid" className={viewMode === "grid" ? "mt-0" : "hidden"}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredStudents.map((student) => (
-              <StudentCardView
-                key={student.id}
-                student={student}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
-        </TabsContent>
-      )}
-      
-      <TabsContent value="table" className={viewMode === "table" ? "mt-0" : "hidden"}>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">Roll No</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Class</TableHead>
-                <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
-                <TableHead className="hidden lg:table-cell">Guardian</TableHead>
-                <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        <Tabs value={viewMode}>
+          <TabsContent value="grid" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.roll_number}</TableCell>
-                  <TableCell className="font-medium">{student.full_name}</TableCell>
-                  <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {new Date(student.date_of_birth).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{student.contact_number}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => {
-                          setCurrentStudent(student);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-red-500"
-                        onClick={() => {
-                          setCurrentStudent(student);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <StudentCardView
+                  key={student.id}
+                  student={student}
+                  onViewDetails={handleViewDetails}
+                />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      </TabsContent>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="table" className="mt-0">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Roll No</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Class</TableHead>
+                    <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
+                    <TableHead className="hidden lg:table-cell">Guardian</TableHead>
+                    <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell>{student.roll_number}</TableCell>
+                      <TableCell className="font-medium">{student.full_name}</TableCell>
+                      <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {new Date(student.date_of_birth).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{student.contact_number}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setCurrentStudent(student);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-500"
+                            onClick={() => {
+                              setCurrentStudent(student);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
       
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
