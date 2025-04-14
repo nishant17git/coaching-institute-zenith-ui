@@ -69,7 +69,7 @@ export default function Index() {
           value={students.length.toString()}
           icon={<Users className="h-4 w-4" />}
           description="All registered students"
-          trend={students.length > 0 ? '+3% this month' : undefined}
+          trend={{ value: 3, isPositive: true }}
         />
         
         <StatCard 
@@ -84,7 +84,7 @@ export default function Index() {
           value={`₹${students.reduce((sum, student) => sum + student.paidFees, 0).toLocaleString()}`}
           icon={<CreditCard className="h-4 w-4" />}
           description="Total collected fees"
-          trend="+12% this month"
+          trend={{ value: 12, isPositive: true }}
         />
         
         <StatCard 
@@ -92,8 +92,7 @@ export default function Index() {
           value={`₹${students.reduce((sum, student) => sum + (student.totalFees - student.paidFees), 0).toLocaleString()}`}
           icon={<AlertTriangle className="h-4 w-4" />}
           description="Total outstanding fees"
-          trend={pendingFees.length > 0 ? `${pendingFees.length} students` : undefined}
-          trendType="negative"
+          trend={pendingFees.length > 0 ? { value: pendingFees.length, isPositive: false } : undefined}
         />
       </div>
 
