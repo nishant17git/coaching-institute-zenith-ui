@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { studentService } from "@/services/studentService";
 import { StudentRecord } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -7,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
-import { Pencil, Trash2, Plus, Search, Loader2, Users } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Loader2, Users, Rows3, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentCardView } from "@/components/ui/student-card-view";
 
 export default function Students() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +24,9 @@ export default function Students() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   
   // Fetch students data
@@ -77,6 +83,11 @@ export default function Students() {
       toast.error(error.message || "Failed to delete student");
     }
   });
+  
+  // View student details
+  const handleViewDetails = (studentId: string) => {
+    navigate(`/students/${studentId}`);
+  };
   
   // Add student form
   const AddStudentForm = () => {
@@ -424,15 +435,15 @@ export default function Students() {
   };
   
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-slide-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -442,19 +453,33 @@ export default function Students() {
             className="pl-10"
           />
         </div>
-        <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Filter by class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-              <SelectItem key={cls} value={cls.toString()}>
-                Class {cls}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        
+        <div className="flex gap-2">
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+                <SelectItem key={cls} value={cls.toString()}>
+                  Class {cls}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
+            <TabsList className="grid w-20 grid-cols-2">
+              <TabsTrigger value="grid" className="p-2">
+                <LayoutGrid className="h-4 w-4" />
+              </TabsTrigger>
+              <TabsTrigger value="table" className="p-2">
+                <Rows3 className="h-4 w-4" />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
       
       {isLoading ? (
@@ -477,6 +502,20 @@ export default function Students() {
           </CardContent>
         </Card>
       ) : (
+        <TabsContent value="grid" className={viewMode === "grid" ? "mt-0" : "hidden"}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredStudents.map((student) => (
+              <StudentCardView
+                key={student.id}
+                student={student}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      )}
+      
+      <TabsContent value="table" className={viewMode === "table" ? "mt-0" : "hidden"}>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -531,11 +570,11 @@ export default function Students() {
             </TableBody>
           </Table>
         </div>
-      )}
+      </TabsContent>
       
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Student</DialogTitle>
             <DialogDescription>
@@ -548,7 +587,7 @@ export default function Students() {
       
       {/* Edit Student Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Student</DialogTitle>
             <DialogDescription>

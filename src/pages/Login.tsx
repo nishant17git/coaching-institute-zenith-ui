@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,21 +20,32 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4">
-      <div className="w-full max-w-md animate-scale-in">
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-all duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex flex-col items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo and Branding */}
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="flex flex-col items-center mb-8"
+        >
+          <div className="h-20 w-20 rounded-2xl bg-gradient-to-r from-apple-blue to-apple-indigo flex items-center justify-center mb-4 shadow-lg">
             <img src="/logo.png" alt="Infinity Classes" className="h-12 w-12 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent animate-fade-in">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent">
             Infinity Classes
           </h1>
           <p className="text-muted-foreground mt-1">Excellence in Education</p>
-        </div>
+        </motion.div>
         
-        <Card className="glass-card shadow-lg border-opacity-40 animate-slide-up">
+        <Card className="glass-card shadow-lg border-opacity-40">
           <CardHeader>
-            <CardTitle className="text-center">Admin Login</CardTitle>
+            <CardTitle className="text-center text-xl">Welcome Back</CardTitle>
             <CardDescription className="text-center">
               Enter your admin credentials to access the dashboard
             </CardDescription>
@@ -86,16 +98,26 @@ export default function Login() {
                 className="w-full h-11 bg-gradient-to-r from-apple-blue to-apple-indigo hover:opacity-90 transition-opacity shadow-md"
                 disabled={isLoading}
               >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : "Sign In"}
               </Button>
             </CardFooter>
           </form>
         </Card>
         
-        <p className="text-center text-sm text-muted-foreground mt-4">
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-center text-sm text-muted-foreground mt-4"
+        >
           Contact administrator for access credentials
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
     </div>
   );
 }
