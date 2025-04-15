@@ -15,7 +15,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   // If still loading, show loading indicator
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <img src="/icon.png" alt="Infinity Classes" className="h-16 w-16 object-contain mb-4" />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );

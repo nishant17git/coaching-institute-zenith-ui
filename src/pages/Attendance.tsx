@@ -1,24 +1,29 @@
 
 import { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
+import { format, isToday, addDays, subDays, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { format, isToday, addDays, subDays, isSameDay } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
-  ChevronLeft, ChevronRight, Download, Search, Calendar as CalendarIcon, 
-  User, Users, Check, X, Clock, AlertCircle, Save, Loader2, FilterX
+  CalendarIcon, Search, User, Users, Check, X, Clock, FilterX, ChevronLeft, 
+  ChevronRight, Download, Save, Loader2, AlertCircle 
 } from "lucide-react";
-import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { useAuth } from "@/hooks/useAuth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+
+// Import components for attendance page
+import { DateSelector } from "@/components/attendance/DateSelector";
+import { AttendanceSummary } from "@/components/attendance/AttendanceSummary";
+import { AttendanceCalendar } from "@/components/attendance/AttendanceCalendar";
+import { AttendanceFilter } from "@/components/attendance/AttendanceFilter";
+import { ClassAttendanceTable } from "@/components/attendance/ClassAttendanceTable";
 
 interface Student {
   id: string;
@@ -35,19 +40,20 @@ interface AttendanceRecord {
 }
 
 export default function Attendance() {
-  const { user } = useAuth();
-  const isMobile = useIsMobile();
+  // State management
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [selectedClass, setSelectedClass] = useState<number>(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [dayAttendance, setDayAttendance] = useState<Student[]>([]);
   const [isBulkMarkOpen, setIsBulkMarkOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<"Present" | "Absent" | "Leave" | "Holiday">("Present");
   const [calendarData, setCalendarData] = useState<any[]>([]);
+  const [filterType, setFilterType] = useState<"all" | "class" | "student">("class");
   
   const queryClient = useQueryClient();
   
-  // Fetch students data
+  // Data fetching with React Query
   const { data: students = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
@@ -60,25 +66,25 @@ export default function Attendance() {
     }
   });
 
-  // Fetch attendance records for the selected month
+  // Monthly attendance records
   const { data: allAttendanceRecords = [], isLoading: allAttendanceLoading } = useQuery({
-    queryKey: ['attendance', format(selectedDate, 'yyyy-MM')],
+    queryKey: ['attendance', format(selectedMonth, 'yyyy-MM')],
     queryFn: async () => {
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      const monthStart = startOfMonth(selectedMonth);
+      const monthEnd = endOfMonth(selectedMonth);
       
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
-        .gte('date', format(startOfMonth, 'yyyy-MM-dd'))
-        .lte('date', format(endOfMonth, 'yyyy-MM-dd'));
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'));
       
       if (error) throw error;
       return data || [];
     }
   });
 
-  // Fetch attendance records for the selected date
+  // Daily attendance records
   const { data: attendanceRecords = [], isLoading: attendanceLoading } = useQuery({
     queryKey: ['attendance', format(selectedDate, 'yyyy-MM-dd')],
     queryFn: async () => {
@@ -95,7 +101,7 @@ export default function Attendance() {
   // Mutation to save attendance
   const saveAttendanceMutation = useMutation({
     mutationFn: async (attendanceData: AttendanceRecord[]) => {
-      // For each attendance record, check if it already exists
+      // Process each attendance record
       for (const record of attendanceData) {
         const { data: existingRecord } = await supabase
           .from('attendance_records')
@@ -122,9 +128,9 @@ export default function Attendance() {
         }
       }
       
-      // Update attendance percentages for students
+      // Update attendance percentages
       for (const record of attendanceData) {
-        // Get all attendance records for the student
+        // Get student attendance history
         const { data: studentAttendance, error: attendanceError } = await supabase
           .from('attendance_records')
           .select('*')
@@ -133,7 +139,7 @@ export default function Attendance() {
         if (attendanceError) throw attendanceError;
         
         if (studentAttendance && studentAttendance.length > 0) {
-          // Calculate attendance percentage
+          // Calculate percentage
           const totalDays = studentAttendance.length;
           const presentDays = studentAttendance.filter(a => a.status === 'Present').length;
           const attendancePercentage = Math.round((presentDays / totalDays) * 100);
@@ -160,29 +166,24 @@ export default function Attendance() {
     }
   });
 
-  // Filter students by selected class, search query, and prepare attendance data
+  // Process student data with attendance status
   useEffect(() => {
-    // First filter students based on class
     let filteredStudents = students.filter(student => student.class === selectedClass);
     
-    // Then filter by search query if provided
     if (searchQuery) {
       filteredStudents = filteredStudents.filter(student => 
         student.full_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
-    // Create attendance status for each filtered student
     const dateString = format(selectedDate, 'yyyy-MM-dd');
     const studentsWithStatus = filteredStudents.map(student => {
-      // Find attendance record for this student on selected date
       const record = attendanceRecords.find(
         record => record.student_id === student.id && record.date === dateString
       );
       
       return {
         ...student,
-        // Set the status, with a default of "Absent"
         status: (record?.status as "Present" | "Absent" | "Leave" | "Holiday") || "Absent"
       };
     });
@@ -190,20 +191,20 @@ export default function Attendance() {
     setDayAttendance(studentsWithStatus);
   }, [selectedDate, selectedClass, searchQuery, students, attendanceRecords]);
 
-  // Prepare calendar data for the month view
+  // Prepare calendar data
   useEffect(() => {
     if (!allAttendanceLoading && allAttendanceRecords) {
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-      const daysInMonth = endOfMonth.getDate();
+      const monthStart = startOfMonth(selectedMonth);
+      const monthEnd = endOfMonth(selectedMonth);
+      const daysInMonth = monthEnd.getDate();
       
       const calendarDays = [];
       
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
+        const date = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day);
         const dateString = format(date, 'yyyy-MM-dd');
         
-        // Get attendance for this day
+        // Get day's attendance
         const dayAttendance = allAttendanceRecords.filter(record => record.date === dateString);
         
         const presentCount = dayAttendance.filter(record => record.status === 'Present').length;
@@ -229,7 +230,7 @@ export default function Attendance() {
       
       setCalendarData(calendarDays);
     }
-  }, [allAttendanceRecords, selectedDate, allAttendanceLoading]);
+  }, [allAttendanceRecords, selectedDate, selectedMonth, allAttendanceLoading]);
 
   // Handle status change
   const handleStatusChange = (studentId: string, status: "Present" | "Absent" | "Leave" | "Holiday") => {
@@ -253,14 +254,12 @@ export default function Attendance() {
 
   // Save attendance for the day
   const saveAttendance = () => {
-    // First prepare the attendance data
     const attendanceData = dayAttendance.map(student => ({
       student_id: student.id,
       date: format(selectedDate, 'yyyy-MM-dd'),
       status: student.status || "Absent"
     }));
     
-    // Call the mutation to save attendance
     saveAttendanceMutation.mutate(attendanceData);
   };
 
@@ -276,10 +275,9 @@ export default function Attendance() {
     toast.success(`Marked all students as ${bulkStatus}`);
   };
 
-  // Export attendance report as CSV
+  // Export attendance report
   const exportAttendanceReport = () => {
     try {
-      // Create CSV content
       let csvContent = "Date,Student Name,Class,Status\n";
       
       dayAttendance.forEach(student => {
@@ -293,7 +291,6 @@ export default function Attendance() {
         csvContent += row + "\n";
       });
       
-      // Create download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -311,43 +308,19 @@ export default function Attendance() {
     }
   };
 
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
-  };
-  
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6 animate-slide-up"
+      className="space-y-6"
     >
-      {/* Header section with greeting */}
+      {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {user?.first_name ? `Welcome, ${user.first_name} Sir` : 'Attendance Management'}
-          </h1>
-          <p className="text-muted-foreground">
-            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-          </p>
-        </motion.div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Attendance Management</h1>
+          <p className="text-muted-foreground">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
+        </div>
         
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" onClick={() => setSelectedDate(new Date())}>
@@ -362,11 +335,11 @@ export default function Attendance() {
         </div>
       </div>
 
-      {/* Date navigation and filter controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="glass-card md:col-span-2">
+      {/* Filter controls */}
+      <div className="grid grid-cols-1 gap-4">
+        <Card className="glass-card">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="icon" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
                   <ChevronLeft className="h-4 w-4" />
@@ -382,70 +355,66 @@ export default function Attendance() {
                 </Button>
               </div>
               
-              <div className="w-full sm:w-40">
-                <Select 
-                  value={selectedClass.toString()} 
-                  onValueChange={(value) => setSelectedClass(parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-                      <SelectItem key={cls} value={cls.toString()}>
-                        Class {cls}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search student..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-                {searchQuery && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                    onClick={() => setSearchQuery("")}
+              <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-40">
+                  <Select 
+                    value={selectedClass.toString()} 
+                    onValueChange={(value) => setSelectedClass(parseInt(value))}
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+                        <SelectItem key={cls} value={cls.toString()}>
+                          Class {cls}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search student..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                  {searchQuery && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsBulkMarkOpen(true)}
+                >
+                  <Users className="h-4 w-4 mr-2" /> Mark All
+                </Button>
+                
+                <Button 
+                  variant={saveAttendanceMutation.isPending ? "outline" : "default"}
+                  className="bg-apple-green hover:bg-green-600 text-white" 
+                  onClick={saveAttendance}
+                  disabled={saveAttendanceMutation.isPending}
+                >
+                  {saveAttendanceMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Save
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            <div className="flex justify-between">
-              <Button 
-                variant="outline" 
-                className="flex-1 mr-2"
-                onClick={() => setIsBulkMarkOpen(true)}
-              >
-                <Users className="h-4 w-4 mr-2" /> Mark All
-              </Button>
-              <Button 
-                variant={saveAttendanceMutation.isPending ? "outline" : "default"}
-                className="flex-1 ml-2 bg-apple-green hover:bg-green-600 text-white" 
-                onClick={saveAttendance}
-                disabled={saveAttendanceMutation.isPending}
-              >
-                {saveAttendanceMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Save
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -453,70 +422,37 @@ export default function Attendance() {
 
       {/* Main content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Calendar View */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Attendance Calendar</CardTitle>
-            <CardDescription>
-              {format(selectedDate, "MMMM yyyy")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              className="rounded-md"
-              classNames={{
-                day_selected: "bg-apple-blue text-white hover:bg-blue-600",
-                day_today: "bg-muted text-apple-blue font-bold",
-              }}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="relative w-28 h-28 mx-auto">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle 
-                  cx="50" cy="50" r="45" 
-                  fill="none" 
-                  stroke="#f0f0f0" 
-                  strokeWidth="10" 
+        {/* Calendar and stats section */}
+        <div className="lg:col-span-1 grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Calendar</span>
+                <DateSelector 
+                  selectedMonth={selectedMonth}
+                  setSelectedMonth={setSelectedMonth}
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
                 />
-                <circle 
-                  cx="50" cy="50" r="45" 
-                  fill="none" 
-                  stroke={attendanceStats.attendancePercentage >= 75 ? "#30D158" : "#FF9F0A"} 
-                  strokeWidth="10"
-                  strokeDasharray={`${2.83 * 45 * (attendanceStats.attendancePercentage/100)} ${2.83 * 45 * (1-attendanceStats.attendancePercentage/100)}`} 
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold">{attendanceStats.attendancePercentage}%</span>
-                <span className="text-xs text-muted-foreground">Present</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 w-full">
-              <div className="p-2 rounded-lg bg-green-50">
-                <div className="text-lg font-bold text-green-700">{attendanceStats.presentCount}</div>
-                <div className="text-xs text-muted-foreground">Present</div>
-              </div>
-              <div className="p-2 rounded-lg bg-red-50">
-                <div className="text-lg font-bold text-red-700">{attendanceStats.absentCount}</div>
-                <div className="text-xs text-muted-foreground">Absent</div>
-              </div>
-              <div className="p-2 rounded-lg bg-orange-50">
-                <div className="text-lg font-bold text-orange-700">{attendanceStats.leaveCount}</div>
-                <div className="text-xs text-muted-foreground">Leave</div>
-              </div>
-            </div>
-          </CardFooter>
-        </Card>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AttendanceCalendar 
+                calendarData={calendarData}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+                selectedMonth={selectedMonth}
+                onMonthChange={setSelectedMonth}
+              />
+            </CardContent>
+          </Card>
+
+          <AttendanceSummary stats={attendanceStats} />
+        </div>
         
-        {/* Attendance Table */}
+        {/* Attendance table */}
         <Card className="lg:col-span-3">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <div className="flex justify-between">
               <div>
                 <CardTitle>Class {selectedClass} Attendance</CardTitle>
@@ -531,99 +467,18 @@ export default function Attendance() {
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : dayAttendance.length > 0 ? (
-              <div className="border rounded-md overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Student</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <motion.tbody
-                    variants={container}
-                    initial="hidden"
-                    animate="show"
-                    className="divide-y"
-                  >
-                    {dayAttendance.map((student, index) => (
-                      <motion.tr key={student.id} variants={item}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                              <User className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <div className="font-medium">{student.full_name}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant="outline"
-                            className={
-                              student.status === "Present" ? "bg-green-100 text-green-800 border-green-300" :
-                              student.status === "Absent" ? "bg-red-100 text-red-800 border-red-300" :
-                              student.status === "Leave" ? "bg-amber-100 text-amber-800 border-amber-300" :
-                              "bg-gray-100 text-gray-800 border-gray-300"
-                            }
-                          >
-                            {student.status || "Absent"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button 
-                              variant={student.status === "Present" ? "default" : "outline"} 
-                              size="sm"
-                              className={`h-8 ${student.status === "Present" ? "bg-green-600 hover:bg-green-700" : "hover:bg-green-100 hover:text-green-700"}`}
-                              onClick={() => handleStatusChange(student.id, "Present")}
-                            >
-                              <Check className="h-3.5 w-3.5 mr-1" /> Present
-                            </Button>
-                            <Button 
-                              variant={student.status === "Absent" ? "default" : "outline"} 
-                              size="sm"
-                              className={`h-8 ${student.status === "Absent" ? "bg-red-600 hover:bg-red-700" : "hover:bg-red-100 hover:text-red-700"}`}
-                              onClick={() => handleStatusChange(student.id, "Absent")}
-                            >
-                              <X className="h-3.5 w-3.5 mr-1" /> Absent
-                            </Button>
-                            <Button 
-                              variant={student.status === "Leave" ? "default" : "outline"} 
-                              size="sm"
-                              className={`h-8 ${student.status === "Leave" ? "bg-amber-600 hover:bg-amber-700" : "hover:bg-amber-100 hover:text-amber-700"}`}
-                              onClick={() => handleStatusChange(student.id, "Leave")}
-                            >
-                              <Clock className="h-3.5 w-3.5 mr-1" /> Leave
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </motion.tbody>
-                </Table>
-              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 border rounded-md">
-                {searchQuery ? (
-                  <>
-                    <FilterX className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No students found matching "{searchQuery}"</p>
-                    <Button variant="outline" size="sm" className="mt-4" onClick={() => setSearchQuery("")}>
-                      Clear Search
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <User className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No students found for Class {selectedClass}</p>
-                  </>
-                )}
-              </div>
+              <ClassAttendanceTable 
+                students={dayAttendance.map(student => ({
+                  id: student.id,
+                  name: student.full_name,
+                  status: student.status || "Absent"
+                }))} 
+                date={selectedDate}
+                onStatusChange={handleStatusChange}
+                onSaveAttendance={saveAttendance}
+                isSaving={saveAttendanceMutation.isPending}
+              />
             )}
           </CardContent>
         </Card>
