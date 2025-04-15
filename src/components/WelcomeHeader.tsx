@@ -25,15 +25,15 @@ export function WelcomeHeader({
   };
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div className="flex flex-col">
         {showGreeting && user?.first_name && (
           <p className="text-sm text-apple-blue font-medium">{greeting()}, {user.first_name} Sir</p>
         )}
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
       </div>
-      {icon && <div>{icon}</div>}
+      {icon && <div className="mt-1 sm:mt-0">{icon}</div>}
     </div>
   );
 }

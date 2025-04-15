@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { WelcomeHeader } from "@/components/WelcomeHeader";
 import { 
   Users, 
   GraduationCap, 
@@ -16,13 +17,24 @@ import {
   ChevronRight,
   Eye
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Cell
+} from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Index() {
   const { students, classes, isLoading } = useData();
   const [pendingFees, setPendingFees] = useState<Student[]>([]);
   const [classDistribution, setClassDistribution] = useState<any[]>([]);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Calculate statistics and prepare data for charts and tables
   useEffect(() => {
@@ -41,7 +53,8 @@ export default function Index() {
       // Calculate class distribution for chart
       const distribution = classes.map(cls => ({
         class: cls.name,
-        count: cls.totalStudents
+        count: cls.totalStudents,
+        fill: `hsl(${Math.random() * 360}, 70%, 60%)`
       }));
       setClassDistribution(distribution);
     }
@@ -58,9 +71,10 @@ export default function Index() {
   
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-      </div>
+      <WelcomeHeader 
+        title="Dashboard" 
+        subtitle="Overview of your institute's key metrics"
+      />
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -98,25 +112,55 @@ export default function Index() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Class Distribution Chart */}
-        <Card className="glass-card lg:col-span-2">
+        <Card className="glass-card lg:col-span-2 overflow-hidden">
           <CardHeader>
             <CardTitle>Class Distribution</CardTitle>
             <CardDescription>Number of students in each class</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[300px]">
+          <CardContent className="px-0 sm:pl-2 overflow-x-auto">
+            <div className="h-[280px] min-w-[300px]">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading chart data...</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={classDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="class" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#0A84FF" radius={[4, 4, 0, 0]} />
+                  <BarChart 
+                    data={classDistribution}
+                    margin={isMobile ? { top: 5, right: 10, left: 0, bottom: 5 } : { top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="class" 
+                      fontSize={12}
+                      tick={{ fill: '#888' }}
+                      axisLine={{ stroke: '#e0e0e0' }}
+                      tickLine={{ stroke: '#e0e0e0' }}
+                    />
+                    <YAxis 
+                      allowDecimals={false} 
+                      fontSize={12}
+                      tick={{ fill: '#888' }}
+                      axisLine={{ stroke: '#e0e0e0' }}
+                      tickLine={{ stroke: '#e0e0e0' }}
+                      width={40}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'rgba(255, 255, 255, 0.95)', 
+                        border: '1px solid #f0f0f0', 
+                        borderRadius: '8px', 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                      }} 
+                    />
+                    <Bar 
+                      dataKey="count" 
+                      radius={[4, 4, 0, 0]} 
+                    >
+                      {classDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill || "#0A84FF"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -138,9 +182,19 @@ export default function Index() {
                     <p className="font-medium">{student.name}</p>
                     <p className="text-sm text-muted-foreground">{student.class}</p>
                   </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <CalendarClock className="h-3 w-3 mr-1" />
-                    {new Date(student.joinDate).toLocaleDateString()}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground hidden sm:flex items-center">
+                      <CalendarClock className="h-3 w-3 mr-1" />
+                      {new Date(student.joinDate).toLocaleDateString()}
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => navigate(`/students/${student.id}`)}
+                      className="p-1.5 h-auto"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -154,40 +208,50 @@ export default function Index() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Fees Table */}
-        <Card className="glass-card">
+        <Card className="glass-card overflow-hidden">
           <CardHeader>
             <CardTitle>Pending Fees</CardTitle>
-            <CardDescription>Students with outstanding payments (sorted by amount)</CardDescription>
+            <CardDescription>Students with outstanding payments</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead className="text-right">Amount Due</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingFees.slice(0, 5).map((student: any) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.class}</TableCell>
-                    <TableCell className="text-right">₹{student.outstandingAmount.toLocaleString()}</TableCell>
-                    <TableCell className="w-10">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => navigate(`/students/${student.id}`)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          <CardContent className="px-0 sm:px-6">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Class</TableHead>
+                    <TableHead className="text-right">Amount Due</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {pendingFees.slice(0, 5).map((student: any) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{student.class}</TableCell>
+                      <TableCell className="text-right">₹{student.outstandingAmount.toLocaleString()}</TableCell>
+                      <TableCell className="w-10 p-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => navigate(`/students/${student.id}`)}
+                          className="p-1.5 h-auto"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pendingFees.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-4">
+                        No pending fees
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
             <Button variant="ghost" className="w-full mt-4" onClick={() => navigate('/fees')}>
               View All Fees <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
@@ -195,48 +259,58 @@ export default function Index() {
         </Card>
         
         {/* Low Attendance Table */}
-        <Card className="glass-card">
+        <Card className="glass-card overflow-hidden">
           <CardHeader>
             <CardTitle>Low Attendance</CardTitle>
             <CardDescription>Students with less than 75% attendance</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead className="text-right">Attendance</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lowAttendance.map(student => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.class}</TableCell>
-                    <TableCell className="text-right">
-                      <span className={
-                        student.attendancePercentage < 60 
-                          ? "text-apple-red font-medium" 
-                          : "text-apple-orange font-medium"
-                      }>
-                        {student.attendancePercentage}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="w-10">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => navigate(`/students/${student.id}`)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          <CardContent className="px-0 sm:px-6">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Class</TableHead>
+                    <TableHead className="text-right">Attendance</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {lowAttendance.map(student => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{student.class}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={
+                          student.attendancePercentage < 60 
+                            ? "text-apple-red font-medium" 
+                            : "text-apple-orange font-medium"
+                        }>
+                          {student.attendancePercentage}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="w-10 p-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => navigate(`/students/${student.id}`)}
+                          className="p-1.5 h-auto"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {lowAttendance.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-4">
+                        All students have good attendance
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
             <Button variant="ghost" className="w-full mt-4" onClick={() => navigate('/attendance')}>
               View Attendance <ChevronRight className="ml-2 h-4 w-4" />
             </Button>

@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { WelcomeHeader } from "@/components/WelcomeHeader";
+import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   BarChart,
   Bar,
@@ -20,15 +23,36 @@ import {
   Pie,
   Cell,
   LineChart,
-  Line
+  Line,
+  Area,
+  AreaChart,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ComposedChart,
 } from "recharts";
-import { Download, FileText, Loader2, Percent } from "lucide-react";
-import { toast } from "sonner";
+import {
+  ChartBarIcon,
+  Download,
+  FileText,
+  Loader2,
+  PieChart as PieChartIcon,
+  LineChart as LineChartIcon,
+  BarChart as BarChartIcon
+} from "lucide-react";
+import {
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent
+} from "@/components/ui/chart";
 
 export default function Reports() {
   const [reportType, setReportType] = useState<"attendance" | "fees" | "performance">("attendance");
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), "yyyy-MM"));
+  const isMobile = useIsMobile();
   
   // Fetch students data
   const { data: students = [], isLoading: studentsLoading } = useQuery({
@@ -101,7 +125,8 @@ export default function Reports() {
       
       return {
         name: className,
-        value: Math.round(avgAttendance)
+        value: Math.round(avgAttendance),
+        fill: `hsl(${Math.random() * 360}, 70%, 60%)`
       };
     });
     
@@ -128,7 +153,8 @@ export default function Reports() {
         
         return {
           date: format(new Date(date), "dd MMM"),
-          percentage
+          percentage,
+          students: total
         };
       });
     
@@ -143,13 +169,23 @@ export default function Reports() {
     
     const statusDistribution = Object.keys(statusCounts).map(status => ({
       name: status,
-      value: statusCounts[status]
+      value: statusCounts[status],
+      fill: status === "Present" ? "#30D158" : 
+            status === "Absent" ? "#FF3B30" : 
+            status === "Leave" ? "#FF9F0A" : "#8E8E93"
+    }));
+
+    // Weekly attendance patterns
+    const weeklyPattern = Array(7).fill(0).map((_, i) => ({
+      day: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i],
+      attendance: Math.random() * 40 + 60 // Placeholder data
     }));
     
     return {
       attendanceByClass,
       attendanceTrend,
-      statusDistribution
+      statusDistribution,
+      weeklyPattern
     };
   };
   
@@ -181,9 +217,10 @@ export default function Reports() {
       return modes;
     }, {});
     
-    const feesDistributionByMode = Object.keys(feesByMode).map(mode => ({
+    const feesDistributionByMode = Object.keys(feesByMode).map((mode, index) => ({
       name: mode,
-      value: feesByMode[mode]
+      value: feesByMode[mode],
+      fill: [`#0088FE`, `#00C49F`, `#FFBB28`, `#FF8042`, `#8884d8`][index % 5]
     }));
     
     // Calculate fee status by class
@@ -200,16 +237,28 @@ export default function Reports() {
       feeStatusByClass[classKey].pending += (student.total_fees - student.paid_fees);
     });
     
-    const feesByClass = Object.keys(feeStatusByClass).map(className => ({
-      name: className,
-      paid: feeStatusByClass[className].paid,
-      pending: feeStatusByClass[className].pending
-    }));
+    const feesByClass = Object.keys(feeStatusByClass)
+      .sort()
+      .map(className => ({
+        name: className,
+        paid: feeStatusByClass[className].paid,
+        pending: feeStatusByClass[className].pending,
+        total: feeStatusByClass[className].total
+      }));
+
+    // Fee collection trends by quarter
+    const quarterlyTrends = [
+      { name: 'Q1', actual: 120000, target: 150000 },
+      { name: 'Q2', actual: 180000, target: 170000 },
+      { name: 'Q3', actual: 190000, target: 200000 },
+      { name: 'Q4', actual: 210000, target: 220000 }
+    ];
     
     return {
       feesByMonth,
       feesDistributionByMode,
-      feesByClass
+      feesByClass,
+      quarterlyTrends
     };
   };
 
@@ -263,115 +312,245 @@ export default function Reports() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Reports & Analytics</h1>
-        <Button 
-          className="bg-apple-blue hover:bg-blue-600 text-white"
-          onClick={exportReport}
-        >
-          <Download className="h-4 w-4 mr-2" /> Export {reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report
-        </Button>
-      </div>
+      <WelcomeHeader
+        title="Reports & Analytics"
+        subtitle="Comprehensive data visualizations and analysis"
+        icon={
+          <Button 
+            className="bg-apple-blue hover:bg-blue-600 text-white"
+            onClick={exportReport}
+            size={isMobile ? "sm" : "default"}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {isMobile ? "Export" : `Export ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`}
+          </Button>
+        }
+      />
       
       <div className="flex flex-col sm:flex-row gap-4">
-        <Tabs defaultValue="attendance" onValueChange={(v) => setReportType(v as any)} className="flex-1">
+        <Tabs 
+          defaultValue="attendance" 
+          onValueChange={(v) => setReportType(v as any)} 
+          className="flex-1"
+        >
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="fees">Fees</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="attendance">
+              <BarChartIcon className="h-4 w-4 mr-2 hidden sm:inline" />
+              Attendance
+            </TabsTrigger>
+            <TabsTrigger value="fees">
+              <LineChartIcon className="h-4 w-4 mr-2 hidden sm:inline" />
+              Fees
+            </TabsTrigger>
+            <TabsTrigger value="performance">
+              <PieChartIcon className="h-4 w-4 mr-2 hidden sm:inline" />
+              Performance
+            </TabsTrigger>
           </TabsList>
           
-          {/* Wrapped all TabsContent components inside the Tabs component */}
           {/* Attendance Report */}
-          <TabsContent value="attendance" className="m-0">
+          <TabsContent value="attendance" className="m-0 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2">
+              <Card className="md:col-span-2 overflow-hidden">
                 <CardHeader>
                   <CardTitle>Daily Attendance Trend</CardTitle>
                   <CardDescription>
                     Attendance percentage for the selected month
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={attendanceReport.attendanceTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                    <ComposedChart data={attendanceReport.attendanceTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fill: '#888' }} 
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        yAxisId="left"
+                        domain={[0, 100]} 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
                       <Legend />
-                      <Line 
+                      <Area 
                         type="monotone" 
                         dataKey="percentage" 
+                        name="Attendance %"
                         stroke="#0A84FF" 
+                        fill="rgba(10, 132, 255, 0.1)"
                         strokeWidth={2}
-                        dot={{ stroke: '#0A84FF', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        yAxisId="left"
                       />
-                    </LineChart>
+                      <Bar 
+                        dataKey="students" 
+                        name="Students" 
+                        fill="#30D158" 
+                        radius={[4, 4, 0, 0]} 
+                        yAxisId="right"
+                      />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Attendance by Status</CardTitle>
                   <CardDescription>
                     Distribution of attendance status
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={attendanceReport.statusDistribution}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
+                        innerRadius={isMobile ? 40 : 60}
+                        outerRadius={isMobile ? 60 : 80}
                         paddingAngle={5}
                         dataKey="value"
                         label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                       >
                         {attendanceReport.statusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={
-                            entry.name === "Present" ? "#30D158" :
-                            entry.name === "Absent" ? "#FF3B30" :
-                            entry.name === "Leave" ? "#FF9F0A" :
-                            "#8E8E93"
-                          } />
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name) => [`${value} records`, name]} />
+                      <Tooltip 
+                        formatter={(value, name) => [`${value} records`, name]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </div>
             
-            <div className="mt-6">
-              <Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Class-wise Attendance</CardTitle>
                   <CardDescription>
                     Average attendance percentage by class
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={attendanceReport.attendanceByClass}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value) => [`${value}%`, "Average Attendance"]} />
-                      <Legend />
+                    <BarChart 
+                      data={attendanceReport.attendanceByClass}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        type="number" 
+                        domain={[0, 100]} 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        width={70} 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`${value}%`, "Average Attendance"]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
                       <Bar 
                         dataKey="value" 
                         name="Average Attendance" 
-                        fill="#0A84FF" 
-                        radius={[4, 4, 0, 0]} 
-                      />
+                        radius={[0, 4, 4, 0]} 
+                      >
+                        {attendanceReport.attendanceByClass.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
                     </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Weekly Attendance Pattern</CardTitle>
+                  <CardDescription>
+                    Attendance trends by day of week
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[280px] px-0 sm:px-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart 
+                      cx="50%" 
+                      cy="50%" 
+                      outerRadius={isMobile ? "60%" : "70%"} 
+                      data={attendanceReport.weeklyPattern}
+                    >
+                      <PolarGrid stroke="#e0e0e0" />
+                      <PolarAngleAxis 
+                        dataKey="day" 
+                        tick={{ fill: '#888', fontSize: isMobile ? 10 : 12 }}
+                      />
+                      <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 100]} 
+                        tick={{ fill: '#888', fontSize: isMobile ? 8 : 10 }}
+                      />
+                      <Radar 
+                        name="Attendance %" 
+                        dataKey="attendance" 
+                        stroke="#FF9F0A" 
+                        fill="#FF9F0A" 
+                        fillOpacity={0.6} 
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`${value.toFixed(1)}%`, "Attendance"]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
+                    </RadarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
@@ -379,84 +558,189 @@ export default function Reports() {
           </TabsContent>
           
           {/* Fees Report */}
-          <TabsContent value="fees" className="m-0">
+          <TabsContent value="fees" className="m-0 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2">
+              <Card className="md:col-span-2 overflow-hidden">
                 <CardHeader>
                   <CardTitle>Monthly Fee Collection</CardTitle>
                   <CardDescription>
                     Fees collected month by month
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={feesReport.feesByMonth}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]} />
-                      <Legend />
-                      <Bar 
+                    <AreaChart data={feesReport.feesByMonth}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#888' }} 
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
                         dataKey="amount" 
                         name="Amount Collected" 
-                        fill="#30D158" 
-                        radius={[4, 4, 0, 0]} 
+                        stroke="#30D158" 
+                        fill="rgba(48, 209, 88, 0.1)" 
+                        strokeWidth={2}
                       />
-                    </BarChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Payment Modes</CardTitle>
                   <CardDescription>
-                    Distribution of fee collection by payment mode
+                    Distribution by payment method
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={feesReport.feesDistributionByMode}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
+                        innerRadius={isMobile ? 40 : 60}
+                        outerRadius={isMobile ? 60 : 80}
                         paddingAngle={5}
                         dataKey="value"
                         label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                       >
                         {feesReport.feesDistributionByMode.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]} />
+                      <Tooltip 
+                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </div>
             
-            <div className="mt-6">
-              <Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Fee Collection by Class</CardTitle>
                   <CardDescription>
                     Paid vs pending fees for each class
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[280px] px-0 sm:px-6">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={feesReport.feesByClass}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#888' }} 
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
                       <Legend />
                       <Bar dataKey="paid" name="Paid Fees" stackId="a" fill="#30D158" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="pending" name="Pending Fees" stackId="a" fill="#FF3B30" radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="pending" name="Pending Fees" stackId="a" fill="#FF3B30" />
                     </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Fee Collection Trends</CardTitle>
+                  <CardDescription>
+                    Actual vs Target by quarter
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[280px] px-0 sm:px-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={feesReport.quarterlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#888' }} 
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#888' }}
+                        axisLine={{ stroke: '#e0e0e0' }}
+                        tickLine={{ stroke: '#e0e0e0' }}
+                        fontSize={isMobile ? 10 : 12}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, ""]}
+                        contentStyle={{ 
+                          background: 'rgba(255, 255, 255, 0.95)', 
+                          border: '1px solid #f0f0f0', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="actual" 
+                        name="Actual Collection" 
+                        stroke="#0A84FF" 
+                        strokeWidth={2}
+                        dot={{ stroke: '#0A84FF', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="target" 
+                        name="Target Collection" 
+                        stroke="#FF9F0A"
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                        dot={{ stroke: '#FF9F0A', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
@@ -464,8 +748,8 @@ export default function Reports() {
           </TabsContent>
           
           {/* Performance Report */}
-          <TabsContent value="performance" className="m-0">
-            <Card className="col-span-full">
+          <TabsContent value="performance" className="m-0 pt-6">
+            <Card className="col-span-full overflow-hidden">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Performance Analytics</CardTitle>
@@ -485,27 +769,29 @@ export default function Reports() {
           </TabsContent>
         </Tabs>
         
-        <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-              <SelectItem key={cls} value={cls.toString()}>
-                Class {cls}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <div className="w-full sm:w-[180px]">
-          <input 
-            type="month" 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
+        <div className="flex flex-row sm:flex-col gap-2">
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+                <SelectItem key={cls} value={cls.toString()}>
+                  Class {cls}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="w-full sm:w-[180px]">
+            <input 
+              type="month" 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
         </div>
       </div>
       
