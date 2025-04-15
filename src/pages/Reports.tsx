@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +31,7 @@ import {
   PolarRadiusAxis,
   Radar,
   ComposedChart,
+  TooltipProps,
 } from "recharts";
 import {
   ChartBarIcon,
@@ -47,6 +47,7 @@ import {
   ChartTooltip, 
   ChartTooltipContent
 } from "@/components/ui/chart";
+import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 export default function Reports() {
   const [reportType, setReportType] = useState<"attendance" | "fees" | "performance">("attendance");
@@ -54,7 +55,6 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), "yyyy-MM"));
   const isMobile = useIsMobile();
   
-  // Fetch students data
   const { data: students = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
@@ -71,11 +71,9 @@ export default function Reports() {
     }
   });
 
-  // Fetch attendance data
   const { data: attendanceData = [], isLoading: attendanceLoading } = useQuery({
     queryKey: ['attendance_report', selectedMonth],
     queryFn: async () => {
-      // Extract year and month from selectedMonth
       const [year, month] = selectedMonth.split("-");
       const startDate = `${selectedMonth}-01`;
       const endDate = `${selectedMonth}-${new Date(parseInt(year), parseInt(month), 0).getDate()}`;
@@ -91,7 +89,6 @@ export default function Reports() {
     }
   });
 
-  // Fetch fee transactions
   const { data: feeTransactions = [], isLoading: feesLoading } = useQuery({
     queryKey: ['fee_transactions'],
     queryFn: async () => {
@@ -104,12 +101,9 @@ export default function Reports() {
     }
   });
 
-  // Process data for different reports
   const processAttendanceData = () => {
-    // Calculate attendance by class
     const classCounts: Record<string, {total: number, present: number}> = {};
     
-    // First get all students grouped by class
     students.forEach(student => {
       const classKey = `Class ${student.class}`;
       if (!classCounts[classKey]) {
@@ -118,7 +112,6 @@ export default function Reports() {
       classCounts[classKey].total++;
     });
     
-    // Get attendance percentages by class
     const attendanceByClass = Object.keys(classCounts).map(className => {
       const classStudents = students.filter(s => `Class ${s.class}` === className);
       const avgAttendance = classStudents.reduce((sum, student) => sum + student.attendance_percentage, 0) / classStudents.length;
@@ -130,7 +123,6 @@ export default function Reports() {
       };
     });
     
-    // Calculate daily attendance trend
     const dailyAttendanceCounts: Record<string, {total: number, present: number}> = {};
     
     attendanceData.forEach(record => {
@@ -158,7 +150,6 @@ export default function Reports() {
         };
       });
     
-    // Get attendance status distribution
     const statusCounts = attendanceData.reduce((counts: Record<string, number>, record) => {
       if (!counts[record.status]) {
         counts[record.status] = 0;
@@ -175,10 +166,9 @@ export default function Reports() {
             status === "Leave" ? "#FF9F0A" : "#8E8E93"
     }));
 
-    // Weekly attendance patterns
     const weeklyPattern = Array(7).fill(0).map((_, i) => ({
       day: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i],
-      attendance: Math.random() * 40 + 60 // Placeholder data
+      attendance: Math.random() * 40 + 60
     }));
     
     return {
@@ -188,9 +178,8 @@ export default function Reports() {
       weeklyPattern
     };
   };
-  
+
   const processFeesData = () => {
-    // Calculate fee collection by month
     const monthlyFees: Record<string, number> = {};
     
     feeTransactions.forEach(transaction => {
@@ -208,7 +197,6 @@ export default function Reports() {
         amount: monthlyFees[month]
       }));
     
-    // Calculate fee collection by payment mode
     const feesByMode = feeTransactions.reduce((modes: Record<string, number>, transaction) => {
       if (!modes[transaction.payment_mode]) {
         modes[transaction.payment_mode] = 0;
@@ -223,7 +211,6 @@ export default function Reports() {
       fill: [`#0088FE`, `#00C49F`, `#FFBB28`, `#FF8042`, `#8884d8`][index % 5]
     }));
     
-    // Calculate fee status by class
     const feeStatusByClass: Record<string, {total: number, paid: number, pending: number}> = {};
     
     students.forEach(student => {
@@ -246,7 +233,6 @@ export default function Reports() {
         total: feeStatusByClass[className].total
       }));
 
-    // Fee collection trends by quarter
     const quarterlyTrends = [
       { name: 'Q1', actual: 120000, target: 150000 },
       { name: 'Q2', actual: 180000, target: 170000 },
@@ -262,7 +248,6 @@ export default function Reports() {
     };
   };
 
-  // Generate and export reports
   const exportReport = () => {
     try {
       let csvContent = "";
@@ -285,7 +270,6 @@ export default function Reports() {
         });
       }
       
-      // Create download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -303,12 +287,17 @@ export default function Reports() {
     }
   };
 
-  // Prepare report data based on type
   const attendanceReport = processAttendanceData();
   const feesReport = processFeesData();
   
-  // Chart colors
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  const customTooltipFormatter = (value: ValueType) => {
+    if (typeof value === 'number') {
+      return value.toFixed(0);
+    }
+    return value;
+  };
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -348,7 +337,6 @@ export default function Reports() {
             </TabsTrigger>
           </TabsList>
           
-          {/* Attendance Report */}
           <TabsContent value="attendance" className="m-0 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2 overflow-hidden">
@@ -392,6 +380,12 @@ export default function Reports() {
                           borderRadius: '8px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                         }}
+                        formatter={(value) => {
+                          if (typeof value === 'number') {
+                            return [value.toFixed(0), ""];
+                          }
+                          return [value, ""];
+                        }}
                       />
                       <Legend />
                       <Area 
@@ -433,14 +427,17 @@ export default function Reports() {
                         outerRadius={isMobile ? 60 : 80}
                         paddingAngle={5}
                         dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        label={({ name, percent }) => {
+                          const percentValue = typeof percent === 'number' ? (percent * 100).toFixed(0) : '0';
+                          return `${name} (${percentValue}%)`;
+                        }}
                       >
                         {attendanceReport.statusDistribution.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value, name) => [`${value} records`, name]}
+                        formatter={(value) => [`${value} records`, ""]}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -487,7 +484,12 @@ export default function Reports() {
                         fontSize={isMobile ? 10 : 12}
                       />
                       <Tooltip 
-                        formatter={(value) => [`${value}%`, "Average Attendance"]}
+                        formatter={(value) => {
+                          if (typeof value === 'number') {
+                            return [`${value}%`, "Average Attendance"];
+                          }
+                          return [value, "Average Attendance"];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -542,7 +544,12 @@ export default function Reports() {
                         fillOpacity={0.6} 
                       />
                       <Tooltip 
-                        formatter={(value) => [`${value.toFixed(1)}%`, "Attendance"]}
+                        formatter={(value) => {
+                          if (typeof value === 'number') {
+                            return [`${value.toFixed(1)}%`, "Attendance"];
+                          }
+                          return [value, "Attendance"];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -557,7 +564,6 @@ export default function Reports() {
             </div>
           </TabsContent>
           
-          {/* Fees Report */}
           <TabsContent value="fees" className="m-0 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2 overflow-hidden">
@@ -585,7 +591,13 @@ export default function Reports() {
                         fontSize={isMobile ? 10 : 12}
                       />
                       <Tooltip 
-                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        formatter={(value) => {
+                          const numValue = typeof value === 'string' ? parseInt(value) : value;
+                          if (typeof numValue === 'number' && !isNaN(numValue)) {
+                            return [`₹${numValue.toLocaleString()}`, "Amount"];
+                          }
+                          return [value, "Amount"];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -624,14 +636,23 @@ export default function Reports() {
                         outerRadius={isMobile ? 60 : 80}
                         paddingAngle={5}
                         dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        label={({ name, percent }) => {
+                          const percentValue = typeof percent === 'number' ? (percent * 100).toFixed(0) : '0';
+                          return `${name} (${percentValue}%)`;
+                        }}
                       >
                         {feesReport.feesDistributionByMode.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        formatter={(value) => {
+                          const numValue = typeof value === 'string' ? parseInt(value) : value;
+                          if (typeof numValue === 'number' && !isNaN(numValue)) {
+                            return [`₹${numValue.toLocaleString()}`, "Amount"];
+                          }
+                          return [value, "Amount"];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -671,7 +692,13 @@ export default function Reports() {
                         fontSize={isMobile ? 10 : 12}
                       />
                       <Tooltip 
-                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, "Amount"]}
+                        formatter={(value) => {
+                          const numValue = typeof value === 'string' ? parseInt(value) : value;
+                          if (typeof numValue === 'number' && !isNaN(numValue)) {
+                            return [`₹${numValue.toLocaleString()}`, "Amount"];
+                          }
+                          return [value, "Amount"];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -712,7 +739,13 @@ export default function Reports() {
                         fontSize={isMobile ? 10 : 12}
                       />
                       <Tooltip 
-                        formatter={(value) => [`₹${parseInt(value as string).toLocaleString()}`, ""]}
+                        formatter={(value) => {
+                          const numValue = typeof value === 'string' ? parseInt(value) : value;
+                          if (typeof numValue === 'number' && !isNaN(numValue)) {
+                            return [`₹${numValue.toLocaleString()}`, ""];
+                          }
+                          return [value, ""];
+                        }}
                         contentStyle={{ 
                           background: 'rgba(255, 255, 255, 0.95)', 
                           border: '1px solid #f0f0f0', 
@@ -747,7 +780,6 @@ export default function Reports() {
             </div>
           </TabsContent>
           
-          {/* Performance Report */}
           <TabsContent value="performance" className="m-0 pt-6">
             <Card className="col-span-full overflow-hidden">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
