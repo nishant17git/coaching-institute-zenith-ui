@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ export function ClassAttendanceTable({
   onSaveAttendance,
   isSaving
 }: ClassAttendanceTableProps) {
-  // Animation variants
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -45,23 +43,23 @@ export function ClassAttendanceTable({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2 text-sm">
-          <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700">
-            <Check className="h-3 w-3 mr-1" /> Present
+        <div className="flex items-center space-x-3">
+          <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700 px-3 py-1">
+            <Check className="h-3.5 w-3.5 mr-1.5" /> Present
           </Badge>
-          <Badge variant="outline" className="bg-red-50 border-red-300 text-red-700">
-            <X className="h-3 w-3 mr-1" /> Absent
+          <Badge variant="outline" className="bg-red-50 border-red-300 text-red-700 px-3 py-1">
+            <X className="h-3.5 w-3.5 mr-1.5" /> Absent
           </Badge>
-          <Badge variant="outline" className="bg-orange-50 border-orange-300 text-orange-700">
-            <Clock className="h-3 w-3 mr-1" /> Leave
+          <Badge variant="outline" className="bg-orange-50 border-orange-300 text-orange-700 px-3 py-1">
+            <Clock className="h-3.5 w-3.5 mr-1.5" /> Leave
           </Badge>
         </div>
         
         <Button 
           onClick={onSaveAttendance} 
-          className="bg-apple-green hover:bg-green-600"
+          className="bg-apple-green hover:bg-green-600 text-white px-4"
           disabled={isSaving}
         >
           {isSaving ? "Saving..." : "Save Attendance"}
@@ -69,36 +67,34 @@ export function ClassAttendanceTable({
       </div>
       
       {students.length > 0 ? (
-        <div className="border rounded-md overflow-hidden">
+        <div className="border rounded-xl overflow-hidden bg-white/50 backdrop-blur-sm">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-gray-50/50">
+                <TableHead className="w-12 py-3">#</TableHead>
+                <TableHead className="py-3">Student</TableHead>
+                <TableHead className="text-center py-3">Status</TableHead>
+                <TableHead className="text-right py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <motion.tbody
               variants={container}
               initial="hidden"
               animate="show"
-              className="divide-y"
+              className="divide-y divide-gray-100"
             >
               {students.map((student, index) => (
-                <motion.tr key={student.id} variants={item}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                        <User className="h-4 w-4" />
+                <motion.tr key={student.id} variants={item} className="bg-white/40">
+                  <TableCell className="font-medium py-3">{index + 1}</TableCell>
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-gray-100/80 flex items-center justify-center">
+                        <User className="h-5 w-5 text-gray-500" />
                       </div>
-                      <div>
-                        <div className="font-medium">{student.name}</div>
-                      </div>
+                      <div className="font-medium">{student.name}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center py-3">
                     <Badge
                       variant="outline"
                       className={
@@ -111,7 +107,7 @@ export function ClassAttendanceTable({
                       {student.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right py-3">
                     <div className="flex justify-end space-x-2">
                       <Button 
                         variant={student.status === "Present" ? "default" : "outline"} 
@@ -145,7 +141,7 @@ export function ClassAttendanceTable({
           </Table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 border rounded-md">
+        <div className="flex flex-col items-center justify-center p-12 border rounded-xl bg-white/50">
           <User className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-muted-foreground">No students found for this class</p>
         </div>
