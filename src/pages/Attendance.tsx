@@ -1,17 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { format, isToday, addDays, subDays, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
-  CalendarIcon, Search, User, Users, Check, X, Clock, FilterX, ChevronLeft, 
-  ChevronRight, Download, Save, Loader2, AlertCircle 
+  CalendarIcon, Search, User, Users, Check, X, Clock, FilterX,
+  ChevronLeft, ChevronRight, Download, Save, Loader2, AlertCircle 
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
