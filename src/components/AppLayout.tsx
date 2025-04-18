@@ -13,9 +13,7 @@ export function AppLayout() {
     <div className="flex w-full min-h-screen bg-gradient-to-b from-background to-secondary/10 overflow-x-hidden">
       {!isMobile && <Sidebar />}
       <main className="flex-1 flex flex-col pb-[70px] md:pb-0 md:pl-[280px] transition-all duration-500 animate-fade-in w-full max-w-full">
-        <div className="flex items-center justify-center py-2 md:hidden">
-          <img src="/icon.png" alt="Infinity Classes" className="h-8 w-8 object-contain" />
-        </div>
+        {/* Remove the logo div */}
         <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden w-full max-w-full">
           <Outlet />
         </div>
