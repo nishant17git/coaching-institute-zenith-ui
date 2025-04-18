@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +27,6 @@ export default function Dashboard() {
   const [pendingFees, setPendingFees] = useState<any[]>([]);
   const isMobile = useIsMobile();
 
-  // Fetch students data from Supabase
   const { data: students = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
@@ -41,7 +39,6 @@ export default function Dashboard() {
     }
   });
 
-  // Fetch fee transactions from Supabase
   const { data: feeTransactions = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ['fee_transactions'],
     queryFn: async () => {
@@ -54,10 +51,8 @@ export default function Dashboard() {
     }
   });
 
-  // Calculate class distribution and pending fees when data changes
   useEffect(() => {
     if (students.length > 0) {
-      // Calculate class distribution for chart
       const classCounts: Record<number, number> = {};
       students.forEach(student => {
         if (!classCounts[student.class]) {
@@ -77,7 +72,6 @@ export default function Dashboard() {
       
       setClassDistribution(distribution);
       
-      // Calculate pending fees students
       const studentsWithPendingFees = students
         .filter(student => student.fee_status !== "Paid")
         .map(student => ({
@@ -94,11 +88,9 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.join_date).getTime() - new Date(a.join_date).getTime())
     .slice(0, 5);
 
-  // Calculate total fees and collections
   const totalFees = students.reduce((sum, student) => sum + (student.total_fees || 0), 0);
   const collectedFees = students.reduce((sum, student) => sum + (student.paid_fees || 0), 0);
 
-  // Animation settings for the dashboard elements
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -123,9 +115,7 @@ export default function Dashboard() {
     >
       <div className="flex items-center justify-between">
         <motion.div variants={item} className="flex flex-col">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {user?.first_name ? `Welcome, ${user.first_name} Sir` : 'Dashboard'}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
             Your academic institute management dashboard
           </p>
@@ -193,7 +183,6 @@ export default function Dashboard() {
         variants={item}
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
-        {/* Class Distribution Chart */}
         <Card className="glass-card lg:col-span-2">
           <CardHeader>
             <CardTitle>Class Distribution</CardTitle>
@@ -234,7 +223,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        {/* Recent Joins */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Recent Admissions</CardTitle>
@@ -272,7 +260,6 @@ export default function Dashboard() {
         </Card>
       </motion.div>
       
-      {/* Pending Fees Table */}
       <motion.div variants={item}>
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between">

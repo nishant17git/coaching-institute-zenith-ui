@@ -1,11 +1,9 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
-// Define an extended user type that includes the optional name field
 interface ExtendedUser extends User {
   name?: string;
   first_name?: string;
@@ -33,6 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
+        
+        if (event === 'SIGNED_IN') {
+          toast.success("Welcome, Sir");
+        }
         
         // Add name property to user when setting state
         const extendedUser = session?.user ? {

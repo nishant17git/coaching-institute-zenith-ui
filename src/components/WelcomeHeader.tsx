@@ -5,7 +5,6 @@ interface WelcomeHeaderProps {
   title?: string;
   subtitle?: string;
   icon?: ReactNode;
-  showGreeting?: boolean;
 }
 
 export function WelcomeHeader({ 
