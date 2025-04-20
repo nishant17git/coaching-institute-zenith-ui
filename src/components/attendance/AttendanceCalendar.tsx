@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -34,22 +35,22 @@ export function AttendanceCalendar({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Calendar header - days of week */}
       <div className="grid grid-cols-7 text-center">
         {weekDays.map((day) => (
-          <div key={day} className="text-[13px] text-muted-foreground font-medium py-2">
+          <div key={day} className="text-xs text-muted-foreground font-medium py-1.5">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+      <div className="grid grid-cols-7 gap-1">
         {/* Offset for first day of month */}
         {Array.from({ length: new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1).getDay() }).map(
           (_, index) => (
-            <div key={`empty-${index}`} className="aspect-square p-0.5 sm:p-1" />
+            <div key={`empty-${index}`} className="aspect-square p-0.5" />
           )
         )}
 
@@ -66,26 +67,26 @@ export function AttendanceCalendar({
             <button
               key={day.dayOfMonth}
               className={cn(
-                "aspect-square flex flex-col items-center p-0.5 sm:p-1 rounded-lg transition-all hover:bg-apple-blue/5",
-                day.isToday && "ring-2 ring-apple-blue ring-offset-2",
-                isSelected && "bg-apple-blue/10"
+                "aspect-square flex flex-col items-center p-0.5 rounded-md transition-colors",
+                day.isToday && "ring-1 ring-apple-blue ring-offset-1",
+                isSelected && "bg-apple-blue/5"
               )}
               onClick={() => onSelectDate(day.date)}
             >
               <span
                 className={cn(
-                  "h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-sm transition-colors",
+                  "h-6 w-6 flex items-center justify-center rounded-full text-xs font-medium transition-colors",
                   isSelected
-                    ? "bg-apple-blue text-white shadow-sm"
+                    ? "bg-apple-blue text-white"
                     : day.isToday
-                    ? "font-semibold text-apple-blue"
+                    ? "text-apple-blue"
                     : "text-foreground hover:text-apple-blue"
                 )}
               >
                 {day.dayOfMonth}
               </span>
               
-              {/* Attendance indicator bar */}
+              {/* Attendance indicator */}
               <div className="mt-auto w-full px-0.5">
                 <div className="flex justify-center mt-1">
                   <div 
@@ -105,22 +106,22 @@ export function AttendanceCalendar({
         })}
       </div>
 
-      {/* Legend with improved spacing */}
-      <div className="flex flex-wrap justify-center gap-3 text-xs text-muted-foreground pt-2">
-        <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-green-500"></div>
+      {/* Legend */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-muted-foreground pt-2">
+        <div className="flex items-center gap-1.5 justify-center">
+          <div className="h-1 w-1 rounded-full bg-green-500"></div>
           <span>&gt;90%</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-apple-blue"></div>
+        <div className="flex items-center gap-1.5 justify-center">
+          <div className="h-1 w-1 rounded-full bg-apple-blue"></div>
           <span>&gt;75%</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
+        <div className="flex items-center gap-1.5 justify-center">
+          <div className="h-1 w-1 rounded-full bg-amber-500"></div>
           <span>&gt;50%</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-red-500"></div>
+        <div className="flex items-center gap-1.5 justify-center">
+          <div className="h-1 w-1 rounded-full bg-red-500"></div>
           <span>&lt;50%</span>
         </div>
       </div>
