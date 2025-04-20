@@ -1,6 +1,9 @@
 
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CalendarDataItem {
   date: Date;
@@ -35,22 +38,45 @@ export function AttendanceCalendar({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Calendar header - days of week */}
-      <div className="grid grid-cols-7 text-center">
+    <div className="space-y-4 p-1">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onMonthChange(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h3 className="text-base font-semibold">
+          {format(selectedMonth, 'MMMM yyyy')}
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onMonthChange(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Calendar Days */}
+      <div className="grid grid-cols-7 gap-1">
         {weekDays.map((day) => (
-          <div key={day} className="text-xs text-muted-foreground font-medium py-1.5">
+          <div
+            key={day}
+            className="text-xs font-medium text-muted-foreground text-center py-2"
+          >
             {day}
           </div>
         ))}
-      </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {/* Offset for first day of month */}
+        {/* Empty cells for days before the first of the month */}
         {Array.from({ length: new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1).getDay() }).map(
           (_, index) => (
-            <div key={`empty-${index}`} className="aspect-square p-0.5" />
+            <div key={`empty-${index}`} className="aspect-square" />
           )
         )}
 
@@ -64,65 +90,66 @@ export function AttendanceCalendar({
               : 0;
 
           return (
-            <button
+            <Button
               key={day.dayOfMonth}
+              variant="ghost"
               className={cn(
-                "aspect-square flex flex-col items-center p-0.5 rounded-md transition-colors",
-                day.isToday && "ring-1 ring-apple-blue ring-offset-1",
-                isSelected && "bg-apple-blue/5"
+                "aspect-square p-0 relative",
+                day.isToday && "ring-2 ring-apple-blue ring-offset-1",
+                isSelected && "bg-apple-blue/10"
               )}
               onClick={() => onSelectDate(day.date)}
             >
-              <span
-                className={cn(
-                  "h-6 w-6 flex items-center justify-center rounded-full text-xs font-medium transition-colors",
-                  isSelected
-                    ? "bg-apple-blue text-white"
-                    : day.isToday
-                    ? "text-apple-blue"
-                    : "text-foreground hover:text-apple-blue"
-                )}
-              >
-                {day.dayOfMonth}
-              </span>
-              
-              {/* Attendance indicator */}
-              <div className="mt-auto w-full px-0.5">
-                <div className="flex justify-center mt-1">
-                  <div 
+              <div className="flex flex-col items-center w-full h-full">
+                <span
+                  className={cn(
+                    "text-sm font-medium mt-1",
+                    isSelected && "text-apple-blue",
+                    day.isToday && !isSelected && "text-apple-blue font-semibold"
+                  )}
+                >
+                  {day.dayOfMonth}
+                </span>
+                
+                {/* Attendance indicator dot */}
+                {totalStudents > 0 && (
+                  <div
                     className={cn(
-                      "h-0.5 rounded-full transition-all",
+                      "w-1.5 h-1.5 rounded-full mt-1",
                       attendancePercentage >= 90 ? "bg-green-500" :
                       attendancePercentage >= 75 ? "bg-apple-blue" :
                       attendancePercentage >= 50 ? "bg-amber-500" :
                       "bg-red-500"
                     )}
-                    style={{ width: `${Math.min(100, attendancePercentage)}%` }}
                   />
-                </div>
+                )}
               </div>
-            </button>
+            </Button>
           );
         })}
       </div>
 
       {/* Legend */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-muted-foreground pt-2">
-        <div className="flex items-center gap-1.5 justify-center">
-          <div className="h-1 w-1 rounded-full bg-green-500"></div>
-          <span>&gt;90%</span>
+      <div className="grid grid-cols-2 gap-2 pt-4 border-t">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex gap-1">
+            <span className="h-2 w-2 rounded-full bg-green-500 mt-1" />
+            <span>&gt;90%</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="h-2 w-2 rounded-full bg-apple-blue mt-1" />
+            <span>&gt;75%</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 justify-center">
-          <div className="h-1 w-1 rounded-full bg-apple-blue"></div>
-          <span>&gt;75%</span>
-        </div>
-        <div className="flex items-center gap-1.5 justify-center">
-          <div className="h-1 w-1 rounded-full bg-amber-500"></div>
-          <span>&gt;50%</span>
-        </div>
-        <div className="flex items-center gap-1.5 justify-center">
-          <div className="h-1 w-1 rounded-full bg-red-500"></div>
-          <span>&lt;50%</span>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-500 mt-1" />
+            <span>&gt;50%</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="h-2 w-2 rounded-full bg-red-500 mt-1" />
+            <span>&lt;50%</span>
+          </div>
         </div>
       </div>
     </div>
