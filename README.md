@@ -1,73 +1,109 @@
-# Welcome to your Lovable project
+Infinity Classes – Coaching Institute Management System
 
-## Project info
+Project Info
 
-**URL**: https://lovable.dev/projects/156dc01e-b24c-4d03-9f09-b5a5ea0f161d
+Infinity Classes is a fully responsive web app designed to simplify the administration of a coaching institute. It helps manage student data, track daily attendance, and handle monthly fee collections with ease and accuracy.
 
-## How can I edit this code?
+How to Edit This Code
 
-There are several ways of editing your application.
+You can edit and run this project using any modern development workflow. Below are the recommended methods:
 
-**Use Lovable**
+Using Your Preferred IDE
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/156dc01e-b24c-4d03-9f09-b5a5ea0f161d) and start prompting.
+Make sure Node.js and npm are installed. If not, install them using nvm.
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Step 1: Clone the repository.
 git clone <YOUR_GIT_URL>
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd infinity-classes
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install dependencies.
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the development server.
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+Edit Directly on GitHub
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Navigate to the file you want to modify.
 
-**Use GitHub Codespaces**
+Click the Edit (pencil) icon.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Make your changes and commit them directly.
 
-## What technologies are used for this project?
+
+Using GitHub Codespaces
+
+Open your repository on GitHub.
+
+Click the Code button and choose the Codespaces tab.
+
+Click New codespace to launch a cloud-based development environment.
+
+Make changes and commit when ready.
+
+
+Technologies Used
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Vite
 
-## How can I deploy this project?
+React
 
-Simply open [Lovable](https://lovable.dev/projects/156dc01e-b24c-4d03-9f09-b5a5ea0f161d) and click on Share -> Publish.
+TypeScript
 
-## Can I connect a custom domain to my Lovable project?
+shadcn/ui
 
-Yes it is!
+Tailwind CSS
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Supabase (Database + Auth)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Chart.js (Graphical reports and analytics)
+
+
+Key Features
+
+Class-wise student data management
+
+Auto-generated student IDs
+
+Daily attendance with calendar-based UI
+
+Monthly tuition, admission, and test series fee tracking
+
+Payment mode tracking and receipt generation
+
+Weekly and outstanding fee reports
+
+Secure login (admin only)
+
+Fully responsive UI for mobile and desktop
+
+Clean glassmorphism design inspired by Apple aesthetics
+
+
+Deployment
+
+You can deploy the project to platforms like Vercel, Netlify, or any static hosting service that supports React + Vite apps.
+
+1. Push your code to GitHub or another Git provider.
+
+
+2. Connect the repository on your chosen deployment platform.
+
+
+3. Set build command to npm run build and output directory to dist.
+
+
+
+Custom Domain Setup
+
+If you're hosting it on Vercel or Netlify:
+
+Go to your project settings.
+
+Navigate to the Domains section.
+
+Add your custom domain and follow the verification steps.
