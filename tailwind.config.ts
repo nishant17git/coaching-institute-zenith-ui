@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -77,7 +76,7 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-                sans: ['SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
+                'spotify': ['Spotify Mix', 'SF Pro Display', 'system-ui', 'sans-serif'],
             },
 			keyframes: {
 				'accordion-down': {
