@@ -10,7 +10,7 @@ return ( <div className="min-h-screen bg-white flex items-center justify-center 
 src="/icon.png"
 alt="Infinity Classes"
 className="mx-auto h-20 w-20"
-/> <h1 className="mt-4 text-2xl font-semibold text-gray-900"> Infinity Classes </h1> <p className="mt-1 text-sm text-gray-500"> Excellence in Education </p> </div>
+/> <h1 className="mt-4 text-2xl font-semibold text-gray-900"> Infinity Classes </h1> <p className="mt-1 text-sm text-gray-500"> Learn till eternity, with dignity in Infinity. </p> </div>
 
 {/* Glass-Style Card */}
     <Card className="glass-card border border-white/30 shadow-lg rounded-2xl">
