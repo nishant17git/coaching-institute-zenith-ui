@@ -2,15 +2,18 @@ import { useState, useEffect } from "react"; import { useNavigate } from "react-
 
 export default function Login() { const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [showPassword, setShowPassword] = useState(false); const { login, isLoading, isAuthenticated } = useAuth(); const navigate = useNavigate();
 
+// Scroll to top on mount to keep content centered useEffect(() => { window.scrollTo(0, 0); }, []);
+
 const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); await login(email, password); };
 
 useEffect(() => { if (isAuthenticated) { const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard"; sessionStorage.removeItem("redirectAfterLogin"); navigate(redirectPath); } }, [isAuthenticated, navigate]);
 
-return ( <div className="min-h-screen bg-white flex items-center justify-center px-4 py-8"> <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="w-full max-w-sm" > {/* Logo & Branding */} <div className="text-center mb-8"> <img
-src="/icon.png"
-alt="Infinity Classes"
-className="mx-auto h-20 w-20"
-/> <h1 className="mt-4 text-2xl font-semibold text-gray-900"> Infinity Classes </h1> <p className="mt-1 text-sm text-gray-500"> Learn till eternity, with dignity in Infinity. </p> </div>
+return ( // Use full screen height to always center content <div className="h-screen bg-white flex items-center justify-center p-4"> <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="w-full max-w-sm" > {/* Logo & Branding */} <div className="flex items-center justify-center mb-8 space-x-4"> <div className="relative w-16 h-16"> <img
+src="/logo.svg"
+alt=""
+role="presentation"
+className="w-full h-full object-contain"
+/> <span className="sr-only">Infinity Classes Logo</span> </div> <div className="text-left"> <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight"> Infinity Classes </h1> <p className="mt-1 text-sm text-gray-500"> Learn till eternity, with dignity in Infinity. </p> </div> </div>
 
 {/* Glass-Style Card */}
     <Card className="glass-card border border-white/30 shadow-lg rounded-2xl">
@@ -96,3 +99,4 @@ className="mx-auto h-20 w-20"
 
 ); }
 
+    
