@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { EyeIcon, EyeOffIcon, Loader2, ArrowRightIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Login() {
@@ -30,147 +29,154 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/5 flex flex-col items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md"
+      >
+        {/* Apple-style logo animation */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
           className="flex flex-col items-center mb-12"
         >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="h-20 w-20 mb-6 rounded-3xl overflow-hidden shadow-lg"
+          <motion.div 
+            initial={{ y: -10 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="h-20 w-20 flex items-center justify-center mb-6"
           >
-            <img src="/icon.png" alt="Infinity Classes" className="h-full w-full object-cover" />
+            <img src="/icon.png" alt="Infinity Classes" className="h-20 w-20 object-contain" />
           </motion.div>
-          <motion.h1 
-            className="text-4xl font-bold tracking-tight bg-gradient-to-r from-apple-blue to-apple-indigo bg-clip-text text-transparent"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
+          <h1 className="text-4xl font-bold tracking-tight text-gradient mb-1">
             Infinity Classes
-          </motion.h1>
+          </h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            Excellence in Education
+          </p>
         </motion.div>
 
+        {/* Login form with Apple-inspired design */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="glass-effect rounded-3xl overflow-hidden shadow-xl"
         >
-          <Card className="glass-effect border-none shadow-xl overflow-hidden rounded-2xl">
-            <form onSubmit={handleSubmit} className="px-1">
-              <CardContent className="pt-8 pb-4 px-6 space-y-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                  className="text-center mb-2"
-                >
-                  <h2 className="text-2xl font-medium text-foreground">Sign In</h2>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    Enter your credentials to access your account
-                  </p>
-                </motion.div>
-
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium pl-1">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12 bg-secondary/40 border-0 rounded-xl placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-apple-blue focus:bg-background transition-all duration-300"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center pl-1">
-                      <Label htmlFor="password" className="text-sm font-medium">
-                        Password
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-0 h-auto text-xs font-normal text-apple-blue hover:text-apple-indigo"
-                        onClick={() => {}}
-                      >
-                        Forgot Password?
-                      </Button>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="h-12 bg-secondary/40 border-0 rounded-xl pr-10 placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-apple-blue focus:bg-background transition-all duration-300"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full opacity-70 hover:opacity-100 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+          <div className="px-8 pt-8 pb-6">
+            <h2 className="text-2xl font-semibold text-center mb-1">Welcome Back</h2>
+            <p className="text-center text-muted-foreground text-sm mb-8">
+              Sign in to access your admin dashboard
+            </p>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-xl bg-secondary/50 border-0 shadow-inner focus:ring-2 focus:ring-apple-blue focus:border-transparent px-4"
+                />
+              </div>
               
-              <CardFooter className="px-6 pt-2 pb-8">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </Label>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    className="text-xs font-medium text-apple-blue hover:text-blue-700 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // You can add "forgot password" functionality here
+                    }}
+                  >
+                    Forgot Password?
+                  </motion.button>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 rounded-xl bg-secondary/50 border-0 shadow-inner focus:ring-2 focus:ring-apple-blue focus:border-transparent px-4 pr-12"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="pt-2"
+              >
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-apple-blue to-apple-indigo text-white font-medium rounded-xl hover:opacity-95 shadow-md transition-all duration-300 hover:shadow-lg"
+                  className="w-full h-12 bg-apple-blue hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-xl font-medium shadow-md transition-all duration-300 disabled:opacity-70"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Signing in...</span>
+                      <span>Signing In...</span>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center">
-                      <span>Sign In</span>
-                      <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
+                    <span>Sign In</span>
                   )}
                 </Button>
-              </CardFooter>
+              </motion.div>
             </form>
-          </Card>
+          </div>
+          
+          <div className="px-8 py-4 bg-secondary/30 dark:bg-secondary/10 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-center text-sm text-muted-foreground">
+              Need assistance? Contact your system administrator
+            </p>
+          </div>
         </motion.div>
-
+        
+        {/* Security notice - Apple-style trust indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="text-center mt-6"
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="mt-8 flex items-center justify-center"
         >
-          <p className="text-sm text-muted-foreground">
-            Access limited to authorized personnel only
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Contact administrator for support
-          </p>
+          <div className="flex items-center text-xs text-muted-foreground">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            <span>Secure login • SSL encrypted</span>
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
-              }
+                }
