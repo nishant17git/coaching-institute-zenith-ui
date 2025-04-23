@@ -80,7 +80,7 @@ Contributions to improve Infinity Classes are welcome. Please review our contrib
 
 ## Contact
 
-For any questions or support, please reach out to [contact@infinityclasses.edu](mailto:contact@infinityclasses.edu)
+For any questions or support, please reach out to [theinfinityclasses1208@gmail.com](mailto: theinfinityclasses1208@gmail.com)
 
 ---
 
