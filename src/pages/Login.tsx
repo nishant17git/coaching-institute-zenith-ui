@@ -55,7 +55,7 @@ export default function Login() {
         <div className="flex items-center justify-center mb-8 space-x-4">
           <div className="relative w-16 h-16">
             <img
-              src="public/icon.png"
+              src="/icon.png"
               alt=""
               role="presentation"
               className="w-full h-full object-contain"
