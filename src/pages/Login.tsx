@@ -53,7 +53,7 @@ export default function Login() {
       >
         {/* Logo & Branding */}
         <div className="flex items-center justify-center mb-8 space-x-4">
-          <div className="relative w-16 h-16">
+          <div className="relative w-24 h-24">
             <img
               src="/icon.png"
               alt=""
