@@ -12,35 +12,50 @@ addStudent(newStudentData);
 onOpenChange(false);
 form.reset();
 
-if (onSuccess) {
-  onSuccess();
-}
+if (onSuccess) onSuccess();
 
 }
 
-return ( <Dialog open={open} onOpenChange={onOpenChange}> <DialogContent className="sm:max-w-[500px] animate-scale-in"> <DialogHeader> <DialogTitle>Add New Student</DialogTitle> <DialogDescription> Enter student details to create a new record. </DialogDescription> </DialogHeader> <Form {...form}> <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"> <FormField control={form.control} name="name" rules={{ required: "Name is required" }} render={({ field }) => ( <FormItem> <FormLabel>Name</FormLabel> <FormControl> <Input placeholder="Student name" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+return ( <Dialog open={open} onOpenChange={onOpenChange}> <DialogContent className="sm:max-w-[500px] animate-scale-in"> <DialogHeader> <DialogTitle>Add New Student</DialogTitle> <DialogDescription> Enter student details to create a new record. </DialogDescription> </DialogHeader>
 
-<FormField
+<Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          rules={{ required: "Name is required" }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Student name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
           control={form.control}
           name="class"
           rules={{ required: "Class is required" }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Class</FormLabel>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select class" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.name}>
-                        {cls.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+                </FormControl>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.name}>
+                      {cls.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
