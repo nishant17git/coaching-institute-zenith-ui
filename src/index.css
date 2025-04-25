@@ -84,8 +84,9 @@
   }
   
   /* Adding smooth scrolling */
-  html {
+  html, body {
     scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
   }
   
   /* Improved focus styles */
