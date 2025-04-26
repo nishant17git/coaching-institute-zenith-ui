@@ -85,8 +85,7 @@
   
   /* Adding smooth scrolling */
   html, body { 
-scroll-behavior: smooth;   
-overscroll-behavior-y: contain; 
+scroll-behavior: smooth;
 -webkit-user-select: none; /* Safari */ 
 user-select: none; /* Standard syntax */ 
 }
