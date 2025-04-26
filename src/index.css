@@ -84,9 +84,12 @@
   }
   
   /* Adding smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
+  html, body { 
+scroll-behavior: smooth;   
+overscroll-behavior-y: contain; 
+-webkit-user-select: none; /* Safari */ 
+user-select: none; /* Standard syntax */ 
+}
   
   /* Improved focus styles */
   *:focus-visible {
