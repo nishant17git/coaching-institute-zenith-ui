@@ -87,11 +87,6 @@
   html { 
      scroll-behavior: smooth; 
 }
-
-  body {
-    -webkit-user-select: none; /* Safari */ 
-    user-select: none; /* Standard syntax */
-}
   
   /* Improved focus styles */
   *:focus-visible {
