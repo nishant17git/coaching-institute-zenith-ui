@@ -89,7 +89,6 @@
 }
 
   body {
-    overscroll-behavior-y: contain;
     -webkit-user-select: none; /* Safari */ 
     user-select: none; /* Standard syntax */
 }
