@@ -1,10 +1,62 @@
-import React, { useMemo } from "react"; import { Link, useLocation } from "react-router-dom"; import { Home, Users, CreditCard, CalendarDays, BarChart2, FileText } from "lucide-react"; import { cn } from "@/lib/utils"; import { motion } from "framer-motion";
 
-interface NavItem { name: string; path: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; }
+import { Link, useLocation } from "react-router-dom";
+import { Home, Users, CreditCard, CalendarDays, BarChart2, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-const navItemsData: NavItem[] = [ { name: "Home", path: "/dashboard", icon: Home }, { name: "Students", path: "/students", icon: Users }, { name: "Fees", path: "/fees", icon: CreditCard }, { name: "Attendance", path: "/attendance", icon: CalendarDays }, { name: "Tests", path: "/tests", icon: FileText }, { name: "Reports", path: "/reports", icon: BarChart2 }, ];
+export function BottomNavigation() {
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-export const BottomNavigation: React.FC = () => { const { pathname } = useLocation(); const navItems = useMemo(() => navItemsData, []);
+  const navItems = [
+    { name: "Home", path: "/dashboard", icon: Home },
+    { name: "Students", path: "/students", icon: Users },
+    { name: "Fees", path: "/fees", icon: CreditCard },
+    { name: "Attendance", path: "/attendance", icon: CalendarDays },
+    { name: "Tests", path: "/tests", icon: FileText },
+    { name: "Reports", path: "/reports", icon: BarChart2 },
+  ];
 
-return ( <motion.nav role="navigation" aria-label="Bottom Navigation" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.35, ease: "easeOut" }} className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-gray-100 shadow-lg z-50 py-2 px-4 pb-[env(safe-area-inset-bottom)]"> <ul className="flex justify-between items-center max-w-screen-lg mx-auto h-full"> {navItems.map(({ name, path, icon: Icon }) => { const isActive = pathname.startsWith(path); return ( <li key={name} className="flex-1 h-full"> <Link to={path} role="menuitem" aria-current={isActive ? "page" : undefined} className={cn( "relative flex flex-col items-center justify-center h-full rounded-xl px-3 transition-colors duration-200 will-change-colors", isActive ? "text-apple-blue" : "text-gray-500 hover:text-gray-700" )} > {isActive && ( <motion.span layoutId="bottom-nav-indicator" className="absolute inset-0 bg-apple-blue/10 rounded-xl will-change-transform, will-change-opacity" transition={{ type: "spring", stiffness: 400, damping: 30 }} /> )} <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="will-change-transform" > <Icon className={cn( "w-6 h-6 transition-transform duration-200 will-change-transform will-change-color", isActive ? "text-apple-blue" : "text-gray-500" )} aria-hidden="true" /> </motion.div> <span className={cn( "text-xs mt-1 font-medium transition-colors duration-200 will-change-colors", isActive ? "text-apple-blue" : "text-gray-500" )} > {name} </span> </Link> </li> ); })} </ul> </motion.nav> ); };
-
+  return (
+    <motion.nav 
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 shadow-lg py-2 px-4 z-50"
+    >
+      <div className="flex justify-between items-center mx-auto max-w-screen-lg">
+        {navItems.map((item) => {
+          const isActive = currentPath.startsWith(item.path);
+          return (
+            <Link 
+              key={item.name} 
+              to={item.path} 
+              className={cn(
+                "relative flex flex-col items-center justify-center rounded-xl px-3 py-1.5 transition-all duration-300",
+                isActive ? "text-apple-blue" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="indicator"
+                  className="absolute inset-0 bg-apple-blue/10 rounded-xl"
+                  transition={{ type: "spring", duration: 0.5 }}
+                />
+              )}
+              <item.icon className={cn(
+                "w-5 h-5 transition-all",
+                isActive ? "text-apple-blue" : "text-gray-500"
+              )} />
+              <span className={cn(
+                "text-xs mt-1 font-medium transition-all",
+                isActive ? "text-apple-blue" : "text-gray-500"
+              )}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </motion.nav>
+  );
+}
