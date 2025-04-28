@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -37,12 +36,11 @@ export default function Students() {
   
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.roll_number.toString().includes(searchTerm);
-                          
+    const matchesSearch =
+      student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.roll_number.toString().includes(searchTerm);
     const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
-    
     return matchesSearch && matchesClass;
   });
   
@@ -137,7 +135,9 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()}
+                    defaultValue={field.value.toString()} 
+                    value={field.value.toString()} 
+                    {...field}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -312,7 +312,9 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()}
+                    defaultValue={field.value.toString()} 
+                    value={field.value.toString()} 
+                    {...field}
                   >
                     <FormControl>
                       <SelectTrigger>
