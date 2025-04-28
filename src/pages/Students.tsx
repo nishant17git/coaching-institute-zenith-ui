@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -24,26 +25,27 @@ export default function Students() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   // Fetch students data
   const { data: students = [], isLoading, isError } = useQuery({
     queryKey: ['students'],
     queryFn: studentService.getStudents
   });
-  
+
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
-    const matchesSearch =
-      student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.roll_number.toString().includes(searchTerm);
+    const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          student.roll_number.toString().includes(searchTerm);
+
     const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
+
     return matchesSearch && matchesClass;
   });
-  
+
   // Mutations for CRUD operations
   const createStudentMutation = useMutation({
     mutationFn: studentService.createStudent,
@@ -56,7 +58,7 @@ export default function Students() {
       toast.error(error.message || "Failed to add student");
     }
   });
-  
+
   const updateStudentMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       studentService.updateStudent(id, data),
@@ -69,7 +71,7 @@ export default function Students() {
       toast.error(error.message || "Failed to update student");
     }
   });
-  
+
   const deleteStudentMutation = useMutation({
     mutationFn: studentService.deleteStudent,
     onSuccess: () => {
@@ -81,12 +83,12 @@ export default function Students() {
       toast.error(error.message || "Failed to delete student");
     }
   });
-  
+
   // View student details
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
-  
+
   // Add student form
   const AddStudentForm = () => {
     const form = useForm({
@@ -100,7 +102,7 @@ export default function Students() {
         contact_number: ""
       }
     });
-    
+
     const onSubmit = (data: any) => {
       createStudentMutation.mutate({
         ...data,
@@ -108,7 +110,7 @@ export default function Students() {
         roll_number: parseInt(data.roll_number)
       });
     };
-    
+
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -125,7 +127,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -135,9 +137,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()} 
-                    value={field.value.toString()} 
-                    {...field}
+                    defaultValue={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -156,7 +156,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="roll_number"
@@ -177,7 +177,7 @@ export default function Students() {
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -191,7 +191,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -205,7 +205,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="guardian_name"
@@ -219,7 +219,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="contact_number"
@@ -233,7 +233,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <DialogFooter>
             <Button 
               type="button" 
@@ -258,7 +258,7 @@ export default function Students() {
       </Form>
     );
   };
-  
+
   // Edit student form
   const EditStudentForm = () => {
     const form = useForm({
@@ -272,10 +272,10 @@ export default function Students() {
         contact_number: currentStudent?.contact_number || ""
       }
     });
-    
+
     const onSubmit = (data: any) => {
       if (!currentStudent) return;
-      
+
       updateStudentMutation.mutate({
         id: currentStudent.id,
         data: {
@@ -285,7 +285,7 @@ export default function Students() {
         }
       });
     };
-    
+
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -302,7 +302,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -312,9 +312,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()} 
-                    value={field.value.toString()} 
-                    {...field}
+                    defaultValue={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -333,7 +331,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="roll_number"
@@ -354,7 +352,7 @@ export default function Students() {
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -368,7 +366,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -382,7 +380,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="guardian_name"
@@ -396,7 +394,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="contact_number"
@@ -410,7 +408,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <DialogFooter>
             <Button 
               type="button" 
@@ -435,7 +433,7 @@ export default function Students() {
       </Form>
     );
   };
-  
+
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -444,7 +442,7 @@ export default function Students() {
           <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -455,7 +453,7 @@ export default function Students() {
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex gap-2">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-full sm:w-[180px]">
@@ -470,7 +468,7 @@ export default function Students() {
               ))}
             </SelectContent>
           </Select>
-          
+
           <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
             <TabsList className="grid w-20 grid-cols-2">
               <TabsTrigger value="grid" className="p-2">
@@ -483,7 +481,7 @@ export default function Students() {
           </Tabs>
         </div>
       </div>
-      
+
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -516,7 +514,7 @@ export default function Students() {
               ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="table" className="mt-0">
             <div className="rounded-md border">
               <Table>
@@ -575,7 +573,7 @@ export default function Students() {
           </TabsContent>
         </Tabs>
       )}
-      
+
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -588,7 +586,7 @@ export default function Students() {
           <AddStudentForm />
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Student Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -601,7 +599,7 @@ export default function Students() {
           {currentStudent && <EditStudentForm />}
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Student Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
