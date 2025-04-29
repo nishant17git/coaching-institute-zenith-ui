@@ -5,13 +5,19 @@ import { studentService } from "@/services/studentService";
 import { StudentRecord } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 
+"@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 
+"@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
+DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 
+"@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 
+"@/components/ui/card";
 import { useForm } from "react-hook-form";
-import { Pencil, Trash2, Plus, Search, Loader2, Users, Rows3, LayoutGrid } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Loader2, Users, Rows3, LayoutGrid } from 
+"lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentCardView } from "@/components/ui/student-card-view";
@@ -22,7 +28,8 @@ export default function Students() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
+  const [currentStudent, setCurrentStudent] = useState<StudentRecord | 
+null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   
   const navigate = useNavigate();
@@ -36,11 +43,15 @@ export default function Students() {
   
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
-    const matchesSearch =
-      student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.roll_number.toString().includes(searchTerm);
-    const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
+    const matchesSearch = 
+student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          
+student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          student.roll_number.toString().includes(searchTerm);
+                          
+    const matchesClass = selectedClass === "all" || student.class === 
+parseInt(selectedClass);
+    
     return matchesSearch && matchesClass;
   });
   
@@ -135,9 +146,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()} 
-                    value={field.value.toString()} 
-                    {...field}
+                    defaultValue={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -266,7 +275,8 @@ export default function Students() {
         full_name: currentStudent?.full_name || "",
         class: currentStudent?.class || 2,
         roll_number: currentStudent?.roll_number.toString() || "",
-        date_of_birth: currentStudent?.date_of_birth ? new Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
+        date_of_birth: currentStudent?.date_of_birth ? new 
+Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         address: currentStudent?.address || "",
         guardian_name: currentStudent?.guardian_name || "",
         contact_number: currentStudent?.contact_number || ""
@@ -312,9 +322,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()} 
-                    value={field.value.toString()} 
-                    {...field}
+                    defaultValue={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -552,4 +560,7 @@ export default function Students() {
                               setIsEditDialogOpen(true);
                             }}
                           >
-                            <Pencil classNam
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+     
