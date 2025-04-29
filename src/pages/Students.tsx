@@ -563,4 +563,88 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button 
-     
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-500"
+                            onClick={() => {
+                              setCurrentStudent(student);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+      
+      {/* Add Student Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Student</DialogTitle>
+            <DialogDescription>
+              Enter the details of the new student below.
+            </DialogDescription>
+          </DialogHeader>
+          <AddStudentForm />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Student Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student</DialogTitle>
+            <DialogDescription>
+              Update the details of the student below.
+            </DialogDescription>
+          </DialogHeader>
+          {currentStudent && <EditStudentForm />}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Student Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {currentStudent?.full_name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              disabled={deleteStudentMutation.isPending}
+              onClick={() => {
+                if (currentStudent) {
+                  deleteStudentMutation.mutate(currentStudent.id);
+                }
+              }}
+            >
+              {deleteStudentMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
