@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -25,27 +24,28 @@ export default function Students() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-
+  
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
+  
   // Fetch students data
   const { data: students = [], isLoading, isError } = useQuery({
     queryKey: ['students'],
     queryFn: studentService.getStudents
   });
-
+  
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.roll_number.toString().includes(searchTerm);
-
+    const matchesSearch = 
+      student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.roll_number.toString().includes(searchTerm);
+      
     const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
-
+    
     return matchesSearch && matchesClass;
   });
-
+  
   // Mutations for CRUD operations
   const createStudentMutation = useMutation({
     mutationFn: studentService.createStudent,
@@ -58,7 +58,7 @@ export default function Students() {
       toast.error(error.message || "Failed to add student");
     }
   });
-
+  
   const updateStudentMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       studentService.updateStudent(id, data),
@@ -71,7 +71,7 @@ export default function Students() {
       toast.error(error.message || "Failed to update student");
     }
   });
-
+  
   const deleteStudentMutation = useMutation({
     mutationFn: studentService.deleteStudent,
     onSuccess: () => {
@@ -83,12 +83,12 @@ export default function Students() {
       toast.error(error.message || "Failed to delete student");
     }
   });
-
+  
   // View student details
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
-
+  
   // Add student form
   const AddStudentForm = () => {
     const form = useForm({
@@ -102,7 +102,7 @@ export default function Students() {
         contact_number: ""
       }
     });
-
+    
     const onSubmit = (data: any) => {
       createStudentMutation.mutate({
         ...data,
@@ -110,7 +110,7 @@ export default function Students() {
         roll_number: parseInt(data.roll_number)
       });
     };
-
+    
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -127,7 +127,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -137,7 +137,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()}
+                    value={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -156,7 +156,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="roll_number"
@@ -177,7 +177,7 @@ export default function Students() {
               )}
             />
           </div>
-
+          
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -191,7 +191,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="address"
@@ -199,13 +199,13 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Address" {...field} />
+                  <Input placeholder="Address" {...field} required />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="guardian_name"
@@ -219,7 +219,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="contact_number"
@@ -227,23 +227,30 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Contact Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Contact number" {...field} required />
+                  <Input 
+                    type="tel" 
+                    placeholder="Contact number" 
+                    {...field} 
+                    pattern="[0-9]*"
+                    required
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <DialogFooter>
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setIsAddDialogOpen(false)}
+              disabled={createStudentMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
-              type="submit"
+              type="submit" 
               disabled={createStudentMutation.isPending}
             >
               {createStudentMutation.isPending ? (
@@ -258,7 +265,7 @@ export default function Students() {
       </Form>
     );
   };
-
+  
   // Edit student form
   const EditStudentForm = () => {
     const form = useForm({
@@ -272,10 +279,10 @@ export default function Students() {
         contact_number: currentStudent?.contact_number || ""
       }
     });
-
+    
     const onSubmit = (data: any) => {
       if (!currentStudent) return;
-
+      
       updateStudentMutation.mutate({
         id: currentStudent.id,
         data: {
@@ -285,7 +292,7 @@ export default function Students() {
         }
       });
     };
-
+    
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -302,7 +309,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -312,7 +319,7 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()}
+                    value={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -331,7 +338,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="roll_number"
@@ -352,7 +359,7 @@ export default function Students() {
               )}
             />
           </div>
-
+          
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -366,7 +373,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="address"
@@ -374,13 +381,13 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Address" {...field} />
+                  <Input placeholder="Address" {...field} required />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="guardian_name"
@@ -394,7 +401,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="contact_number"
@@ -402,50 +409,63 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Contact Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Contact number" {...field} required />
+                  <Input 
+                    type="tel" 
+                    placeholder="Contact number" 
+                    {...field} 
+                    pattern="[0-9]*"
+                    required
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <DialogFooter>
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setIsEditDialogOpen(false)}
+              disabled={updateStudentMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
-              type="submit"
+              type="submit" 
               disabled={updateStudentMutation.isPending}
             >
               {updateStudentMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
+                  Saving...
                 </>
-              ) : "Update Student"}
+              ) : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>
       </Form>
     );
   };
-
+  
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Student
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Students</h1>
+        <Button 
+          onClick={() => setIsAddDialogOpen(true)} 
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Student
         </Button>
       </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      
+      <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
+        <div className="relative w-full md:w-[300px]">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
           <Input
             placeholder="Search by name, guardian or roll number..."
             value={searchTerm}
@@ -453,7 +473,7 @@ export default function Students() {
             className="pl-10"
           />
         </div>
-
+        
         <div className="flex gap-2">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-full sm:w-[180px]">
@@ -468,7 +488,7 @@ export default function Students() {
               ))}
             </SelectContent>
           </Select>
-
+          
           <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
             <TabsList className="grid w-20 grid-cols-2">
               <TabsTrigger value="grid" className="p-2">
@@ -481,7 +501,7 @@ export default function Students() {
           </Tabs>
         </div>
       </div>
-
+      
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -514,7 +534,7 @@ export default function Students() {
               ))}
             </div>
           </TabsContent>
-
+          
           <TabsContent value="table" className="mt-0">
             <div className="rounded-md border">
               <Table>
@@ -525,116 +545,25 @@ export default function Students() {
                     <TableHead className="hidden md:table-cell">Class</TableHead>
                     <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
                     <TableHead className="hidden lg:table-cell">Guardian</TableHead>
-                    <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>{student.roll_number}</TableCell>
-                      <TableCell className="font-medium">{student.full_name}</TableCell>
-                      <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {new Date(student.date_of_birth).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{student.full_name}</TableCell>
+                      <TableCell className="hidden md:table-cell">{student.class}</TableCell>
+                      <TableCell className="hidden md:table-cell">{student.date_of_birth}</TableCell>
                       <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{student.contact_number}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell>
+                        <div className="flex gap-2">
                           <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => {
-                              setCurrentStudent(student);
-                              setIsEditDialogOpen(true);
-                            }}
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => { setCurrentStudent(student); setIsEditDialogOpen(true); }}
                           >
                             <Pencil className="h-4 w-4" />
+                            Edit
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-red-500"
-                            onClick={() => {
-                              setCurrentStudent(student);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      {/* Add Student Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Student</DialogTitle>
-            <DialogDescription>
-              Enter the details of the new student below.
-            </DialogDescription>
-          </DialogHeader>
-          <AddStudentForm />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Student Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Student</DialogTitle>
-            <DialogDescription>
-              Update the details of the student below.
-            </DialogDescription>
-          </DialogHeader>
-          {currentStudent && <EditStudentForm />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Student Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {currentStudent?.full_name}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive"
-              disabled={deleteStudentMutation.isPending}
-              onClick={() => {
-                if (currentStudent) {
-                  deleteStudentMutation.mutate(currentStudent.id);
-                }
-              }}
-            >
-              {deleteStudentMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                     
