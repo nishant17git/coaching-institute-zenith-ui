@@ -36,13 +36,11 @@ export default function Students() {
   
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
-    const matchesSearch = 
+    const matchesSearch =
       student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_number.toString().includes(searchTerm);
-      
     const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
-    
     return matchesSearch && matchesClass;
   });
   
@@ -137,7 +135,9 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value.toString()}
+                    defaultValue={field.value.toString()} 
+                    value={field.value.toString()} 
+                    {...field}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -199,7 +199,7 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Address" {...field} required />
+                  <Input placeholder="Address" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -227,13 +227,7 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Contact Number</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="tel" 
-                    placeholder="Contact number" 
-                    {...field} 
-                    pattern="[0-9]*"
-                    required
-                  />
+                  <Input placeholder="Contact number" {...field} required />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -245,12 +239,11 @@ export default function Students() {
               type="button" 
               variant="outline" 
               onClick={() => setIsAddDialogOpen(false)}
-              disabled={createStudentMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
               disabled={createStudentMutation.isPending}
             >
               {createStudentMutation.isPending ? (
@@ -319,7 +312,9 @@ export default function Students() {
                   <FormLabel>Class</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value.toString()}
+                    defaultValue={field.value.toString()} 
+                    value={field.value.toString()} 
+                    {...field}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -381,7 +376,7 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Address" {...field} required />
+                  <Input placeholder="Address" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -409,13 +404,7 @@ export default function Students() {
               <FormItem>
                 <FormLabel>Contact Number</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="tel" 
-                    placeholder="Contact number" 
-                    {...field} 
-                    pattern="[0-9]*"
-                    required
-                  />
+                  <Input placeholder="Contact number" {...field} required />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -427,20 +416,19 @@ export default function Students() {
               type="button" 
               variant="outline" 
               onClick={() => setIsEditDialogOpen(false)}
-              disabled={updateStudentMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
               disabled={updateStudentMutation.isPending}
             >
               {updateStudentMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Updating...
                 </>
-              ) : "Save Changes"}
+              ) : "Update Student"}
             </Button>
           </DialogFooter>
         </form>
@@ -449,23 +437,17 @@ export default function Students() {
   };
   
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Students</h1>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)} 
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Student
+    <div className="space-y-6 animate-slide-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-        <div className="relative w-full md:w-[300px]">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </div>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, guardian or roll number..."
             value={searchTerm}
@@ -545,25 +527,29 @@ export default function Students() {
                     <TableHead className="hidden md:table-cell">Class</TableHead>
                     <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
                     <TableHead className="hidden lg:table-cell">Guardian</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>{student.roll_number}</TableCell>
-                      <TableCell>{student.full_name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{student.class}</TableCell>
-                      <TableCell className="hidden md:table-cell">{student.date_of_birth}</TableCell>
+                      <TableCell className="font-medium">{student.full_name}</TableCell>
+                      <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {new Date(student.date_of_birth).toLocaleDateString()}
+                      </TableCell>
                       <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell className="hidden lg:table-cell">{student.contact_number}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => { setCurrentStudent(student); setIsEditDialogOpen(true); }}
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setCurrentStudent(student);
+                              setIsEditDialogOpen(true);
+                            }}
                           >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </Button>
-                     
+                            <Pencil classNam
