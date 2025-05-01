@@ -21,7 +21,7 @@ export function BottomNavigation() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white/90 backdrop-blur-xl border border-gray-100 shadow-lg py-2 px-4 rounded-2xl w-full max-w-md pointer-events-auto"
+        className="bg-white/80 backdrop-blur-xl border border-gray-100 shadow-lg py-2 px-4 rounded-2xl w-full max-w-md pointer-events-auto"
       >
         <div className="flex justify-between items-center">
           {navItems.map((item) => {
@@ -34,10 +34,7 @@ export function BottomNavigation() {
               <Link 
                 key={item.name} 
                 to={item.path} 
-                className={cn(
-                  "relative flex flex-col items-center justify-center rounded-xl px-5 py-2 transition-all duration-300",
-                  isActive ? "text-apple-blue" : "text-gray-500 hover:text-gray-700"
-                )}
+                className="relative flex flex-col items-center justify-center rounded-xl px-5 py-2"
               >
                 {isActive && (
                   <motion.div
@@ -54,20 +51,37 @@ export function BottomNavigation() {
                   whileTap={{ scale: 0.9 }}
                   className="flex flex-col items-center"
                 >
-                  <item.icon className={cn(
-                    "w-6 h-6 transition-all",
-                    isActive 
-                      ? "text-apple-blue" 
-                      : "text-gray-500"
-                  )} />
-                  <span className={cn(
-                    "text-xs mt-1 font-medium transition-all",
-                    isActive 
-                      ? "text-apple-blue" 
-                      : "text-gray-500"
-                  )}>
+                  <motion.div
+                    animate={{ 
+                      scale: isActive ? 1.2 : 1,
+                      y: isActive ? -2 : 0
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className={cn(
+                      "transition-all",
+                      isActive 
+                        ? "text-apple-blue" 
+                        : "text-gray-500"
+                    )}
+                  >
+                    <item.icon className="w-6 h-6" />
+                  </motion.div>
+                  
+                  <motion.span 
+                    animate={{ 
+                      opacity: isActive ? 0 : 1,
+                      height: isActive ? 0 : 'auto',
+                      marginTop: isActive ? 0 : 4
+                    }}
+                    className={cn(
+                      "text-xs font-medium overflow-hidden transition-all",
+                      isActive 
+                        ? "text-apple-blue" 
+                        : "text-gray-500"
+                    )}
+                  >
                     {item.name}
-                  </span>
+                  </motion.span>
                 </motion.div>
               </Link>
             );

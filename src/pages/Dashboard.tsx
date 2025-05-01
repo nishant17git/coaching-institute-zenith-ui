@@ -6,7 +6,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, GraduationCap, School, LogOut, Settings, Eye, ChevronRight, AlertTriangle, CreditCard, FileText, BarChart2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Menubar,
@@ -14,7 +14,6 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
-  MenubarShortcut,
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -133,7 +132,7 @@ export default function Dashboard() {
             <MenubarTrigger className="font-medium hover:bg-accent/50 data-[state=open]:bg-accent focus:bg-accent">
               {user?.email?.split('@')[0] || 'Admin'}
             </MenubarTrigger>
-            <MenubarContent className="min-w-[200px]">
+            <MenubarContent className="min-w-[200px] animate-in fade-in-80 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
               <MenubarItem onClick={() => navigate("/dashboard")}>
                 <School className="mr-2 h-4 w-4" />
                 <span>Dashboard</span>
@@ -145,7 +144,6 @@ export default function Dashboard() {
               <MenubarItem onClick={() => navigate("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
-                <MenubarShortcut>⌘S</MenubarShortcut>
               </MenubarItem>
               <MenubarSeparator />
               <MenubarItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
@@ -228,7 +226,7 @@ export default function Dashboard() {
                       fontSize={isMobile ? 10 : 12}
                       width={isMobile ? 25 : 40}
                     />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Bar dataKey="count" name="Students" fill="#0A84FF" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

@@ -3,7 +3,6 @@ import { Outlet, useLocation } from "react-router-dom";
 import { BottomNavigation } from "./BottomNavigation";
 import { Sidebar } from "./Sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Toaster } from "@/components/ui/toaster";
 
 export function AppLayout() {
   const isMobile = useIsMobile();
@@ -18,7 +17,6 @@ export function AppLayout() {
         </div>
         {isMobile && <BottomNavigation />}
       </main>
-      <Toaster />
     </div>
   );
 }
