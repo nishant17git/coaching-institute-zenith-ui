@@ -42,10 +42,10 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   institute: {
     instituteName: "Infinity Classes",
-    email: "admin@infinityclasses.edu",
-    phone: "+91 9876543210",
-    address: "123, Education Lane, Knowledge City",
-    logo: "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC"
+    email: "theinfinityclasses1208@gmail.com",
+    phone: "+91 9905880697",
+    address: "Kandri, Mandar, Ranchi",
+    logo: "/icon.png"
   },
   notifications: {
     email: true,
