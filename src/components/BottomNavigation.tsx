@@ -20,7 +20,7 @@ export function BottomNavigation() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white/80 backdrop-blur-xl border border-gray-100 shadow-lg py-2 px-6 rounded-full w-full max-w-md pointer-events-auto"
+        className="bg-white/40 backdrop-blur-2xl border border-white/20 shadow-xl py-2 px-6 rounded-full w-full max-w-md pointer-events-auto"
       >
         <div className="flex justify-between items-center">
           {navItems.map((item) => {
