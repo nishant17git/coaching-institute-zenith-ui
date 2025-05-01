@@ -10,10 +10,9 @@ export function AppLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex w-full min-h-screen bg-gradient-to-b from-background to-secondary/10 overflow-x-hidden">
+    <div className="flex w-full min-h-screen bg-gradient-to-b from-background to-secondary/5 overflow-x-hidden">
       {!isMobile && <Sidebar />}
-      <main className="flex-1 flex flex-col pb-[70px] md:pb-0 md:pl-[280px] transition-all duration-500 animate-fade-in w-full max-w-full">
-        {/* Remove the logo div */}
+      <main className="flex-1 flex flex-col pb-[80px] md:pb-0 md:pl-[280px] transition-all duration-500 animate-fade-in w-full max-w-full">
         <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden w-full max-w-full">
           <Outlet />
         </div>

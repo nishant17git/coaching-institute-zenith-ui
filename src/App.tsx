@@ -18,6 +18,8 @@ import Fees from "./pages/Fees";
 import Attendance from "./pages/Attendance";
 import TestRecord from "./pages/TestRecord";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import More from "./pages/More";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -49,6 +51,8 @@ const App = () => (
                   <Route path="/attendance" element={<Attendance />} />
                   <Route path="/tests" element={<TestRecord />} />
                   <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/more" element={<More />} />
                 </Route>
                 
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />

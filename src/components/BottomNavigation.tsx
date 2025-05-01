@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, CreditCard, CalendarDays, BarChart2, FileText } from "lucide-react";
+import { Home, Users, CreditCard, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -12,9 +12,7 @@ export function BottomNavigation() {
     { name: "Home", path: "/dashboard", icon: Home },
     { name: "Students", path: "/students", icon: Users },
     { name: "Fees", path: "/fees", icon: CreditCard },
-    { name: "Attendance", path: "/attendance", icon: CalendarDays },
-    { name: "Tests", path: "/tests", icon: FileText },
-    { name: "Reports", path: "/reports", icon: BarChart2 },
+    { name: "More", path: "/more", icon: MoreHorizontal },
   ];
 
   return (
@@ -22,29 +20,33 @@ export function BottomNavigation() {
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 shadow-lg py-2 px-4 z-50"
+      className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 shadow-lg py-2 px-4 z-50"
     >
       <div className="flex justify-between items-center mx-auto max-w-screen-lg">
         {navItems.map((item) => {
-          const isActive = currentPath.startsWith(item.path);
+          const isActive = 
+            item.path === "/more" 
+              ? ["/more", "/tests", "/reports", "/settings", "/attendance"].includes(currentPath)
+              : currentPath.startsWith(item.path);
+          
           return (
             <Link 
               key={item.name} 
               to={item.path} 
               className={cn(
-                "relative flex flex-col items-center justify-center rounded-xl px-3 py-1.5 transition-all duration-300",
+                "relative flex flex-col items-center justify-center rounded-xl px-5 py-2 transition-all duration-300",
                 isActive ? "text-apple-blue" : "text-gray-500 hover:text-gray-700"
               )}
             >
               {isActive && (
                 <motion.div
-                  layoutId="indicator"
+                  layoutId="navIndicator"
                   className="absolute inset-0 bg-apple-blue/10 rounded-xl"
-                  transition={{ type: "spring", duration: 0.5 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
               <item.icon className={cn(
-                "w-5 h-5 transition-all",
+                "w-6 h-6 transition-all",
                 isActive ? "text-apple-blue" : "text-gray-500"
               )} />
               <span className={cn(
