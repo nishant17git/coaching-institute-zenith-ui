@@ -69,17 +69,17 @@ export default function More() {
         variants={container}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        {menuItems.map((item) => (
-          <motion.div key={item.title} variants={item}>
-            <Link to={item.path} className="block">
-              <Card className={`hover-lift overflow-hidden ${item.color} border-none shadow-sm`}>
+        {menuItems.map((menuItem) => (
+          <motion.div key={menuItem.title} variants={item}>
+            <Link to={menuItem.path} className="block">
+              <Card className={`hover-lift overflow-hidden ${menuItem.color} border-none shadow-sm`}>
                 <div className="p-6 flex items-center gap-4">
                   <div className="rounded-xl bg-white/80 p-3 shadow-sm">
-                    {item.icon}
+                    {menuItem.icon}
                   </div>
                   <div>
-                    <h3 className="font-medium text-lg">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                    <h3 className="font-medium text-lg">{menuItem.title}</h3>
+                    <p className="text-sm text-muted-foreground">{menuItem.description}</p>
                   </div>
                 </div>
               </Card>
