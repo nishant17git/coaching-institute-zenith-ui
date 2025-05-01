@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
 import { format, addMonths, subMonths } from "date-fns";
+import { motion } from "framer-motion";
 
 interface DateSelectorProps {
   selectedMonth: Date;
@@ -31,36 +32,49 @@ export function DateSelector({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <motion.div 
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2"
+    >
       <Button
         variant="outline"
         size="sm"
-        className="h-8 w-8 p-0"
+        className="h-8 w-8 p-0 rounded-full"
         onClick={goToPrevMonth}
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="sr-only">Previous month</span>
       </Button>
-      <div className="text-sm font-medium min-w-[120px] text-center">
+      
+      <motion.div 
+        key={format(selectedMonth, 'MMMM yyyy')}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-sm font-medium min-w-[120px] text-center"
+      >
         {format(selectedMonth, "MMMM yyyy")}
-      </div>
+      </motion.div>
+      
       <Button
         variant="outline"
         size="sm"
-        className="h-8 w-8 p-0"
+        className="h-8 w-8 p-0 rounded-full"
         onClick={goToNextMonth}
       >
         <ChevronRight className="h-4 w-4" />
         <span className="sr-only">Next month</span>
       </Button>
+      
       <Button
         variant="outline"
         size="sm"
-        className="ml-2 h-8"
+        className="ml-2 h-8 rounded-full"
         onClick={goToToday}
       >
+        <CalendarClock className="h-4 w-4 mr-1.5" />
         Today
       </Button>
-    </div>
+    </motion.div>
   );
 }

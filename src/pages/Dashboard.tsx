@@ -5,20 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, GraduationCap, School, LogOut, Settings, Eye, ChevronRight, AlertTriangle, CreditCard } from "lucide-react";
+import { Users, GraduationCap, School, LogOut, Settings, Eye, ChevronRight, AlertTriangle, CreditCard, FileText, BarChart2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -106,6 +108,11 @@ export default function Dashboard() {
     show: { opacity: 1, y: 0 }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Logged out successfully");
+  };
+
   return (
     <motion.div 
       variants={container}
@@ -121,26 +128,33 @@ export default function Dashboard() {
           </p>
         </motion.div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.email}</p>
-                <p className="text-xs text-muted-foreground">Administrator</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Menubar className="border-none bg-transparent">
+          <MenubarMenu>
+            <MenubarTrigger className="font-medium hover:bg-accent/50 data-[state=open]:bg-accent focus:bg-accent">
+              {user?.email?.split('@')[0] || 'Admin'}
+            </MenubarTrigger>
+            <MenubarContent className="min-w-[200px]">
+              <MenubarItem onClick={() => navigate("/dashboard")}>
+                <School className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </MenubarItem>
+              <MenubarItem onClick={() => navigate("/reports")}>
+                <BarChart2 className="mr-2 h-4 w-4" />
+                <span>Reports</span>
+              </MenubarItem>
+              <MenubarItem onClick={() => navigate("/settings")}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+                <MenubarShortcut>⌘S</MenubarShortcut>
+              </MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
       </div>
       
       <motion.div 

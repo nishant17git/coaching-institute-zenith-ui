@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 interface CalendarDataItem {
   date: Date;
@@ -44,18 +45,24 @@ export function AttendanceCalendar({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-full"
           onClick={() => onMonthChange(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <h3 className="text-base font-semibold">
+        <motion.h3 
+          className="text-base font-semibold"
+          key={format(selectedMonth, 'MMMM yyyy')}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           {format(selectedMonth, 'MMMM yyyy')}
-        </h3>
+        </motion.h3>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-full"
           onClick={() => onMonthChange(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))}
         >
           <ChevronRight className="h-4 w-4" />
@@ -100,7 +107,12 @@ export function AttendanceCalendar({
               )}
               onClick={() => onSelectDate(day.date)}
             >
-              <div className="flex flex-col items-center w-full h-full">
+              <motion.div 
+                className="flex flex-col items-center w-full h-full"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
                 <span
                   className={cn(
                     "text-sm font-medium mt-1",
@@ -111,19 +123,21 @@ export function AttendanceCalendar({
                   {day.dayOfMonth}
                 </span>
                 
-                {/* Attendance indicator dot */}
+                {/* Attendance indicator */}
                 {totalStudents > 0 && (
-                  <div
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full mt-1",
-                      attendancePercentage >= 90 ? "bg-green-500" :
-                      attendancePercentage >= 75 ? "bg-apple-blue" :
-                      attendancePercentage >= 50 ? "bg-amber-500" :
-                      "bg-red-500"
-                    )}
-                  />
+                  <div className="flex gap-[2px] mt-1">
+                    <div
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full",
+                        attendancePercentage >= 90 ? "bg-green-500" :
+                        attendancePercentage >= 75 ? "bg-apple-blue" :
+                        attendancePercentage >= 50 ? "bg-amber-500" :
+                        "bg-red-500"
+                      )}
+                    />
+                  </div>
                 )}
-              </div>
+              </motion.div>
             </Button>
           );
         })}
