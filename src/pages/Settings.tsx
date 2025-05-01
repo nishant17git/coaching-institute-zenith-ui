@@ -193,7 +193,7 @@ export default function Settings() {
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-32 h-32 rounded-lg overflow-hidden border mb-4">
                     <img 
-                      src={logoPreview || "https://placehold.co/200x200/4F46E5/FFFFFF?text=LOGO"} 
+                      src={logoPreview || "/icon.png"} 
                       alt="Institute Logo" 
                       className="w-full h-full object-cover"
                     />
