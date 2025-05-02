@@ -59,35 +59,35 @@ export default function More() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-6">
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="space-y-6"
+        className="space-y-4"
       >
-        <div className="flex flex-col mb-6">
+        <div className="flex flex-col text-center mb-4">
           <h1 className="text-2xl font-semibold tracking-tight">More</h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 mt-1 text-sm">
             Access additional features and settings
           </p>
         </div>
 
         <motion.div 
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           {menuItems.map((menuItem) => (
             <motion.div key={menuItem.title} variants={item}>
               <Link to={menuItem.path} className="block">
-                <Card className={`hover:shadow-lg transition-all duration-300 overflow-hidden ${menuItem.color} border border-gray-100 rounded-2xl`}>
-                  <div className="p-8 flex items-center gap-6">
-                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <Card className={`hover:shadow-md transition-all duration-300 overflow-hidden ${menuItem.color} border border-gray-100 rounded-xl`}>
+                  <div className="p-4 flex items-center gap-4">
+                    <div className="rounded-xl bg-white p-2 shadow-sm">
                       {menuItem.icon}
                     </div>
                     <div>
-                      <h3 className="font-medium text-xl text-gray-900">{menuItem.title}</h3>
-                      <p className="text-gray-500 mt-1">{menuItem.description}</p>
+                      <h3 className="font-medium text-base text-gray-900">{menuItem.title}</h3>
+                      <p className="text-gray-500 text-xs">{menuItem.description}</p>
                     </div>
                   </div>
                 </Card>
@@ -96,7 +96,7 @@ export default function More() {
           ))}
         </motion.div>
 
-        <div className="text-center text-sm text-gray-400 pt-8">
+        <div className="text-center text-xs text-gray-400 pt-2">
           <p>Version 2.0</p>
         </div>
       </motion.div>
