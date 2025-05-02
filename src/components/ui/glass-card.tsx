@@ -2,7 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { motion, MotionProps } from "framer-motion";
+import { motion, MotionProps, HTMLMotionProps } from "framer-motion";
 
 type GlassCardProps = React.ComponentPropsWithoutRef<typeof Card> & {
   animate?: boolean;
@@ -14,16 +14,28 @@ const GlassCard = React.forwardRef<
   HTMLDivElement,
   GlassCardProps
 >(({ className, animate = true, delay = 0, motionProps, ...props }, ref) => {
-  const Component = animate ? motion.div : "div";
+  if (animate) {
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: delay * 0.1 }}
+        {...motionProps as HTMLMotionProps<"div">}
+      >
+        <Card
+          className={cn(
+            "border-opacity-40 bg-opacity-60 backdrop-blur-sm shadow-md",
+            className
+          )}
+          {...props}
+        />
+      </motion.div>
+    );
+  }
   
   return (
-    <Component
-      ref={ref}
-      initial={animate ? { opacity: 0, y: 10 } : undefined}
-      animate={animate ? { opacity: 1, y: 0 } : undefined}
-      transition={animate ? { duration: 0.3, delay: delay * 0.1 } : undefined}
-      {...motionProps}
-    >
+    <div ref={ref}>
       <Card
         className={cn(
           "border-opacity-40 bg-opacity-60 backdrop-blur-sm shadow-md",
@@ -31,7 +43,7 @@ const GlassCard = React.forwardRef<
         )}
         {...props}
       />
-    </Component>
+    </div>
   );
 });
 GlassCard.displayName = "GlassCard";

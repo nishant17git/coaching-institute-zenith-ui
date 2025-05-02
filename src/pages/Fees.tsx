@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -414,14 +413,7 @@ export default function Fees() {
       fee_status: validFeeStatus
     };
     
-    paymentForm.reset({
-      student_id: typedStudent.id,
-      amount: typedStudent.total_fees - typedStudent.paid_fees,
-      date: format(new Date(), "yyyy-MM-dd"),
-      payment_mode: "Cash",
-      receipt_number: generateReceiptNumber(),
-      purpose: "Fee Payment"
-    });
+    // Instead of using paymentForm, we'll set the dialog state and pass the student data
     setIsAddPaymentDialogOpen(true);
   };
 
@@ -840,9 +832,3 @@ export default function Fees() {
               Record a new fee payment for a student.
             </DialogDescription>
           </DialogHeader>
-          <AddPaymentForm />
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
