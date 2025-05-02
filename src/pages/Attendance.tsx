@@ -30,7 +30,7 @@ useEffect(() => { const day = format(date, 'yyyy-MM-dd'); const filtered = stude
 
 const handleSave = () => { const payload = records.map((r) => ({ student_id: r.id, date: format(date, 'yyyy-MM-dd'), status: r.status, })); saveMutation.mutate(payload); };
 
-const markAll = (status: string) => { setRecords(records.map((r) => ({ ...r, status }))); };
+const markAll = (status: string) => { setRecords((prev) => prev.map((r) => ({ ...r, status }))); };
 
 return ( <motion.div className="space-y-6 p-4"> {/* Header Card /} <Card> <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center"> <div> <CardTitle>Attendance</CardTitle> <CardDescription>{format(date, 'EEEE, MMMM d')}</CardDescription> </div> <div className="flex gap-2"> <Popover> <PopoverTrigger asChild> <Button variant="outline"> <Icons.calendar className="mr-2 h-4 w-4" /> {format(date, 'MMM d, yyyy')} </Button> </PopoverTrigger> <PopoverContent align="end"> <Calendar mode="single" selected={date} onSelect={setDate} /> </PopoverContent> </Popover> <Dialog> <DialogTrigger asChild> <Button variant="outline"> <Icons.download className="mr-2 h-4 w-4" /> Export </Button> </DialogTrigger> <DialogContent> <DialogHeader> <DialogTitle>Confirm Export</DialogTitle> </DialogHeader> <DialogFooter> <Button onClick={() => { / export logic */ }}>Yes, Export</Button> <Button variant="ghost">Cancel</Button> </DialogFooter> </DialogContent> </Dialog> </div> </CardHeader> </Card>
 
@@ -96,9 +96,7 @@ return ( <motion.div className="space-y-6 p-4"> {/* Header Card /} <Card> <CardH
                     value={r.status}
                     onValueChange={(status) =>
                       setRecords((prev) =>
-                        prev.map((rec) =>
-                          rec.id === r.id ? { ...rec, status } : rec
-                        )
+                        prev.map((rec) => rec.id === r.id ? { ...rec, status } : rec)
                       )
                     }
                   >
@@ -121,10 +119,7 @@ return ( <motion.div className="space-y-6 p-4"> {/* Header Card /} <Card> <CardH
       )}
     </CardContent>
     <CardFooter className="flex justify-end">
-      <Button
-        onClick={handleSave}
-        disabled={saveMutation.isLoading}
-      >
+      <Button onClick={handleSave} disabled={saveMutation.isLoading}>
         {saveMutation.isLoading ? (
           <Icons.loader className="mr-2 h-4 w-4 animate-spin" />
         ) : (
