@@ -6,7 +6,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AppLayout } from "@/components/AppLayout";
-import { ThemeProvider } from "@/components/theme-provider";
+// import { ThemeProvider } from "@/components/theme-provider";
 import * as React from "react";
 
 // Pages
