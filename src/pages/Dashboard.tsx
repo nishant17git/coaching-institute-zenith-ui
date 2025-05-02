@@ -121,9 +121,9 @@ export default function Dashboard() {
     >
       <div className="flex items-center justify-between">
         <motion.div variants={item} className="flex flex-col">
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">INFINITY CLASSES</h1>
           <p className="text-muted-foreground">
-            Your academic institute management dashboard
+            Learn till eternity, with dignity in Infinity.
           </p>
         </motion.div>
         
