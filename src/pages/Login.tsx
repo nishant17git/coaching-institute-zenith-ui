@@ -64,7 +64,7 @@ export default function Login() {
           </div>
           <div className="text-left">
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Infinity Classes
+              INFINITY CLASSES
             </h1>
             <p className="mt-1 text-sm text-gray-500">
               Learn till eternity, with dignity in Infinity.
