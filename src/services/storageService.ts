@@ -26,5 +26,6 @@ export const STORAGE_KEYS = {
   STUDENTS: 'infinity_classes_students',
   FEES: 'infinity_classes_fees',
   ATTENDANCE: 'infinity_classes_attendance',
-  SETTINGS: 'infinity_classes_settings'
+  SETTINGS: 'infinity_classes_settings',
+  THEME: 'infinity_classes_theme'
 };
