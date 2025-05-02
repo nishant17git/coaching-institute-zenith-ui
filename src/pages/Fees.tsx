@@ -190,7 +190,48 @@ export default function Fees() {
       setSortDirection("desc");
     }
   };
-  
+
+  // Export fees data as CSV
+  const exportFeeData = () => {
+    try {
+      // Create CSV content
+      let csvContent = "Student,Class,Date,Amount,Payment Mode,Receipt,Purpose\n";
+      
+      feeTransactions.forEach(transaction => {
+        const student = students.find(s => s.id === transaction.student_id);
+        if (student) {
+          const row = [
+            student.full_name,
+            `Class ${student.class}`,
+            new Date(transaction.date).toLocaleDateString(),
+            `₹${transaction.amount}`,
+            transaction.payment_mode,
+            transaction.receipt_number,
+            transaction.purpose || ""
+          ].map(item => `"${item}"`).join(",");
+          
+          csvContent += row + "\n";
+        }
+      });
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `fee_transactions_${format(new Date(), 'yyyyMMdd')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Fee data exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export fee data");
+    }
+  };
+
   const AddPaymentForm = () => {
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
@@ -361,48 +402,7 @@ export default function Fees() {
     );
   };
 
-  // Export fees data as CSV
-  const exportFeeData = () => {
-    try {
-      // Create CSV content
-      let csvContent = "Student,Class,Date,Amount,Payment Mode,Receipt,Purpose\n";
-      
-      feeTransactions.forEach(transaction => {
-        const student = students.find(s => s.id === transaction.student_id);
-        if (student) {
-          const row = [
-            student.full_name,
-            `Class ${student.class}`,
-            new Date(transaction.date).toLocaleDateString(),
-            `₹${transaction.amount}`,
-            transaction.payment_mode,
-            transaction.receipt_number,
-            transaction.purpose || ""
-          ].map(item => `"${item}"`).join(",");
-          
-          csvContent += row + "\n";
-        }
-      });
-      
-      // Create download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `fee_transactions_${format(new Date(), 'yyyyMMdd')}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Fee data exported successfully");
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Failed to export fee data");
-    }
-  };
-
-  // Update the button click handlers to use paymentForm instead of form
+  // Update the button click handlers
   const handlePayButtonClick = (student: any) => {
     // We need to ensure the student has the correct type for fee_status
     // Type assertion to fix the issue
@@ -413,7 +413,7 @@ export default function Fees() {
       fee_status: validFeeStatus
     };
     
-    // Instead of using paymentForm, we'll set the dialog state and pass the student data
+    // Instead of using paymentForm, we'll set the dialog state
     setIsAddPaymentDialogOpen(true);
   };
 
@@ -832,3 +832,9 @@ export default function Fees() {
               Record a new fee payment for a student.
             </DialogDescription>
           </DialogHeader>
+          <AddPaymentForm />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
