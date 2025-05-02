@@ -34,9 +34,9 @@ export function AttendanceSummary({ stats }: AttendanceSummaryProps) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3"
+      className="w-full"
     >
-      <motion.div variants={item}>
+      <motion.div variants={item} className="w-full">
         <Card className="bg-white/50 backdrop-blur-sm border shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 flex justify-between items-start">
             <div>
@@ -51,7 +51,7 @@ export function AttendanceSummary({ stats }: AttendanceSummaryProps) {
         </Card>
       </motion.div>
 
-      <motion.div variants={item}>
+      <motion.div variants={item} className="w-full mt-3">
         <Card className="bg-white/50 backdrop-blur-sm border shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 flex justify-between items-start">
             <div>
@@ -70,7 +70,7 @@ export function AttendanceSummary({ stats }: AttendanceSummaryProps) {
         </Card>
       </motion.div>
 
-      <motion.div variants={item}>
+      <motion.div variants={item} className="w-full mt-3">
         <Card className="bg-white/50 backdrop-blur-sm border shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 flex justify-between items-start">
             <div>
@@ -89,7 +89,7 @@ export function AttendanceSummary({ stats }: AttendanceSummaryProps) {
         </Card>
       </motion.div>
 
-      <motion.div variants={item}>
+      <motion.div variants={item} className="w-full mt-3">
         <Card className="bg-white/50 backdrop-blur-sm border shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 flex justify-between items-start">
             <div>

@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, User, Save } from "lucide-react";
-import { toast } from "sonner";
+import { Check, X, Clock, User, Save, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Student {
   id: string;
@@ -17,7 +17,7 @@ interface Student {
 interface ClassAttendanceTableProps {
   students: Student[];
   date: Date;
-  onStatusChange: (studentId: string, status: "Present" | "Absent" | "Leave") => void;
+  onStatusChange: (studentId: string, status: "Present" | "Absent" | "Leave" | "Holiday") => void;
   onSaveAttendance: () => void;
   isSaving: boolean;
 }
@@ -61,16 +61,14 @@ export function ClassAttendanceTable({
           <Badge variant="outline" className="bg-orange-50 border-orange-200 text-orange-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
             <Clock className="h-3 w-3 mr-1" /> Leave
           </Badge>
+          <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
+            <Calendar className="h-3 w-3 mr-1" /> Holiday
+          </Badge>
         </div>
         
-        <Button 
-          onClick={onSaveAttendance} 
-          className="bg-apple-green hover:bg-green-600 text-white px-3 whitespace-nowrap h-9 rounded-lg"
-          disabled={isSaving}
-        >
-          <Save className="h-4 w-4 mr-1.5" />
-          {isSaving ? "Saving..." : "Save Attendance"}
-        </Button>
+        <Badge variant="outline" className="bg-white border-gray-200 text-gray-900 px-2.5 py-1">
+          <time dateTime={format(date, 'yyyy-MM-dd')}>{format(date, 'MMM d, yyyy')}</time>
+        </Badge>
       </motion.div>
       
       {students.length > 0 ? (
@@ -113,9 +111,14 @@ export function ClassAttendanceTable({
                           "px-2 py-0.5 text-xs font-medium whitespace-nowrap",
                           student.status === "Present" ? "bg-green-50 text-green-700 border-green-200" :
                           student.status === "Absent" ? "bg-red-50 text-red-700 border-red-200" :
+                          student.status === "Holiday" ? "bg-blue-50 text-blue-700 border-blue-200" :
                           "bg-orange-50 text-orange-700 border-orange-200"
                         )}
                       >
+                        {student.status === "Present" && <Check className="h-3 w-3 mr-1 inline" />}
+                        {student.status === "Absent" && <X className="h-3 w-3 mr-1 inline" />}
+                        {student.status === "Leave" && <Clock className="h-3 w-3 mr-1 inline" />}
+                        {student.status === "Holiday" && <Calendar className="h-3 w-3 mr-1 inline" />}
                         {student.status}
                       </Badge>
                     </TableCell>
@@ -166,6 +169,22 @@ export function ClassAttendanceTable({
                             onClick={() => onStatusChange(student.id, "Leave")}
                           >
                             <Clock className="h-3 w-3 mr-1" /> Leave
+                          </Button>
+                        </motion.div>
+
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button 
+                            variant={student.status === "Holiday" ? "default" : "outline"} 
+                            size="sm"
+                            className={cn(
+                              "h-7 px-2.5 text-xs whitespace-nowrap rounded-lg transition-all",
+                              student.status === "Holiday" 
+                                ? "bg-blue-600 hover:bg-blue-700 shadow-sm" 
+                                : "hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+                            )}
+                            onClick={() => onStatusChange(student.id, "Holiday")}
+                          >
+                            <Calendar className="h-3 w-3 mr-1" /> Holiday
                           </Button>
                         </motion.div>
                       </div>
