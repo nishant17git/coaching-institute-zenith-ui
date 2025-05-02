@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"; import { format } from "date-fns"; import { motion } from "framer-motion"; import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; import { supabase } from "@/integrations/supabase/client";
 
 // shadcn/ui 
-components import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter, } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"; import { Calendar } from "@/components/ui/calendar"; import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"; import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"; import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; import { Input } from "@/components/ui/input"; import { Icons } from "@/components/icons";
+components import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"; import { Calendar } from "@/components/ui/calendar"; import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"; import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"; import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; import { Input } from "@/components/ui/input"; import { Icons } from "@/components/icons";
 
 export default function AttendancePage() { const [date, setDate] = useState(new Date()); const [classFilter, setClassFilter] = useState<number>(10); const [search, setSearch] = useState(""); const [records, setRecords] = useState<any[]>([]);
 
@@ -96,9 +96,7 @@ return ( <motion.div className="space-y-6 p-4"> {/* Header Card /} <Card> <CardH
                   <Select
                     value={r.status}
                     onValueChange={(status) =>
-                      setRecords((prev) =>
-                        prev.map((rec) => rec.id === r.id ? { ...rec, status } : rec)
-                      )
+                      setRecords((prev) => prev.map((rec) => rec.id === r.id ? { ...rec, status } : rec))
                     }
                   >
                     <SelectTrigger>
@@ -106,9 +104,7 @@ return ( <motion.div className="space-y-6 p-4"> {/* Header Card /} <Card> <CardH
                     </SelectTrigger>
                     <SelectContent>
                       {['Present', 'Absent', 'Leave', 'Holiday'].map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
