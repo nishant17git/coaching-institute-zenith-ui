@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { FileText, BarChart2, Settings, CalendarDays } from "lucide-react";
@@ -14,83 +13,93 @@ export default function More() {
       }
     }
   };
-  
+
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
   };
 
   const menuItems = [
     {
       title: "Attendance",
       description: "Track student attendance records",
-      icon: <CalendarDays className="h-8 w-8 text-apple-purple" />,
+      icon: <CalendarDays className="h-8 w-8 text-indigo-500" />,
       path: "/attendance",
-      color: "bg-gradient-to-br from-apple-purple/10 to-apple-indigo/5"
+      color: "bg-gradient-to-br from-indigo-50 to-violet-50"
     },
     {
       title: "Tests",
       description: "Manage test scores and exams",
-      icon: <FileText className="h-8 w-8 text-apple-blue" />,
+      icon: <FileText className="h-8 w-8 text-blue-500" />,
       path: "/tests",
-      color: "bg-gradient-to-br from-apple-blue/10 to-apple-teal/5"
+      color: "bg-gradient-to-br from-blue-50 to-cyan-50"
     },
     {
       title: "Reports",
       description: "View performance analytics",
-      icon: <BarChart2 className="h-8 w-8 text-apple-green" />,
+      icon: <BarChart2 className="h-8 w-8 text-green-500" />,
       path: "/reports",
-      color: "bg-gradient-to-br from-apple-green/10 to-apple-teal/5"
+      color: "bg-gradient-to-br from-green-50 to-emerald-50"
     },
     {
       title: "Settings",
       description: "Configure application settings",
-      icon: <Settings className="h-8 w-8 text-apple-gray" />,
+      icon: <Settings className="h-8 w-8 text-gray-500" />,
       path: "/settings",
-      color: "bg-gradient-to-br from-apple-gray/10 to-apple-gray2/5"
+      color: "bg-gradient-to-br from-gray-50 to-slate-50"
     }
   ];
 
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
-      <div className="flex flex-col">
-        <h1 className="text-2xl font-semibold tracking-tight">More</h1>
-        <p className="text-muted-foreground">
-          Access additional features and settings
-        </p>
-      </div>
-
-      <motion.div 
+    <div className="max-w-5xl mx-auto px-4 py-10">
+      <motion.div
         variants={container}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        initial="hidden"
+        animate="show"
+        className="space-y-8"
       >
-        {menuItems.map((menuItem) => (
-          <motion.div key={menuItem.title} variants={item}>
-            <Link to={menuItem.path} className="block">
-              <Card className={`hover-lift overflow-hidden ${menuItem.color} border-none shadow-sm`}>
-                <div className="p-6 flex items-center gap-4">
-                  <div className="rounded-xl bg-white/80 p-3 shadow-sm">
-                    {menuItem.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-lg">{menuItem.title}</h3>
-                    <p className="text-sm text-muted-foreground">{menuItem.description}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
-      </motion.div>
+        <div className="flex flex-col text-center mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight">More</h1>
+          <p className="text-gray-500 mt-2 text-lg">
+            Access additional features and settings
+          </p>
+        </div>
 
-      <div className="text-center text-xs text-muted-foreground pt-4">
-        <p>Version 2.0</p>
-      </div>
-    </motion.div>
+        <motion.div 
+          variants={container}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {menuItems.map((menuItem) => (
+            <motion.div key={menuItem.title} variants={item}>
+              <Link to={menuItem.path} className="block">
+                <Card className={`hover:shadow-lg transition-all duration-300 overflow-hidden ${menuItem.color} border border-gray-100 rounded-2xl`}>
+                  <div className="p-8 flex items-center gap-6">
+                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                      {menuItem.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-xl text-gray-900">{menuItem.title}</h3>
+                      <p className="text-gray-500 mt-1">{menuItem.description}</p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="text-center text-sm text-gray-400 pt-8">
+          <p>Version 2.0</p>
+        </div>
+      </motion.div>
+    </div>
   );
 }
