@@ -10,17 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 
 "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
-DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 
 "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 
-"@/components/ui/card";
 import { useForm } from "react-hook-form";
-import { Pencil, Trash2, Plus, Search, Loader2, Users, Rows3, LayoutGrid } from 
-"lucide-react";
+import { Loader2, Plus, Search, Users, Rows3, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/ui/page-header";
 import { StudentCardView } from "@/components/ui/student-card-view";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 export default function Students() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,12 +30,12 @@ export default function Students() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<StudentRecord | 
-null>(null);
+  const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   
   // Fetch students data
   const { data: students = [], isLoading, isError } = useQuery({
@@ -44,13 +46,11 @@ null>(null);
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
-student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.roll_number.toString().includes(searchTerm);
                           
-student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.roll_number.toString().includes(searchTerm);
-                          
-    const matchesClass = selectedClass === "all" || student.class === 
-parseInt(selectedClass);
+    const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
     
     return matchesSearch && matchesClass;
   });
@@ -96,6 +96,16 @@ parseInt(selectedClass);
   // View student details
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
+  };
+  
+  const handleEditStudent = (student: StudentRecord) => {
+    setCurrentStudent(student);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleDeleteStudent = (student: StudentRecord) => {
+    setCurrentStudent(student);
+    setIsDeleteDialogOpen(true);
   };
   
   // Add student form
@@ -445,15 +455,22 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
   };
   
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Student
-        </Button>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader 
+        title="Students" 
+        action={
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Student
+          </Button>
+        }
+      />
       
-      <div className="flex flex-col sm:flex-row gap-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="flex flex-col sm:flex-row gap-4"
+      >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -490,43 +507,56 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
             </TabsList>
           </Tabs>
         </div>
-      </div>
+      </motion.div>
       
       {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingState />
       ) : isError ? (
-        <Card>
-          <CardContent className="py-12 text-center text-red-500">
-            Error loading students. Please try again later.
-          </CardContent>
-        </Card>
+        <EmptyState 
+          icon={<Users className="h-10 w-10 text-muted-foreground" />} 
+          title="Error loading students"
+          description="There was an error loading the student data. Please try again later."
+          action={
+            <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['students'] })}>
+              Try Again
+            </Button>
+          }
+        />
       ) : filteredStudents.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 flex flex-col items-center justify-center">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center">
-              No students found. {!searchTerm && selectedClass === "all" && "Add your first student by clicking the 'Add Student' button."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState 
+          icon={<Users className="h-10 w-10 text-muted-foreground" />}
+          title="No students found"
+          description={!searchTerm && selectedClass === "all" ? 
+            "Add your first student by clicking the 'Add Student' button." : 
+            "Try adjusting your search or filters to find what you're looking for."}
+          action={
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Student
+            </Button>
+          }
+        />
       ) : (
-        <Tabs value={viewMode}>
+        <Tabs value={viewMode} className="mt-2">
           <TabsContent value="grid" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredStudents.map((student) => (
+            <motion.div 
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            >
+              {filteredStudents.map((student, index) => (
                 <StudentCardView
                   key={student.id}
                   student={student}
+                  index={index}
                   onViewDetails={handleViewDetails}
+                  onEdit={handleEditStudent}
+                  onDelete={handleDeleteStudent}
                 />
               ))}
-            </div>
+            </motion.div>
           </TabsContent>
           
           <TabsContent value="table" className="mt-0">
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-hidden backdrop-blur-sm bg-card/60">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -540,8 +570,15 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
+                  {filteredStudents.map((student, index) => (
+                    <motion.tr
+                      key={student.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      onClick={() => handleViewDetails(student.id)}
+                      className="cursor-pointer hover:bg-muted/80"
+                    >
                       <TableCell>{student.roll_number}</TableCell>
                       <TableCell className="font-medium">{student.full_name}</TableCell>
                       <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
@@ -554,28 +591,28 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                         <div className="flex justify-end gap-2">
                           <Button 
                             variant="ghost" 
-                            size="icon"
-                            onClick={() => {
-                              setCurrentStudent(student);
-                              setIsEditDialogOpen(true);
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditStudent(student);
                             }}
                           >
-                            <Pencil className="h-4 w-4" />
+                            Edit
                           </Button>
                           <Button 
                             variant="ghost" 
-                            size="icon" 
+                            size="sm" 
                             className="text-red-500"
-                            onClick={() => {
-                              setCurrentStudent(student);
-                              setIsDeleteDialogOpen(true);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteStudent(student);
                             }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   ))}
                 </TableBody>
               </Table>
