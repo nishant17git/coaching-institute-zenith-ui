@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
-import { Settings as SettingsIcon, User, Bell, ShieldCheck, Trash2, Upload, Moon, Sun, Monitor } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { getStoredData, storeData, STORAGE_KEYS } from "@/services/storageService";
-import { ModeToggle } from "@/components/mode-toggle";
 
 interface InstituteSettings {
   instituteName: string;
@@ -65,7 +64,6 @@ const defaultSettings: AppSettings = {
 
 export default function Settings() {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
   
   // Load settings from local storage or use defaults
   const [settings, setSettings] = useState<AppSettings>(
@@ -79,11 +77,6 @@ export default function Settings() {
   useEffect(() => {
     storeData(STORAGE_KEYS.SETTINGS, settings);
   }, [settings]);
-
-  // Update theme when settings theme changes
-  useEffect(() => {
-    setTheme(settings.theme);
-  }, [settings.theme, setTheme]);
   
   const handleSaveInstitute = () => {
     storeData(STORAGE_KEYS.SETTINGS, settings);
@@ -98,12 +91,6 @@ export default function Settings() {
   const handleSaveExportSettings = () => {
     storeData(STORAGE_KEYS.SETTINGS, settings);
     toast.success("Export settings saved successfully!");
-  };
-
-  const handleSaveTheme = () => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-    setTheme(settings.theme);
-    toast.success("Theme settings saved successfully!");
   };
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +120,6 @@ export default function Settings() {
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <ModeToggle />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -179,13 +165,6 @@ export default function Settings() {
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Export Settings
-                </div>
-                <div 
-                  className={`${activeSection === "appearance" ? "bg-primary/10 text-primary" : "hover:bg-secondary"} p-3 flex items-center gap-3 cursor-pointer transition-colors`}
-                  onClick={() => setActiveSection("appearance")}
-                >
-                  <Moon className="h-4 w-4" />
-                  Appearance
                 </div>
               </nav>
             </CardContent>
@@ -491,59 +470,6 @@ export default function Settings() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSaveExportSettings}>Save Settings</Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {activeSection === "appearance" && (
-            <Card className="animate-fade-in">
-              <CardHeader>
-                <CardTitle>Appearance Settings</CardTitle>
-                <CardDescription>
-                  Configure your theme preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Theme</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div 
-                      className={`border p-4 rounded-lg flex flex-col items-center gap-2 cursor-pointer hover:bg-secondary transition-colors ${settings.theme === 'light' ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => setSettings(prev => ({ ...prev, theme: 'light' }))}
-                    >
-                      <div className="h-20 w-20 rounded-full bg-white border flex items-center justify-center">
-                        <Sun className="h-8 w-8 text-amber-500" />
-                      </div>
-                      <p className="font-medium">Light</p>
-                    </div>
-                    <div 
-                      className={`border p-4 rounded-lg flex flex-col items-center gap-2 cursor-pointer hover:bg-secondary transition-colors ${settings.theme === 'dark' ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => setSettings(prev => ({ ...prev, theme: 'dark' }))}
-                    >
-                      <div className="h-20 w-20 rounded-full bg-gray-800 border flex items-center justify-center">
-                        <Moon className="h-8 w-8 text-slate-300" />
-                      </div>
-                      <p className="font-medium">Dark</p>
-                    </div>
-                    <div 
-                      className={`border p-4 rounded-lg flex flex-col items-center gap-2 cursor-pointer hover:bg-secondary transition-colors ${settings.theme === 'system' ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => setSettings(prev => ({ ...prev, theme: 'system' }))}
-                    >
-                      <div className="h-20 w-20 rounded-full bg-gradient-to-r from-white to-gray-800 border flex items-center justify-center">
-                        <Monitor className="h-8 w-8 text-blue-500" />
-                      </div>
-                      <p className="font-medium">System</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {settings.theme === 'system' ? 
-                      'System theme will follow your device settings.' : 
-                      `${settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1)} theme will be used regardless of your system settings.`}
-                  </p>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSaveTheme}>Save Theme</Button>
               </CardFooter>
             </Card>
           )}
