@@ -59,16 +59,16 @@ export default function More() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="space-y-8"
+        className="space-y-6"
       >
-        <div className="flex flex-col text-center mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">More</h1>
-          <p className="text-gray-500 mt-2 text-lg">
+        <div className="flex flex-col mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">More</h1>
+          <p className="text-gray-500 text-sm">
             Access additional features and settings
           </p>
         </div>
