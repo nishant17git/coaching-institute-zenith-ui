@@ -1,0 +1,12 @@
+
+@font-face {
+  font-family: 'INDIA2023 Bold';
+  font-style: normal;
+  font-weight: normal;
+  src: local('INDIA2023 Bold'), url('/fonts/INDIA2023bold.woff') format('woff');
+}
+
+.infinity-title {
+  font-family: 'INDIA2023 Bold', system-ui, sans-serif;
+  letter-spacing: 0.05em;
+}

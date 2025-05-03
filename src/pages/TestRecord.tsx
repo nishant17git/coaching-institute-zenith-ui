@@ -1,263 +1,438 @@
 
-import { useState } from "react";
-import { useData } from "@/contexts/DataContext";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Loader2, FileSpreadsheet } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Filter, ArrowUpDown, Plus, Download, Calendar, FileText, Users, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { format } from "date-fns";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function TestRecord() {
-  const { students, isLoading } = useData();
-  const [selectedClass, setSelectedClass] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
+  const [classFilter, setClassFilter] = useState("all");
+  const [sortField, setSortField] = useState<"date" | "marks">("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const isMobile = useIsMobile();
   
-  // Sample test data - in a real app, this would come from the database
-  const testRecords = [
-    { id: 1, name: "Rahul Sharma", class: "Class 10", subject: "Mathematics", marks: 85, totalMarks: 100, date: "2023-09-15" },
-    { id: 2, name: "Priya Patel", class: "Class 11", subject: "Physics", marks: 78, totalMarks: 100, date: "2023-09-15" },
-    { id: 3, name: "Amit Singh", class: "Class 12", subject: "Chemistry", marks: 72, totalMarks: 100, date: "2023-09-15" },
-    { id: 4, name: "Neha Verma", class: "Class 9", subject: "English", marks: 95, totalMarks: 100, date: "2023-09-14" },
-    { id: 5, name: "Rohit Agarwal", class: "Class 12", subject: "Biology", marks: 88, totalMarks: 100, date: "2023-09-14" },
-    { id: 6, name: "Ananya Mehta", class: "Class 11", subject: "History", marks: 76, totalMarks: 100, date: "2023-09-14" },
-  ];
-  
-  // Filter test records based on search term and class
-  const filteredRecords = testRecords.filter(record => {
-    const matchesSearch = 
-      record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesClass = selectedClass === "all" || record.class === `Class ${selectedClass}`;
-    
-    return matchesSearch && matchesClass;
+  // Mock data for test records (replace with actual implementation using Supabase)
+  const { data: testRecords = [], isLoading: testsLoading } = useQuery({
+    queryKey: ['test_records'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('test_records')
+        .select('*');
+        
+      if (error) throw error;
+      return data || [];
+    }
   });
   
-  // Form for adding new test records
-  const AddTestRecordForm = () => {
-    const form = useForm({
-      defaultValues: {
-        student: "",
-        subject: "",
-        marks: "",
-        totalMarks: "100",
-        date: new Date().toISOString().split('T')[0],
+  const { data: students = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+  
+  // Generate some statistics
+  const subjects = Array.from(new Set(testRecords.map((record: any) => record.subject)));
+  const totalTests = testRecords.length;
+  const averageScore = testRecords.length > 0 
+    ? Math.round(testRecords.reduce((acc: number, record: any) => acc + record.marks, 0) / testRecords.length) 
+    : 0;
+
+  // Grade distribution
+  const gradeDistribution = [
+    { name: 'A (90-100%)', value: 0, color: '#22c55e' }, 
+    { name: 'B (75-89%)', value: 0, color: '#3b82f6' },
+    { name: 'C (60-74%)', value: 0, color: '#eab308' },
+    { name: 'D (40-59%)', value: 0, color: '#f97316' },
+    { name: 'F (0-39%)', value: 0, color: '#ef4444' }
+  ];
+  
+  testRecords.forEach((record: any) => {
+    const percent = (record.marks / record.total_marks) * 100;
+    if (percent >= 90) gradeDistribution[0].value++;
+    else if (percent >= 75) gradeDistribution[1].value++;
+    else if (percent >= 60) gradeDistribution[2].value++;
+    else if (percent >= 40) gradeDistribution[3].value++;
+    else gradeDistribution[4].value++;
+  });
+
+  // Subject performance
+  const subjectPerformance = subjects.map(subject => {
+    const subjectTests = testRecords.filter((record: any) => record.subject === subject);
+    const averagePercent = subjectTests.length > 0 
+      ? Math.round(
+          subjectTests.reduce((acc: number, record: any) => 
+            acc + (record.marks / record.total_marks) * 100, 0) / subjectTests.length
+        ) 
+      : 0;
+      
+    return {
+      name: subject,
+      score: averagePercent,
+      fill: `hsl(${Math.random() * 360}, 70%, 60%)`
+    };
+  });
+  
+  // Filter and sort test records
+  const filteredTests = testRecords
+    .filter((test: any) => {
+      const student = students.find(s => s.id === test.student_id);
+      const studentMatches = student?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+      const subjectMatches = subjectFilter === "all" || test.subject === subjectFilter;
+      const classMatches = classFilter === "all" || student?.class?.toString() === classFilter;
+      
+      return studentMatches && subjectMatches && classMatches;
+    })
+    .sort((a: any, b: any) => {
+      if (sortField === "date") {
+        const dateA = new Date(a.test_date).getTime();
+        const dateB = new Date(b.test_date).getTime();
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      } else {
+        // Sort by percentage score
+        const percentA = (a.marks / a.total_marks) * 100;
+        const percentB = (b.marks / b.total_marks) * 100;
+        return sortDirection === "asc" ? percentA - percentB : percentB - percentA;
       }
     });
     
-    const onSubmit = (data: any) => {
-      console.log("Adding test record:", data);
-      // In a real app, this would add the record to the database
-      setIsAddDialogOpen(false);
-    };
-    
-    return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="student"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Student</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map(student => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.name} ({student.class})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="subject"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subject</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mathematics">Mathematics</SelectItem>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Science">Science</SelectItem>
-                      <SelectItem value="Social Studies">Social Studies</SelectItem>
-                      <SelectItem value="Physics">Physics</SelectItem>
-                      <SelectItem value="Chemistry">Chemistry</SelectItem>
-                      <SelectItem value="Biology">Biology</SelectItem>
-                      <SelectItem value="Computer Science">Computer Science</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="marks"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marks Obtained</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} required min="0" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="totalMarks"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Marks</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} required min="1" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Test Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} required />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Add Record</Button>
-          </DialogFooter>
-        </form>
-      </Form>
-    );
+  // Toggle sort direction
+  const handleSort = (field: "date" | "marks") => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
   };
 
+  // Functions to get grade and color based on marks
+  const getGrade = (marks: number, totalMarks: number) => {
+    const percent = (marks / totalMarks) * 100;
+    if (percent >= 90) return { grade: 'A', color: 'bg-emerald-500' };
+    if (percent >= 75) return { grade: 'B', color: 'bg-blue-500' };
+    if (percent >= 60) return { grade: 'C', color: 'bg-yellow-500' };
+    if (percent >= 40) return { grade: 'D', color: 'bg-orange-500' };
+    return { grade: 'F', color: 'bg-red-500' };
+  };
+  
+  // Loading state
+  if (testsLoading || studentsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading test records...</p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Test Records</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Test
-        </Button>
-      </div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <EnhancedPageHeader 
+        title="Test Records" 
+        description="Track and manage student performance"
+        showBackButton
+        action={
+          <div className="flex gap-2">
+            <Button className="bg-green-500 hover:bg-green-600">
+              <Plus className="h-4 w-4 mr-2" /> Add Test
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
+          </div>
+        }
+      />
       
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by student name or subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Filter by class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-              <SelectItem key={cls} value={cls.toString()}>
-                Class {cls}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : filteredRecords.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 flex flex-col items-center justify-center">
-            <FileSpreadsheet className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center">
-              No test records found. {!searchTerm && selectedClass === "all" && "Add a new test record by clicking the 'Add Test' button."}
-            </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Total Tests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold">{totalTests}</div>
+            <p className="text-sm text-muted-foreground mt-1">Across all subjects and classes</p>
           </CardContent>
         </Card>
-      ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead className="hidden sm:table-cell">Class</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead className="text-right">Marks</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.name}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{record.class}</TableCell>
-                  <TableCell>{record.subject}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={
-                      (record.marks / record.totalMarks) >= 0.75 ? "text-apple-green" :
-                      (record.marks / record.totalMarks) >= 0.50 ? "text-apple-yellow" :
-                      "text-apple-red"
-                    }>
-                      {record.marks}/{record.totalMarks}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {new Date(record.date).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+        
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Average Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold">{averageScore}%</div>
+            <p className="text-sm text-muted-foreground mt-1">Overall student performance</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Subjects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold">{subjects.length}</div>
+            <p className="text-sm text-muted-foreground mt-1">Different subjects tested</p>
+          </CardContent>
+        </Card>
+      </div>
       
-      {/* Add Test Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Test Record</DialogTitle>
-            <DialogDescription>
-              Enter the test details for the student.
-            </DialogDescription>
-          </DialogHeader>
-          <AddTestRecordForm />
-        </DialogContent>
-      </Dialog>
-    </div>
+      <Tabs defaultValue="tests" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="tests">Test Records</TabsTrigger>
+          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="tests" className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search student name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Subjects</SelectItem>
+                  {subjects.map((subject: any) => (
+                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+                    <SelectItem key={cls} value={cls.toString()}>Class {cls}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {isMobile ? (
+              <AnimatePresence>
+                {filteredTests.map((test: any, index) => {
+                  const student = students.find(s => s.id === test.student_id);
+                  const { grade, color } = getGrade(test.marks, test.total_marks);
+                  
+                  return (
+                    <motion.div
+                      key={test.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <Card className="overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{student?.full_name || "Unknown Student"}</p>
+                              <p className="text-sm text-muted-foreground">Class {student?.class || "N/A"}</p>
+                            </div>
+                            <Badge className={color}>{grade}</Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Subject</p>
+                              <p>{test.subject}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Date</p>
+                              <p>{format(new Date(test.test_date), 'dd MMM yyyy')}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Test Name</p>
+                              <p>{test.test_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Score</p>
+                              <p className="font-medium">
+                                {test.marks}/{test.total_marks} ({Math.round((test.marks / test.total_marks) * 100)}%)
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            ) : (
+              <Card>
+                <div className="rounded-md overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>
+                          <div className="flex items-center cursor-pointer" onClick={() => handleSort("date")}>
+                            Date <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </div>
+                        </TableHead>
+                        <TableHead>Test Name</TableHead>
+                        <TableHead>
+                          <div className="flex items-center cursor-pointer" onClick={() => handleSort("marks")}>
+                            Score <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </div>
+                        </TableHead>
+                        <TableHead>Grade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <AnimatePresence>
+                        {filteredTests.map((test: any, index) => {
+                          const student = students.find(s => s.id === test.student_id);
+                          const { grade, color } = getGrade(test.marks, test.total_marks);
+                          const percent = Math.round((test.marks / test.total_marks) * 100);
+                          
+                          return (
+                            <motion.tr
+                              key={test.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.02 }}
+                            >
+                              <TableCell>
+                                <div className="font-medium">{student?.full_name || "Unknown"}</div>
+                                <div className="text-xs text-muted-foreground">Class {student?.class || "N/A"}</div>
+                              </TableCell>
+                              <TableCell>{test.subject}</TableCell>
+                              <TableCell>{format(new Date(test.test_date), 'dd MMM yyyy')}</TableCell>
+                              <TableCell>{test.test_name}</TableCell>
+                              <TableCell>
+                                <div className="font-medium">{test.marks}/{test.total_marks}</div>
+                                <div className="text-xs text-muted-foreground">{percent}%</div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={color}>{grade}</Badge>
+                              </TableCell>
+                            </motion.tr>
+                          );
+                        })}
+                      </AnimatePresence>
+                      
+                      {filteredTests.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            No test records found matching your search criteria
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle>Grade Distribution</CardTitle>
+                <CardDescription>Distribution of grades across all tests</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={gradeDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    >
+                      {gradeDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} tests`, 'Count']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle>Subject Performance</CardTitle>
+                <CardDescription>Average scores by subject</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={subjectPerformance}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} />
+                    <YAxis dataKey="name" type="category" width={100} />
+                    <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
+                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                      {subjectPerformance.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </motion.div>
   );
 }

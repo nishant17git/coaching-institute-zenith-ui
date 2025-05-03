@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -9,17 +10,13 @@ import { Users, GraduationCap, School, LogOut, Settings, Eye, ChevronRight, Aler
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from "@/components/ui/table";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { UserIcon } from "@/components/UserIcon";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -121,38 +118,15 @@ export default function Dashboard() {
     >
       <div className="flex items-center justify-between">
         <motion.div variants={item} className="flex flex-col">
-          <h1 className="text-2xl font-semibold tracking-tight">INFINITY CLASSES</h1>
+          <h1 className="text-2xl font-semibold tracking-tight infinity-title">INFINITY CLASSES</h1>
           <p className="text-muted-foreground">
             Learn till eternity, with dignity in Infinity.
           </p>
         </motion.div>
         
-        <Menubar className="border-none bg-transparent">
-          <MenubarMenu>
-            <MenubarTrigger className="font-medium hover:bg-accent/50 data-[state=open]:bg-accent focus:bg-accent">
-              {user?.email?.split('@')[0] || 'Admin'}
-            </MenubarTrigger>
-            <MenubarContent className="min-w-[200px] animate-in fade-in-80 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
-              <MenubarItem onClick={() => navigate("/dashboard")}>
-                <School className="mr-2 h-4 w-4" />
-                <span>Dashboard</span>
-              </MenubarItem>
-              <MenubarItem onClick={() => navigate("/reports")}>
-                <BarChart2 className="mr-2 h-4 w-4" />
-                <span>Reports</span>
-              </MenubarItem>
-              <MenubarItem onClick={() => navigate("/settings")}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-        </Menubar>
+        <UserIcon 
+          username={user?.email?.split('@')[0] || 'Admin'} 
+        />
       </div>
       
       <motion.div 

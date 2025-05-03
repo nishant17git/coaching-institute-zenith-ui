@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -63,7 +64,7 @@ export default function Login() {
             <span className="sr-only">Infinity Classes Logo</span>
           </div>
           <div className="text-left">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight infinity-title">
               INFINITY CLASSES
             </h1>
             <p className="mt-1 text-sm text-gray-500">
