@@ -562,194 +562,198 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Students</h1>
+        <EnhancedPageHeader 
+          title="Students" 
+        />
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, guardian or roll number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+      <div className="space-y-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex flex-col sm:flex-row gap-4"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, guardian or roll number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
+                  <SelectItem key={cls} value={cls.toString()}>
+                    Class {cls}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
+              <TabsList className="grid w-20 grid-cols-2">
+                <TabsTrigger value="grid" className="p-2">
+                  <LayoutGrid className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="table" className="p-2">
+                  <Rows3 className="h-4 w-4" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </motion.div>
+
+        {isLoading ? (
+          <LoadingState />
+        ) : isError ? (
+          <EmptyState 
+            icon={<Users className="h-10 w-10 text-muted-foreground" />} 
+            title="Error loading students"
+            description="There was an error loading the student data. Please try again later."
+            action={
+              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['students'] })}>
+                Try Again
+              </Button>
+            }
           />
-        </div>
+        ) : filteredStudents.length === 0 ? (
+          <EmptyState 
+            icon={<Users className="h-10 w-10 text-muted-foreground" />}
+            title="No students found"
+            description={!searchTerm && selectedClass === "all" ? 
+              "Add your first student by clicking the 'Add Student' button." : 
+              "Try adjusting your search or filters to find what you're looking for."}
+            action={
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Student
+              </Button>
+            }
+          />
+        ) : (
+          <Tabs value={viewMode} className="mt-2">
+            <TabsContent value="grid" className="mt-0">
+              <motion.div 
+                layout
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              >
+                {filteredStudents.map((student, index) => (
+                  <StudentCardView
+                    key={student.id}
+                    student={student}
+                    index={index}
+                    onViewDetails={handleViewDetails}
+                    onEdit={handleEditStudent}
+                    onDelete={handleDeleteStudent}
+                    onCall={handlePhoneCall}
+                    onWhatsApp={handleWhatsApp}
+                  />
+                ))}
+              </motion.div>
+            </TabsContent>
 
-        <div className="flex gap-2">
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-                <SelectItem key={cls} value={cls.toString()}>
-                  Class {cls}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
-            <TabsList className="grid w-20 grid-cols-2">
-              <TabsTrigger value="grid" className="p-2">
-                <LayoutGrid className="h-4 w-4" />
-              </TabsTrigger>
-              <TabsTrigger value="table" className="p-2">
-                <Rows3 className="h-4 w-4" />
-              </TabsTrigger>
-            </TabsList>
+            <TabsContent value="table" className="mt-0">
+              <div className="rounded-md border overflow-hidden backdrop-blur-sm bg-card/60">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Roll No</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Class</TableHead>
+                      <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
+                      <TableHead className="hidden lg:table-cell">Guardian</TableHead>
+                      <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map((student, index) => (
+                      <motion.tr
+                        key={student.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        onClick={() => handleViewDetails(student.id)}
+                        className="cursor-pointer hover:bg-muted/80"
+                      >
+                        <TableCell>{student.roll_number}</TableCell>
+                        <TableCell className="font-medium">{student.full_name}</TableCell>
+                        <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {new Date(student.date_of_birth).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 text-blue-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePhoneCall(student.contact_number);
+                              }}
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 text-green-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleWhatsApp(student.contact_number);
+                              }}
+                            >
+                              <MessageSquare className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditStudent(student);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteStudent(student);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
           </Tabs>
-        </div>
-      </motion.div>
-
-      {isLoading ? (
-        <LoadingState />
-      ) : isError ? (
-        <EmptyState 
-          icon={<Users className="h-10 w-10 text-muted-foreground" />} 
-          title="Error loading students"
-          description="There was an error loading the student data. Please try again later."
-          action={
-            <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['students'] })}>
-              Try Again
-            </Button>
-          }
-        />
-      ) : filteredStudents.length === 0 ? (
-        <EmptyState 
-          icon={<Users className="h-10 w-10 text-muted-foreground" />}
-          title="No students found"
-          description={!searchTerm && selectedClass === "all" ? 
-            "Add your first student by clicking the 'Add Student' button." : 
-            "Try adjusting your search or filters to find what you're looking for."}
-          action={
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Student
-            </Button>
-          }
-        />
-      ) : (
-        <Tabs value={viewMode} className="mt-2">
-          <TabsContent value="grid" className="mt-0">
-            <motion.div 
-              layout
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-            >
-              {filteredStudents.map((student, index) => (
-                <StudentCardView
-                  key={student.id}
-                  student={student}
-                  index={index}
-                  onViewDetails={handleViewDetails}
-                  onEdit={handleEditStudent}
-                  onDelete={handleDeleteStudent}
-                  onCall={handlePhoneCall}
-                  onWhatsApp={handleWhatsApp}
-                />
-              ))}
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="table" className="mt-0">
-            <div className="rounded-md border overflow-hidden backdrop-blur-sm bg-card/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">Roll No</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="hidden md:table-cell">Class</TableHead>
-                    <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
-                    <TableHead className="hidden lg:table-cell">Guardian</TableHead>
-                    <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStudents.map((student, index) => (
-                    <motion.tr
-                      key={student.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      onClick={() => handleViewDetails(student.id)}
-                      className="cursor-pointer hover:bg-muted/80"
-                    >
-                      <TableCell>{student.roll_number}</TableCell>
-                      <TableCell className="font-medium">{student.full_name}</TableCell>
-                      <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {new Date(student.date_of_birth).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 text-blue-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePhoneCall(student.contact_number);
-                            }}
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 text-green-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleWhatsApp(student.contact_number);
-                            }}
-                          >
-                            <MessageSquare className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditStudent(student);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteStudent(student);
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
-      )}
+        )}
+      </div>
 
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
