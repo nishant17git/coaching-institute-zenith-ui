@@ -39,6 +39,7 @@ export function EnhancedPageHeader({
         "flex flex-col space-y-4",
         className
       )}
+      {...props}
     >
       {breadcrumb && (
         <div className="text-sm text-muted-foreground">{breadcrumb}</div>

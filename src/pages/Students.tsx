@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -14,10 +15,10 @@ DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 
 "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Loader2, Plus, Search, Users, Rows3, LayoutGrid } from "lucide-react";
+import { Loader2, Plus, Search, Users, Rows3, LayoutGrid, Phone, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/ui/page-header";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { StudentCardView } from "@/components/ui/student-card-view";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -54,6 +55,17 @@ export default function Students() {
     
     return matchesSearch && matchesClass;
   });
+  
+  // Handle phone and WhatsApp actions
+  const handlePhoneCall = (phoneNumber: string) => {
+    window.open(`tel:${phoneNumber}`, "_blank");
+    toast.success(`Calling ${phoneNumber}`);
+  };
+
+  const handleWhatsApp = (phoneNumber: string) => {
+    window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}`, "_blank");
+    toast.success(`Opening WhatsApp for ${phoneNumber}`);
+  };
   
   // Mutations for CRUD operations
   const createStudentMutation = useMutation({
@@ -107,6 +119,21 @@ export default function Students() {
     setCurrentStudent(student);
     setIsDeleteDialogOpen(true);
   };
+
+  // Split guardian name into father and mother names
+  const extractParentNames = (guardianName: string = "") => {
+    const parts = guardianName.split(' ');
+    if (parts.length >= 2) {
+      return {
+        fatherName: parts[0],
+        motherName: parts.slice(1).join(' ')
+      };
+    }
+    return {
+      fatherName: guardianName,
+      motherName: ''
+    };
+  };
   
   // Add student form
   const AddStudentForm = () => {
@@ -117,15 +144,21 @@ export default function Students() {
         roll_number: "",
         date_of_birth: "",
         address: "",
-        guardian_name: "",
-        contact_number: ""
+        father_name: "",
+        mother_name: "",
+        contact_number: "",
+        whatsapp_number: ""
       }
     });
     
     const onSubmit = (data: any) => {
+      // Combine father and mother names into guardian_name
+      const guardian_name = `${data.father_name} ${data.mother_name}`.trim();
+      
       createStudentMutation.mutate({
         ...data,
-        class: parseInt(data.class),
+        guardian_name,
+        class: parseInt(data.class.toString()),
         roll_number: parseInt(data.roll_number)
       });
     };
@@ -155,8 +188,9 @@ export default function Students() {
                 <FormItem>
                   <FormLabel>Class</FormLabel>
                   <Select 
-                    onValueChange={field.onChange} 
+                    onValueChange={(value) => field.onChange(parseInt(value))} 
                     defaultValue={field.value.toString()}
+                    value={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -225,33 +259,65 @@ export default function Students() {
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="guardian_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Guardian Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Guardian name" {...field} required />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="father_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Father's Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Father's name" {...field} required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="mother_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mother's Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Mother's name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
-          <FormField
-            control={form.control}
-            name="contact_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="Contact number" {...field} required />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="contact_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Contact number" {...field} required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="whatsapp_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="WhatsApp number (optional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <DialogFooter>
             <Button 
@@ -280,6 +346,8 @@ export default function Students() {
   
   // Edit student form
   const EditStudentForm = () => {
+    const { fatherName, motherName } = extractParentNames(currentStudent?.guardian_name);
+    
     const form = useForm({
       defaultValues: {
         full_name: currentStudent?.full_name || "",
@@ -288,19 +356,25 @@ export default function Students() {
         date_of_birth: currentStudent?.date_of_birth ? new 
 Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         address: currentStudent?.address || "",
-        guardian_name: currentStudent?.guardian_name || "",
-        contact_number: currentStudent?.contact_number || ""
+        father_name: fatherName || "",
+        mother_name: motherName || "",
+        contact_number: currentStudent?.contact_number || "",
+        whatsapp_number: currentStudent?.contact_number || ""
       }
     });
     
     const onSubmit = (data: any) => {
       if (!currentStudent) return;
       
+      // Combine father and mother names into guardian_name
+      const guardian_name = `${data.father_name} ${data.mother_name}`.trim();
+      
       updateStudentMutation.mutate({
         id: currentStudent.id,
         data: {
           ...data,
-          class: parseInt(data.class),
+          guardian_name,
+          class: parseInt(data.class.toString()),
           roll_number: parseInt(data.roll_number)
         }
       });
@@ -331,8 +405,8 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                 <FormItem>
                   <FormLabel>Class</FormLabel>
                   <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value.toString()}
+                    onValueChange={(value) => field.onChange(parseInt(value))} 
+                    value={field.value.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -401,33 +475,65 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="guardian_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Guardian Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Guardian name" {...field} required />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="father_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Father's Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Father's name" {...field} required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="mother_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mother's Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Mother's name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
-          <FormField
-            control={form.control}
-            name="contact_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="Contact number" {...field} required />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="contact_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Contact number" {...field} required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="whatsapp_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="WhatsApp number (optional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <DialogFooter>
             <Button 
@@ -456,7 +562,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
   
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
+      <EnhancedPageHeader 
         title="Students" 
         action={
           <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -550,6 +656,8 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                   onViewDetails={handleViewDetails}
                   onEdit={handleEditStudent}
                   onDelete={handleDeleteStudent}
+                  onCall={handlePhoneCall}
+                  onWhatsApp={handleWhatsApp}
                 />
               ))}
             </motion.div>
@@ -586,7 +694,32 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                         {new Date(student.date_of_birth).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{student.contact_number}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-blue-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePhoneCall(student.contact_number);
+                            }}
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-green-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWhatsApp(student.contact_number);
+                            }}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button 

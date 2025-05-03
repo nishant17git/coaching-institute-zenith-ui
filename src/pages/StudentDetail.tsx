@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { 
   ArrowLeft, 
   Phone, 
@@ -17,7 +19,9 @@ import {
   Edit3,
   Download,
   Trash2,
-  Plus
+  Plus,
+  User,
+  Users
 } from "lucide-react";
 import { 
   PieChart,
@@ -41,6 +45,7 @@ import {
   type AttendancePDFOptions,
   type FeeInvoicePDFOptions
 } from "@/services/pdfService";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Logo placeholder
 const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
@@ -70,6 +75,7 @@ export default function StudentDetail() {
   const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false);
   const [feeToEdit, setFeeToEdit] = useState<string | null>(null);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
   const handlePhoneCall = () => {
     if (!student?.phoneNumber) return;
@@ -136,15 +142,32 @@ export default function StudentDetail() {
     toast.success("Fee invoice exported successfully!");
   };
 
+  // Extract first and last name for father and mother from guardian name
+  const extractParentNames = (guardianName: string = "") => {
+    const parts = guardianName.split(' ');
+    if (parts.length >= 2) {
+      return {
+        fatherName: parts[0],
+        motherName: parts.slice(1).join(' ')
+      };
+    }
+    return {
+      fatherName: guardianName,
+      motherName: ''
+    };
+  };
+
+  const { fatherName, motherName } = student ? extractParentNames(student.guardian_name) : { fatherName: '', motherName: '' };
+
   const StudentEditForm = () => {
     const form = useForm({
       defaultValues: {
         name: student?.name || '',
         class: student?.class || '',
-        fatherName: student?.fatherName || '',
-        motherName: student?.motherName || '',
+        fatherName: fatherName || '',
+        motherName: motherName || '',
         phoneNumber: student?.phoneNumber || '',
-        whatsappNumber: student?.whatsappNumber || '',
+        whatsappNumber: student?.whatsappNumber || student?.phoneNumber || '',
         totalFees: student?.totalFees || 0,
       }
     });
@@ -154,7 +177,9 @@ export default function StudentDetail() {
       
       updateStudent(student.id, {
         ...data,
-        totalFees: Number(data.totalFees)
+        totalFees: Number(data.totalFees),
+        // Combine father and mother name for guardian_name
+        guardian_name: `${data.fatherName} ${data.motherName}`.trim(),
       });
       
       setIsEditDialogOpen(false);
@@ -169,7 +194,7 @@ export default function StudentDetail() {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>Full Name</FormLabel>
                 <FormControl>
                   <Input placeholder="Student name" {...field} />
                 </FormControl>
@@ -442,176 +467,236 @@ export default function StudentDetail() {
     );
   }
   
+  const getInitials = (name: string) => {
+    return name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
+  };
+  
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/students")}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">{student.name}'s Profile</h1>
-        </div>
-        
-        <div className="flex gap-2">
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex gap-2">
-                <Edit3 className="h-4 w-4" /> Edit
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Edit Student Information</DialogTitle>
-                <DialogDescription>
-                  Make changes to the student's profile here.
-                </DialogDescription>
-              </DialogHeader>
-              <StudentEditForm />
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={confirmDeleteDialogOpen} onOpenChange={setConfirmDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" className="flex gap-2">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirm Deletion</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this student? This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setConfirmDeleteDialogOpen(false)}>
-                  Cancel
+      <EnhancedPageHeader
+        title={`${student.name}'s Profile`}
+        showBackButton={true}
+        action={
+          <div className="flex gap-2">
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex gap-2">
+                  <Edit3 className="h-4 w-4" /> Edit
                 </Button>
-                <Button variant="destructive" onClick={handleDelete}>
-                  Delete Student
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Student Information</DialogTitle>
+                  <DialogDescription>
+                    Make changes to the student's profile here.
+                  </DialogDescription>
+                </DialogHeader>
+                <StudentEditForm />
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={confirmDeleteDialogOpen} onOpenChange={setConfirmDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="flex gap-2">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Deletion</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this student? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setConfirmDeleteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" onClick={handleDelete}>
+                    Delete Student
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+      />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="glass-card md:col-span-1 animate-fade-in">
-          <CardHeader>
-            <CardTitle>Student Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Class</span>
-              <Badge variant="outline">{student.class}</Badge>
-            </div>
+      <Card className="glass-card mb-6 overflow-hidden">
+        <CardContent className="p-0">
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center md:items-start">
+            <Avatar className="h-24 w-24 shadow-lg border-4 border-white/90">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
+                {getInitials(student.name)}
+              </AvatarFallback>
+            </Avatar>
             
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">Father's Name</div>
-              <div>{student.fatherName}</div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">Mother's Name</div>
-              <div>{student.motherName}</div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <Phone className="h-4 w-4" /> Contact
-              </div>
-              <div className="flex items-center gap-4 mt-2">
-                <Button variant="outline" size="sm" className="flex gap-2" onClick={handlePhoneCall}>
-                  <Phone className="h-4 w-4 text-apple-blue" />
-                  Call
-                </Button>
-                <Button variant="outline" size="sm" className="flex gap-2" onClick={handleWhatsApp}>
-                  <MessageSquare className="h-4 w-4 text-apple-green" />
-                  WhatsApp
-                </Button>
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-2xl font-bold mb-1">{student.name}</h2>
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                <Badge variant="outline" className="bg-white/40">{student.class}</Badge>
+                <Badge variant="outline" className={cn(
+                  "bg-white/40",
+                  student.feeStatus === "Paid" ? "text-green-600 border-green-600/30" : 
+                  student.feeStatus === "Partial" ? "text-orange-600 border-orange-600/30" : 
+                  "text-red-600 border-red-600/30"
+                )}>
+                  {student.feeStatus}
+                </Badge>
               </div>
             </div>
             
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" /> Joined On
-              </div>
-              <div>{new Date(student.joinDate).toLocaleDateString()}</div>
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm" className="bg-white/80 flex items-center gap-1.5" onClick={handlePhoneCall}>
+                <Phone className="h-3.5 w-3.5 text-blue-600" /> Call
+              </Button>
+              <Button variant="outline" size="sm" className="bg-white/80 flex items-center gap-1.5" onClick={handleWhatsApp}>
+                <MessageSquare className="h-3.5 w-3.5 text-green-600" /> WhatsApp
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="glass-card md:col-span-2">
-          <CardHeader className="pb-2">
-            <Tabs defaultValue="fees">
-              <TabsList>
-                <TabsTrigger value="fees">Fees</TabsTrigger>
-                <TabsTrigger value="attendance">Attendance</TabsTrigger>
-              </TabsList>
+          </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 md:px-6">
+            <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-6">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="fees">Fees</TabsTrigger>
+              <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="profile" className="pb-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-4 w-4" /> Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Roll Number</p>
+                        <p className="font-medium">{student.roll_number || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date of Birth</p>
+                        <p className="font-medium">{new Date(student.date_of_birth).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground">Address</p>
+                      <p className="font-medium">{student.address || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground">Joined On</p>
+                      <p className="font-medium">{new Date(student.joinDate).toLocaleDateString()}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-4 w-4" /> Family Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Father's Name</p>
+                      <p className="font-medium">{fatherName || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground">Mother's Name</p>
+                      <p className="font-medium">{motherName || 'N/A'}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="font-medium">{student.phoneNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">WhatsApp</p>
+                        <p className="font-medium">{student.whatsappNumber || student.phoneNumber || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="fees" className="space-y-4 pb-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Fee Summary</h3>
+                <Dialog open={isAddFeeDialogOpen} onOpenChange={(open) => {
+                  setIsAddFeeDialogOpen(open);
+                  if (!open) setFeeToEdit(null);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="h-4 w-4 mr-2" /> Add Fee
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{feeToEdit ? 'Edit' : 'Add'} Fee Transaction</DialogTitle>
+                      <DialogDescription>
+                        {feeToEdit 
+                          ? 'Make changes to the fee transaction.' 
+                          : 'Add a new fee transaction for this student.'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <FeeTransactionForm />
+                  </DialogContent>
+                </Dialog>
+              </div>
               
-              <TabsContent value="fees" className="space-y-4 mt-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium">Fee Summary</h3>
-                  <Dialog open={isAddFeeDialogOpen} onOpenChange={(open) => {
-                    setIsAddFeeDialogOpen(open);
-                    if (!open) setFeeToEdit(null);
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="bg-apple-blue hover:bg-blue-600">
-                        <Plus className="h-4 w-4 mr-2" /> Add Fee
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{feeToEdit ? 'Edit' : 'Add'} Fee Transaction</DialogTitle>
-                        <DialogDescription>
-                          {feeToEdit 
-                            ? 'Make changes to the fee transaction.' 
-                            : 'Add a new fee transaction for this student.'}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <FeeTransactionForm />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-semibold text-apple-green">
-                        ₹{student.paidFees.toLocaleString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Fee Transactions</h3>
-                  <div className="space-y-3">
-                    {studentFees.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No fee transactions found
-                      </div>
-                    ) : (
-                      studentFees.map((fee) => (
-                        <div key={fee.id} className="flex items-center justify-between p-3 border rounded-lg hover-scale transition-all">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-semibold text-green-600">
+                      ₹{student.paidFees.toLocaleString()}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm text-muted-foreground">Due Fees</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-semibold text-amber-600">
+                      ₹{(student.totalFees - student.paidFees).toLocaleString()}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-lg">Fee Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {studentFees.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No fee transactions found
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {studentFees.map((fee) => (
+                        <div key={fee.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
                           <div>
                             <div className="font-medium">{fee.purpose}</div>
                             <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -650,107 +735,120 @@ export default function StudentDetail() {
                             </div>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="attendance" className="space-y-4 pb-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Attendance</h3>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleExportAttendance}
+                  className="flex gap-1 items-center"
+                >
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </div>
               
-              <TabsContent value="attendance" className="space-y-4 mt-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium">Attendance Summary</h3>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={handleExportAttendance}
-                    className="flex gap-1 items-center"
-                  >
-                    <Download className="h-4 w-4" /> Export
-                  </Button>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Card>
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-lg">Attendance Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center h-[250px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart className="animate-scale-in">
+                          <Pie
+                            data={attendanceData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {attendanceData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`${value} days`, ``]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
                 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <h3 className="text-sm font-medium mb-4">Attendance Summary</h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <PieChart className="animate-scale-in">
-                        <Pie
-                          data={attendanceData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={30}
-                          outerRadius={60}
-                          dataKey="value"
-                          label={({ name }) => name}
-                        >
-                          {attendanceData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value} days`, ``]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium mb-4">Monthly Trend</h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="percentage" 
-                          stroke="#0A84FF" 
-                          animationDuration={1500}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Recent Attendance</h3>
-                  <div className="space-y-2">
-                    {studentAttendance.slice(0, 10).map((record) => (
-                      <div 
-                        key={record.id} 
-                        className="flex items-center justify-between p-3 border rounded-lg hover-scale transition-all"
+                <Card>
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-lg">Monthly Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="h-[250px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="percentage" 
+                            stroke="#0A84FF" 
+                            animationDuration={1500}
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-lg">Recent Attendance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {studentAttendance.slice(0, 10).map((record) => (
+                    <div 
+                      key={record.id} 
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        <div>{new Date(record.date).toLocaleDateString()}</div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          record.status === "Present" ? "border-green-500 text-green-500" :
+                          record.status === "Absent" ? "border-red-500 text-red-500" :
+                          record.status === "Leave" ? "border-orange-500 text-orange-500" :
+                          "border-gray-500 text-gray-500"
+                        }
                       >
-                        <div className="flex items-center gap-3">
-                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                          <div>{new Date(record.date).toLocaleDateString()}</div>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={
-                            record.status === "Present" ? "border-apple-green text-apple-green" :
-                            record.status === "Absent" ? "border-apple-red text-apple-red" :
-                            record.status === "Leave" ? "border-apple-orange text-apple-orange" :
-                            "border-apple-gray text-apple-gray"
-                          }
-                        >
-                          {record.status}
-                        </Badge>
-                      </div>
-                    ))}
-                    
-                    {studentAttendance.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No attendance records found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            {/* Content moved inside TabsContent components above */}
-          </CardContent>
-        </Card>
-      </div>
+                        {record.status}
+                      </Badge>
+                    </div>
+                  ))}
+                  
+                  {studentAttendance.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No attendance records found
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -9,4 +9,12 @@
 .infinity-title {
   font-family: 'INDIA2023 Bold', system-ui, sans-serif;
   letter-spacing: 0.05em;
+  font-size: 1.75rem; /* Slightly reduced from 2rem */
+}
+
+/* Responsive adjustments for the font size */
+@media (max-width: 640px) {
+  .infinity-title {
+    font-size: 1.5rem;
+  }
 }
