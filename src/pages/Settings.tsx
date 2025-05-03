@@ -238,7 +238,7 @@ export default function Settings() {
   };
 
   // Get user profile image and name safely
-  const userImage = user?.image || undefined;
+  // Updated to use the correct properties from ExtendedUser
   const userName = user?.name || "Admin User";
   const userEmail = user?.email || "admin@example.com";
   
@@ -261,13 +261,9 @@ export default function Settings() {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
-                  {userImage ? (
-                    <AvatarImage src={userImage} alt={userName} />
-                  ) : (
-                    <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
-                      {userName.charAt(0) || "A"}
-                    </AvatarFallback>
-                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
+                    {userName.charAt(0) || "A"}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{userName}</p>
@@ -520,13 +516,9 @@ export default function Settings() {
                   <CardContent className="space-y-6">
                     <div className="flex flex-col items-center mb-8">
                       <Avatar className="h-24 w-24 mb-4">
-                        {userImage ? (
-                          <AvatarImage src={userImage} alt={userName} />
-                        ) : (
-                          <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
-                            {userName.charAt(0) || "A"}
-                          </AvatarFallback>
-                        )}
+                        <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
+                          {userName.charAt(0) || "A"}
+                        </AvatarFallback>
                       </Avatar>
                       <Label 
                         htmlFor="avatar-upload" 
