@@ -46,6 +46,7 @@ import {
   type FeeInvoicePDFOptions
 } from "@/services/pdfService";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 // Logo placeholder
 const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
@@ -142,22 +143,16 @@ export default function StudentDetail() {
     toast.success("Fee invoice exported successfully!");
   };
 
-  // Extract first and last name for father and mother from guardian name
-  const extractParentNames = (guardianName: string = "") => {
-    const parts = guardianName.split(' ');
-    if (parts.length >= 2) {
-      return {
-        fatherName: parts[0],
-        motherName: parts.slice(1).join(' ')
-      };
-    }
+  // Extract first and last name for father and mother from fatherName and motherName fields
+  const extractParentNames = () => {
+    if (!student) return { fatherName: '', motherName: '' };
     return {
-      fatherName: guardianName,
-      motherName: ''
+      fatherName: student.fatherName || '',
+      motherName: student.motherName || ''
     };
   };
 
-  const { fatherName, motherName } = student ? extractParentNames(student.guardian_name) : { fatherName: '', motherName: '' };
+  const { fatherName, motherName } = extractParentNames();
 
   const StudentEditForm = () => {
     const form = useForm({
@@ -178,8 +173,6 @@ export default function StudentDetail() {
       updateStudent(student.id, {
         ...data,
         totalFees: Number(data.totalFees),
-        // Combine father and mother name for guardian_name
-        guardian_name: `${data.fatherName} ${data.motherName}`.trim(),
       });
       
       setIsEditDialogOpen(false);
@@ -572,17 +565,6 @@ export default function StudentDetail() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Roll Number</p>
-                        <p className="font-medium">{student.roll_number || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Date of Birth</p>
-                        <p className="font-medium">{new Date(student.date_of_birth).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    
                     <div>
                       <p className="text-sm text-muted-foreground">Address</p>
                       <p className="font-medium">{student.address || 'N/A'}</p>
