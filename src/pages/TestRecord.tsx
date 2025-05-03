@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +26,17 @@ import {
   Cell,
 } from "recharts";
 
+// Define mock test records data structure
+interface TestRecord {
+  id: string;
+  student_id: string;
+  subject: string;
+  test_date: string;
+  test_name: string;
+  marks: number;
+  total_marks: number;
+}
+
 export default function TestRecord() {
   const [searchQuery, setSearchQuery] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
@@ -35,16 +45,73 @@ export default function TestRecord() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const isMobile = useIsMobile();
   
-  // Mock data for test records (replace with actual implementation using Supabase)
+  // Mock data for test records (replace with actual implementation using Supabase when the table exists)
   const { data: testRecords = [], isLoading: testsLoading } = useQuery({
-    queryKey: ['test_records'],
+    queryKey: ['test_records_mock'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('test_records')
-        .select('*');
-        
-      if (error) throw error;
-      return data || [];
+      // In a real implementation, this would fetch from the test_records table
+      // Since the table doesn't exist yet, we're using mock data
+      // You'll need to create this table first
+      
+      // Attempt to get data from localStorage first (for persistence between page loads)
+      const storedTestRecords = localStorage.getItem('mockTestRecords');
+      if (storedTestRecords) {
+        return JSON.parse(storedTestRecords);
+      }
+      
+      // Generate mock data
+      const mockData: TestRecord[] = [
+        {
+          id: "1",
+          student_id: "1",
+          subject: "Mathematics",
+          test_date: "2024-04-15",
+          test_name: "Algebra Quiz",
+          marks: 42,
+          total_marks: 50
+        },
+        {
+          id: "2",
+          student_id: "2",
+          subject: "Physics",
+          test_date: "2024-04-10",
+          test_name: "Mechanics Test",
+          marks: 35,
+          total_marks: 40
+        },
+        {
+          id: "3",
+          student_id: "3",
+          subject: "Chemistry",
+          test_date: "2024-04-05",
+          test_name: "Periodic Table Quiz",
+          marks: 28,
+          total_marks: 30
+        },
+        {
+          id: "4",
+          student_id: "1",
+          subject: "English",
+          test_date: "2024-04-01",
+          test_name: "Grammar Test",
+          marks: 38,
+          total_marks: 50
+        },
+        {
+          id: "5",
+          student_id: "4",
+          subject: "Mathematics",
+          test_date: "2024-04-12",
+          test_name: "Geometry Quiz",
+          marks: 18,
+          total_marks: 30
+        },
+      ];
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('mockTestRecords', JSON.stringify(mockData));
+      
+      return mockData;
     }
   });
   

@@ -20,13 +20,13 @@ import {
   Sun, 
   Laptop,
   Globe,
-  Languages,
-  Lock,
   Mail,
   Phone,
   Building,
   Palette,
-  FileText
+  FileText,
+  CreditCard as PaymentIcon,
+  Users as UsersIcon
 } from "lucide-react";
 import { getStoredData, storeData, STORAGE_KEYS } from "@/services/storageService";
 import { 
@@ -236,6 +236,11 @@ export default function Settings() {
       }
     }
   };
+
+  // Get user profile image and name safely
+  const userImage = user?.image || undefined;
+  const userName = user?.name || "Admin User";
+  const userEmail = user?.email || "admin@example.com";
   
   return (
     <div className="space-y-6">
@@ -256,17 +261,17 @@ export default function Settings() {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
-                  {user?.photoURL ? (
-                    <AvatarImage src={user.photoURL} alt={user?.name || "User"} />
+                  {userImage ? (
+                    <AvatarImage src={userImage} alt={userName} />
                   ) : (
                     <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
-                      {user?.name?.charAt(0) || "A"}
+                      {userName.charAt(0) || "A"}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 <div>
-                  <p className="font-medium">{user?.name || "Admin User"}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email || "admin@example.com"}</p>
+                  <p className="font-medium">{userName}</p>
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
                 </div>
               </div>
             </CardHeader>
@@ -515,11 +520,11 @@ export default function Settings() {
                   <CardContent className="space-y-6">
                     <div className="flex flex-col items-center mb-8">
                       <Avatar className="h-24 w-24 mb-4">
-                        {user?.photoURL ? (
-                          <AvatarImage src={user.photoURL} alt={user?.name || "User"} />
+                        {userImage ? (
+                          <AvatarImage src={userImage} alt={userName} />
                         ) : (
                           <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
-                            {user?.name?.charAt(0) || "A"}
+                            {userName.charAt(0) || "A"}
                           </AvatarFallback>
                         )}
                       </Avatar>
@@ -542,7 +547,7 @@ export default function Settings() {
                       <Label htmlFor="userName">Name</Label>
                       <Input
                         id="userName"
-                        value={user?.name || "Admin User"}
+                        value={userName}
                       />
                     </div>
                     
@@ -551,7 +556,7 @@ export default function Settings() {
                       <Input
                         id="userEmail"
                         type="email"
-                        value={user?.email || "admin@example.com"}
+                        value={userEmail}
                       />
                     </div>
 
@@ -592,7 +597,7 @@ export default function Settings() {
                           </p>
                         </div>
                         <Button variant="outline">
-                          <Lock className="h-4 w-4 mr-2" />
+                          <ShieldCheck className="h-4 w-4 mr-2" />
                           Setup 2FA
                         </Button>
                       </div>
@@ -672,7 +677,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-muted-foreground" />
+                            <PaymentIcon className="h-4 w-4 text-muted-foreground" />
                             <span>Fee Reminders</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -690,7 +695,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <UsersIcon className="h-4 w-4 text-muted-foreground" />
                             <span>Attendance Alerts</span>
                           </div>
                           <div className="text-sm text-muted-foreground">

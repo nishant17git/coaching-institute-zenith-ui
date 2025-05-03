@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
-interface EnhancedPageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+interface EnhancedPageHeaderProps {
   title: string;
   description?: string;
   showBackButton?: boolean;
   action?: React.ReactNode;
   breadcrumb?: React.ReactNode;
+  className?: string;
 }
 
 export function EnhancedPageHeader({
@@ -38,7 +39,6 @@ export function EnhancedPageHeader({
         "flex flex-col space-y-4",
         className
       )}
-      {...props}
     >
       {breadcrumb && (
         <div className="text-sm text-muted-foreground">{breadcrumb}</div>
