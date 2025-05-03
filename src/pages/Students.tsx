@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -33,29 +32,29 @@ export default function Students() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  
+
   // Fetch students data
   const { data: students = [], isLoading, isError } = useQuery({
     queryKey: ['students'],
     queryFn: studentService.getStudents
   });
-  
+
   // Filter students based on search term and class
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
       student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_number.toString().includes(searchTerm);
-                          
+
     const matchesClass = selectedClass === "all" || student.class === parseInt(selectedClass);
-    
+
     return matchesSearch && matchesClass;
   });
-  
+
   // Handle phone and WhatsApp actions
   const handlePhoneCall = (phoneNumber: string) => {
     window.open(`tel:${phoneNumber}`, "_blank");
@@ -66,7 +65,7 @@ export default function Students() {
     window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}`, "_blank");
     toast.success(`Opening WhatsApp for ${phoneNumber}`);
   };
-  
+
   // Mutations for CRUD operations
   const createStudentMutation = useMutation({
     mutationFn: studentService.createStudent,
@@ -79,7 +78,7 @@ export default function Students() {
       toast.error(error.message || "Failed to add student");
     }
   });
-  
+
   const updateStudentMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       studentService.updateStudent(id, data),
@@ -92,7 +91,7 @@ export default function Students() {
       toast.error(error.message || "Failed to update student");
     }
   });
-  
+
   const deleteStudentMutation = useMutation({
     mutationFn: studentService.deleteStudent,
     onSuccess: () => {
@@ -104,17 +103,17 @@ export default function Students() {
       toast.error(error.message || "Failed to delete student");
     }
   });
-  
+
   // View student details
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
-  
+
   const handleEditStudent = (student: StudentRecord) => {
     setCurrentStudent(student);
     setIsEditDialogOpen(true);
   };
-  
+
   const handleDeleteStudent = (student: StudentRecord) => {
     setCurrentStudent(student);
     setIsDeleteDialogOpen(true);
@@ -134,7 +133,7 @@ export default function Students() {
       motherName: ''
     };
   };
-  
+
   // Add student form
   const AddStudentForm = () => {
     const form = useForm({
@@ -150,11 +149,11 @@ export default function Students() {
         whatsapp_number: ""
       }
     });
-    
+
     const onSubmit = (data: any) => {
       // Combine father and mother names into guardian_name
       const guardian_name = `${data.father_name} ${data.mother_name}`.trim();
-      
+
       createStudentMutation.mutate({
         ...data,
         guardian_name,
@@ -162,7 +161,7 @@ export default function Students() {
         roll_number: parseInt(data.roll_number)
       });
     };
-    
+
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -179,7 +178,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -209,7 +208,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="roll_number"
@@ -230,7 +229,7 @@ export default function Students() {
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -244,7 +243,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -258,7 +257,7 @@ export default function Students() {
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -273,7 +272,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="mother_name"
@@ -288,7 +287,7 @@ export default function Students() {
               )}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -303,7 +302,7 @@ export default function Students() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="whatsapp_number"
@@ -318,7 +317,7 @@ export default function Students() {
               )}
             />
           </div>
-          
+
           <DialogFooter>
             <Button 
               type="button" 
@@ -343,11 +342,11 @@ export default function Students() {
       </Form>
     );
   };
-  
+
   // Edit student form
   const EditStudentForm = () => {
     const { fatherName, motherName } = extractParentNames(currentStudent?.guardian_name);
-    
+
     const form = useForm({
       defaultValues: {
         full_name: currentStudent?.full_name || "",
@@ -362,13 +361,13 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         whatsapp_number: currentStudent?.contact_number || ""
       }
     });
-    
+
     const onSubmit = (data: any) => {
       if (!currentStudent) return;
-      
+
       // Combine father and mother names into guardian_name
       const guardian_name = `${data.father_name} ${data.mother_name}`.trim();
-      
+
       updateStudentMutation.mutate({
         id: currentStudent.id,
         data: {
@@ -379,7 +378,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         }
       });
     };
-    
+
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -396,7 +395,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -425,7 +424,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="roll_number"
@@ -446,7 +445,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="date_of_birth"
@@ -460,7 +459,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -474,7 +473,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -489,7 +488,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="mother_name"
@@ -504,7 +503,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               )}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -519,7 +518,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="whatsapp_number"
@@ -534,7 +533,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               )}
             />
           </div>
-          
+
           <DialogFooter>
             <Button 
               type="button" 
@@ -559,18 +558,16 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
       </Form>
     );
   };
-  
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <EnhancedPageHeader 
-        title="Students" 
-        action={
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Student
-          </Button>
-        }
-      />
-      
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Students</h1>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Student
+        </Button>
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -586,7 +583,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex gap-2">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-full sm:w-[180px]">
@@ -601,7 +598,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               ))}
             </SelectContent>
           </Select>
-          
+
           <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "grid" | "table")}>
             <TabsList className="grid w-20 grid-cols-2">
               <TabsTrigger value="grid" className="p-2">
@@ -614,7 +611,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
           </Tabs>
         </div>
       </motion.div>
-      
+
       {isLoading ? (
         <LoadingState />
       ) : isError ? (
@@ -662,7 +659,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               ))}
             </motion.div>
           </TabsContent>
-          
+
           <TabsContent value="table" className="mt-0">
             <div className="rounded-md border overflow-hidden backdrop-blur-sm bg-card/60">
               <Table>
@@ -753,7 +750,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
           </TabsContent>
         </Tabs>
       )}
-      
+
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -766,7 +763,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
           <AddStudentForm />
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Student Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -779,7 +776,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
           {currentStudent && <EditStudentForm />}
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Student Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
