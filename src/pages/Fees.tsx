@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -13,18 +14,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from "@/components/ui/glass-card";
-import { PageHeader } from "@/components/ui/page-header";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Icons
-import { Search, ArrowUpDown, Download, Calendar, Plus, Loader2, Coins, Receipt, CreditCard } from "lucide-react";
+import { Search, ArrowUpDown, Download, Calendar, Plus, Loader2, Coins, Receipt, CreditCard, School, Users } from "lucide-react";
 
 export default function Fees() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,6 +34,7 @@ export default function Fees() {
   const [sortField, setSortField] = useState<"date" | "amount">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   // Generate receipt number (current date + random 4 digits)
@@ -232,11 +234,16 @@ export default function Fees() {
     }
   };
 
+  const handleAddPaymentForStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setIsAddPaymentDialogOpen(true);
+  };
+
   const AddPaymentForm = () => {
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
       defaultValues: {
-        student_id: "",
+        student_id: selectedStudentId || "",
         amount: 0,
         date: format(new Date(), "yyyy-MM-dd"),
         payment_mode: "Cash",
@@ -244,6 +251,13 @@ export default function Fees() {
         purpose: "Fee Payment"
       }
     });
+
+    // Reset form when dialog opens with selected student
+    React.useEffect(() => {
+      if (selectedStudentId) {
+        form.setValue('student_id', selectedStudentId);
+      }
+    }, [selectedStudentId, form]);
     
     // Get student by ID for showing due amount
     const selectedStudentId = form.watch("student_id");
@@ -284,7 +298,7 @@ export default function Fees() {
           />
           
           {selectedStudent && (
-            <div className="text-sm p-3 rounded-md bg-muted">
+            <div className="text-sm p-3 rounded-md bg-muted/50 border border-muted-foreground/10">
               <div className="grid grid-cols-2 gap-2">
                 <span>Total Fees:</span>
                 <span className="text-right font-medium">₹{selectedStudent.total_fees.toLocaleString()}</span>
@@ -312,42 +326,44 @@ export default function Fees() {
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} max={format(new Date(), "yyyy-MM-dd")} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="payment_mode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Mode</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Date</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select mode" />
-                    </SelectTrigger>
+                    <Input type="date" {...field} max={format(new Date(), "yyyy-MM-dd")} />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Online">Online</SelectItem>
-                    <SelectItem value="Cheque">Cheque</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="payment_mode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Mode</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select mode" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Online">Online</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <FormField
             control={form.control}
@@ -381,7 +397,10 @@ export default function Fees() {
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setIsAddPaymentDialogOpen(false)}
+              onClick={() => {
+                setIsAddPaymentDialogOpen(false);
+                setSelectedStudentId(null);
+              }}
             >
               Cancel
             </Button>
@@ -402,430 +421,282 @@ export default function Fees() {
     );
   };
 
-  // Update the button click handlers
-  const handlePayButtonClick = (student: any) => {
-    // We need to ensure the student has the correct type for fee_status
-    // Type assertion to fix the issue
-    const validFeeStatus = student.fee_status as "Paid" | "Pending" | "Partial";
-    
-    const typedStudent: StudentRecord = {
-      ...student,
-      fee_status: validFeeStatus
-    };
-    
-    // Instead of using paymentForm, we'll set the dialog state
-    setIsAddPaymentDialogOpen(true);
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
+      <EnhancedPageHeader 
         title="Fee Management" 
+        description="Manage student fees and payments"
         action={
           <div className="flex gap-2">
-            <Button onClick={() => setIsAddPaymentDialogOpen(true)} className="bg-apple-green hover:bg-green-600">
+            <Button onClick={() => setIsAddPaymentDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" /> Add Payment
             </Button>
-            <Button 
-              className="bg-apple-blue hover:bg-blue-600 text-white"
-              onClick={exportFeeData}
-            >
+            <Button variant="outline" onClick={exportFeeData}>
               <Download className="h-4 w-4 mr-2" /> Export
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { 
-            title: "Total Fees", 
-            value: `₹${totalFees.toLocaleString()}`,
-            icon: <Coins className="h-6 w-6 text-muted-foreground" />,
-            delay: 0,
-            color: "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900"
-          },
-          { 
-            title: "Collected", 
-            value: `₹${collectedFees.toLocaleString()}`,
-            icon: <Receipt className="h-6 w-6 text-apple-green" />,
-            delay: 1,
-            color: "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30"
-          },
-          { 
-            title: "Pending", 
-            value: `₹${pendingFees.toLocaleString()}`,
-            icon: <CreditCard className="h-6 w-6 text-apple-red" />,
-            delay: 2,
-            color: "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30"
-          },
-          { 
-            title: "Percentage Collected", 
-            value: `${percentageCollected}%`,
-            icon: null,
-            progressBar: true,
-            progress: percentageCollected,
-            delay: 3,
-            color: "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30"
-          }
-        ].map((card, index) => (
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <GlassCard className={`${card.color}`}>
-              <GlassCardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <GlassCardTitle className="text-sm text-muted-foreground">{card.title}</GlassCardTitle>
-                  {card.icon && card.icon}
-                </div>
-              </GlassCardHeader>
-              <GlassCardContent>
-                <div className="text-2xl font-semibold">{card.value}</div>
-                {card.progressBar && (
-                  <div className="mt-2">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                      <motion.div 
-                        className="bg-apple-green h-2.5 rounded-full" 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${card.progress}%` }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
-          </motion.div>
-        ))}
+      {/* Fee Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b-4 border-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+              <School className="h-4 w-4" /> Total Fees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{totalFees.toLocaleString()}</div>
+            <div className="text-sm text-muted-foreground">All students</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+              <Coins className="h-4 w-4" /> Collected Fees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{collectedFees.toLocaleString()}</div>
+            <div className="text-sm text-muted-foreground">{percentageCollected}% of total</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-b-4 border-amber-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+              <Receipt className="h-4 w-4" /> Pending Fees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{pendingFees.toLocaleString()}</div>
+            <div className="text-sm text-muted-foreground">{100 - percentageCollected}% remaining</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-b-4 border-purple-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
+              <Users className="h-4 w-4" /> Students
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{students.length}</div>
+            <div className="text-sm text-muted-foreground">
+              {students.filter(s => s.fee_status === "Paid").length} paid in full
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="transactions" className="space-y-4">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="transactions" className="flex-1 sm:flex-initial">Transactions</TabsTrigger>
-          <TabsTrigger value="pending" className="flex-1 sm:flex-initial">Pending Fees</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="transactions" className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search student name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={periodFilter} onValueChange={setPeriodFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="thisMonth">This Month</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
-                <SelectItem value="thisYear">This Year</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {transactionsLoading ? (
-            <LoadingState text="Loading transactions..." />
+      {/* Filters and Search */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search students..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-background/60 backdrop-blur-sm"
+          />
+        </div>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={periodFilter} onValueChange={setPeriodFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="thisMonth">This Month</SelectItem>
+            <SelectItem value="lastMonth">Last Month</SelectItem>
+            <SelectItem value="thisYear">This Year</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Transactions List */}
+      <Card className="shadow-sm border-muted">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Fee Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {transactionsLoading || studentsLoading ? (
+            <LoadingState />
           ) : filteredTransactions.length === 0 ? (
             <EmptyState 
-              icon={<Receipt className="h-10 w-10 text-muted-foreground" />}
-              title="No transactions found"
-              description="There are no fee transactions matching your search criteria."
-              action={
-                <Button onClick={() => setIsAddPaymentDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Payment
-                </Button>
-              }
+              icon={<Receipt className="h-10 w-10 text-muted-foreground" />} 
+              title="No transactions found" 
+              description="No fee transactions match your current filters." 
             />
           ) : (
-            <div className="space-y-4">
-              {/* Mobile view: cards */}
-              {isMobile ? (
-                <AnimatePresence>
-                  {filteredTransactions.map((transaction, index) => {
-                    const student = students.find(s => s.id === transaction.student_id);
-                    return (
-                      <motion.div
-                        key={transaction.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                      >
-                        <GlassCard>
-                          <GlassCardContent className="p-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-lg">{student?.full_name || "Unknown Student"}</p>
-                                <p className="text-sm text-muted-foreground">Class {student?.class || "N/A"}</p>
-                              </div>
-                              <Badge 
-                                variant={
-                                  transaction.payment_mode === "Cash" ? "outline" : 
-                                  transaction.payment_mode === "Online" ? "secondary" : 
-                                  "default"
-                                }
-                              >
-                                {transaction.payment_mode}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                              <div>
-                                <p className="text-xs text-muted-foreground">Date</p>
-                                <p>{new Date(transaction.date).toLocaleDateString()}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Amount</p>
-                                <p className="font-medium">₹{transaction.amount.toLocaleString()}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Receipt No.</p>
-                                <p className="text-sm">{transaction.receipt_number}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Purpose</p>
-                                <p className="text-sm">{transaction.purpose || "Fee Payment"}</p>
-                              </div>
-                            </div>
-                          </GlassCardContent>
-                        </GlassCard>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              ) : (
-                // Desktop view: table
-                <GlassCard>
-                  <div className="rounded-md overflow-hidden">
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 text-sm font-medium">
-                      <div>Student</div>
-                      <div 
-                        className="cursor-pointer flex items-center justify-start" 
+            <div className="overflow-hidden rounded-md border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Student</th>
+                      <th 
+                        className="px-4 py-3 text-left text-sm font-medium text-muted-foreground cursor-pointer"
                         onClick={() => handleSort("date")}
                       >
-                        Date
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                      <div 
-                        className="cursor-pointer flex items-center justify-start" 
+                        <div className="flex items-center gap-1">
+                          Date
+                          <ArrowUpDown className="h-3 w-3" />
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-sm font-medium text-muted-foreground cursor-pointer"
                         onClick={() => handleSort("amount")}
                       >
-                        Amount
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                      <div className="hidden md:block">Payment Mode</div>
-                    </div>
-                    <div className="divide-y">
-                      <AnimatePresence>
-                        {filteredTransactions.map((transaction, index) => {
-                          const student = students.find(s => s.id === transaction.student_id);
-                          return (
-                            <motion.div 
-                              key={transaction.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ duration: 0.3, delay: index * 0.03 }}
-                              className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-center hover:bg-muted/20"
-                            >
-                              <div>
-                                <div className="font-medium">{student?.full_name || "Unknown"}</div>
-                                <div className="text-sm text-muted-foreground">Class {student?.class || "N/A"}</div>
-                              </div>
-                              <div>{new Date(transaction.date).toLocaleDateString()}</div>
-                              <div className="font-medium">₹{transaction.amount.toLocaleString()}</div>
-                              <div className="hidden md:block">
-                                <Badge 
-                                  variant={
-                                    transaction.payment_mode === "Cash" ? "outline" : 
-                                    transaction.payment_mode === "Online" ? "secondary" : 
-                                    "default"
-                                  }
-                                >
-                                  {transaction.payment_mode}
-                                </Badge>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  Receipt: {transaction.receipt_number}
-                                </div>
-                              </div>
-                              <div className="block md:hidden mt-2">
-                                <Badge 
-                                  variant={
-                                    transaction.payment_mode === "Cash" ? "outline" : 
-                                    transaction.payment_mode === "Online" ? "secondary" : 
-                                    "default"
-                                  }
-                                >
-                                  {transaction.payment_mode}
-                                </Badge>
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  Receipt: {transaction.receipt_number}
-                                </span>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </GlassCard>
-              )}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="pending">
-          {studentsLoading ? (
-            <LoadingState text="Loading student data..." />
-          ) : (
-            <div className="space-y-4">
-              {/* Mobile view: cards */}
-              {isMobile ? (
-                <AnimatePresence>
-                  {students
-                    .filter(student => student.fee_status !== "Paid")
-                    .sort((a, b) => (b.total_fees - b.paid_fees) - (a.total_fees - a.paid_fees))
-                    .map((student, index) => (
-                      <motion.div
-                        key={student.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                      >
-                        <GlassCard>
-                          <GlassCardContent className="p-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-lg">{student.full_name}</p>
-                                <p className="text-sm text-muted-foreground">Class {student.class}</p>
-                              </div>
-                              <Badge 
-                                variant={student.fee_status === "Partial" ? "secondary" : "destructive"}
-                              >
-                                {student.fee_status}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-2 mt-4 mb-4">
-                              <div>
-                                <p className="text-xs text-muted-foreground">Total</p>
-                                <p>₹{student.total_fees.toLocaleString()}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Paid</p>
-                                <p className="text-apple-green">₹{student.paid_fees.toLocaleString()}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Pending</p>
-                                <p className="text-apple-red font-medium">₹{(student.total_fees - student.paid_fees).toLocaleString()}</p>
-                              </div>
-                            </div>
-                            
-                            <Button 
-                              className="w-full"
-                              onClick={() => handlePayButtonClick(student)}
-                            >
-                              <Plus className="h-4 w-4 mr-1" /> Pay Fees
-                            </Button>
-                          </GlassCardContent>
-                        </GlassCard>
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              ) : (
-                // Desktop view: card list
-                <GlassCard>
-                  <div className="rounded-md overflow-hidden">
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-5 text-sm font-medium">
-                      <div>Student</div>
-                      <div className="hidden sm:block">Total Fees</div>
-                      <div className="hidden sm:block">Paid</div>
-                      <div>Pending</div>
-                      <div className="hidden sm:block text-right">Actions</div>
-                    </div>
-                    <div className="divide-y">
-                      <AnimatePresence>
-                        {students
-                          .filter(student => student.fee_status !== "Paid")
-                          .sort((a, b) => (b.total_fees - b.paid_fees) - (a.total_fees - a.paid_fees))
-                          .map((student, index) => (
-                            <motion.div
-                              key={student.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ duration: 0.3, delay: index * 0.03 }}
-                              className="p-4 grid grid-cols-1 sm:grid-cols-5 gap-2 hover:bg-muted/20"
-                            >
-                              <div>
-                                <div className="font-medium">{student.full_name}</div>
-                                <div className="text-sm text-muted-foreground">Class {student.class}</div>
-                                <div className="sm:hidden grid grid-cols-3 gap-2 mt-2 text-sm">
-                                  <div>
-                                    <div className="text-muted-foreground">Total</div>
-                                    <div>₹{student.total_fees.toLocaleString()}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">Paid</div>
-                                    <div className="text-apple-green">₹{student.paid_fees.toLocaleString()}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">Pending</div>
-                                    <div className="text-apple-red font-medium">₹{(student.total_fees - student.paid_fees).toLocaleString()}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="hidden sm:block">₹{student.total_fees.toLocaleString()}</div>
-                              <div className="hidden sm:block text-apple-green">₹{student.paid_fees.toLocaleString()}</div>
-                              <div className="hidden sm:flex justify-between items-center">
-                                <span className="text-apple-red font-medium">₹{(student.total_fees - student.paid_fees).toLocaleString()}</span>
-                              </div>
-                              <div className="hidden sm:flex justify-end">
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handlePayButtonClick(student)}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" /> Pay
-                                </Button>
-                              </div>
-                              <div className="sm:hidden mt-2">
-                                <Button 
-                                  className="w-full"
-                                  onClick={() => handlePayButtonClick(student)}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" /> Pay Fees
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))}
-                      </AnimatePresence>
-                      {students.filter(student => student.fee_status !== "Paid").length === 0 && (
-                        <div className="p-4 text-center text-muted-foreground">
-                          No pending fees
+                        <div className="flex items-center gap-1">
+                          Amount
+                          <ArrowUpDown className="h-3 w-3" />
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </GlassCard>
-              )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Mode</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Receipt #</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((transaction) => {
+                      const student = students.find(s => s.id === transaction.student_id);
+                      
+                      return (
+                        <motion.tr 
+                          key={transaction.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="border-t hover:bg-muted/30"
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col">
+                              <span className="font-medium">{student?.full_name || 'Unknown'}</span>
+                              <span className="text-xs text-muted-foreground">Class {student?.class}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 font-medium">₹{transaction.amount.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={transaction.payment_mode === "Cash" ? "outline" : 
+                                          transaction.payment_mode === "Online" ? "secondary" : "default"}>
+                              {transaction.payment_mode}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm">{transaction.receipt_number}</td>
+                          <td className="px-4 py-3 text-sm">{transaction.purpose || '-'}</td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
-      
+        </CardContent>
+      </Card>
+
+      {/* Student Fee Status */}
+      <Card className="shadow-sm border-muted">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Student Fee Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {studentsLoading ? (
+            <LoadingState />
+          ) : students.length === 0 ? (
+            <EmptyState 
+              icon={<Users className="h-10 w-10 text-muted-foreground" />} 
+              title="No students found" 
+              description="No students have been added to the system yet." 
+            />
+          ) : (
+            <div className="overflow-hidden rounded-md border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Student</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Class</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Total Fees</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Paid</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Balance</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="px-4 py-3 text-sm font-medium text-muted-foreground">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students
+                      .filter(student => 
+                        student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        student.class.toString().includes(searchQuery)
+                      )
+                      .map((student) => {
+                        const balance = student.total_fees - student.paid_fees;
+                        const percentage = student.total_fees > 0 ? 
+                          Math.round((student.paid_fees / student.total_fees) * 100) : 0;
+                        
+                        return (
+                          <motion.tr 
+                            key={student.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="border-t hover:bg-muted/30"
+                          >
+                            <td className="px-4 py-3 font-medium">{student.full_name}</td>
+                            <td className="px-4 py-3">Class {student.class}</td>
+                            <td className="px-4 py-3">₹{student.total_fees.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-green-600 font-medium">₹{student.paid_fees.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-red-500 font-medium">₹{balance.toLocaleString()}</td>
+                            <td className="px-4 py-3">
+                              <Badge className={
+                                student.fee_status === "Paid" ? "bg-green-100 text-green-800 hover:bg-green-200" :
+                                student.fee_status === "Partial" ? "bg-amber-100 text-amber-800 hover:bg-amber-200" :
+                                "bg-red-100 text-red-800 hover:bg-red-200"
+                              }>
+                                {student.fee_status} {student.fee_status === "Partial" && `(${percentage}%)`}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                onClick={() => handleAddPaymentForStudent(student.id)}
+                              >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Payment
+                              </Button>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Add Payment Dialog */}
-      <Dialog open={isAddPaymentDialogOpen} onOpenChange={setIsAddPaymentDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <Dialog open={isAddPaymentDialogOpen} onOpenChange={(open) => {
+        setIsAddPaymentDialogOpen(open);
+        if (!open) setSelectedStudentId(null);
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add Fee Payment</DialogTitle>
             <DialogDescription>

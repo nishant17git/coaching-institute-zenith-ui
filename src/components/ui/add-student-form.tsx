@@ -15,22 +15,27 @@ interface AddStudentFormProps {
 export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentFormProps) {
   const { classes, addStudent } = useData();
 
-  const handleSubmit = (values: any) => {
-    // Generate a default student with required fields
-    const newStudentData = {
-      ...values,
-      paidFees: 0,
-      attendancePercentage: 100,
-      feeStatus: "Pending",
-      joinDate: new Date().toISOString().split('T')[0],
-    };
+  const handleSubmit = async (values: any) => {
+    try {
+      // Generate a default student with required fields
+      const newStudentData = {
+        ...values,
+        paidFees: 0,
+        attendancePercentage: 100,
+        feeStatus: "Pending",
+        joinDate: new Date().toISOString().split('T')[0],
+      };
 
-    addStudent(newStudentData);
-    onOpenChange(false);
-    toast.success("Student added successfully");
+      await addStudent(newStudentData);
+      onOpenChange(false);
+      toast.success("Student added successfully");
 
-    if (onSuccess) {
-      onSuccess();
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      toast.error("Failed to add student");
+      console.error(error);
     }
   };
 

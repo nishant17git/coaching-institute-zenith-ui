@@ -90,7 +90,7 @@ export type Database = {
       }
       students: {
         Row: {
-          aadhaar_number: string | null
+          aadhaar_number: number | null
           address: string | null
           attendance_percentage: number | null
           class: number
@@ -110,7 +110,7 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
-          aadhaar_number?: string | null
+          aadhaar_number?: number | null
           address?: string | null
           attendance_percentage?: number | null
           class: number
@@ -130,7 +130,7 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
-          aadhaar_number?: string | null
+          aadhaar_number?: number | null
           address?: string | null
           attendance_percentage?: number | null
           class?: number

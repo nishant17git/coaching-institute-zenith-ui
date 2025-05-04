@@ -10,7 +10,6 @@ import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { StudentForm } from "@/components/students/StudentForm";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft,
   Phone,
   MessageSquare,
   Clock,
@@ -54,10 +53,359 @@ import {
 } from "@/services/pdfService";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FeeTransactionForm } from "@/components/fees/FeeTransactionForm";
+import { motion } from "framer-motion";
 
 // Logo placeholder
 const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
 
+// Student Profile component to show personal information
+const StudentProfile = ({ student }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <User className="h-4 w-4" /> Personal Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Gender</p>
+            <p className="font-medium">{student.gender || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Date of Birth</p>
+            <p className="font-medium">
+              {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not specified'}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Aadhaar Number</p>
+          <p className="font-medium">{student.aadhaarNumber || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Address</p>
+          <p className="font-medium">{student.address || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Joined On</p>
+          <p className="font-medium">{new Date(student.joinDate).toLocaleDateString()}</p>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Users className="h-4 w-4" /> Family Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Father's Name</p>
+          <p className="font-medium">{student.fatherName || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Mother's Name</p>
+          <p className="font-medium">{student.motherName || 'Not provided'}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Phone</p>
+            <p className="font-medium">{student.phoneNumber || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">WhatsApp</p>
+            <p className="font-medium">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+// Education Details component
+const EducationDetails = ({ student }) => (
+  <Card>
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg">Education Details</CardTitle>
+    </CardHeader>
+    <CardContent className="grid md:grid-cols-3 gap-6">
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <GraduationCap className="h-4 w-4" /> Class
+        </div>
+        <p className="text-xl font-semibold">{student.class}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <Users className="h-4 w-4" /> Roll Number
+        </div>
+        <p className="text-xl font-semibold">{student.rollNumber || 'Not assigned'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <AtSign className="h-4 w-4" /> Attendance
+        </div>
+        <p className={cn(
+          "text-xl font-semibold",
+          student.attendancePercentage >= 80 ? "text-green-600" :
+            student.attendancePercentage >= 60 ? "text-orange-600" :
+              "text-red-600"
+        )}>
+          {student.attendancePercentage}%
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Contact Information component
+const ContactInformation = ({ student }) => (
+  <Card>
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg">Contact Information</CardTitle>
+    </CardHeader>
+    <CardContent className="grid md:grid-cols-3 gap-6">
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <PhoneIcon className="h-4 w-4" /> Phone Number
+        </div>
+        <p className="text-xl font-semibold">{student.phoneNumber || 'Not provided'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <MessageSquare className="h-4 w-4" /> WhatsApp
+        </div>
+        <p className="text-xl font-semibold">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <MapPin className="h-4 w-4" /> Address
+        </div>
+        <p className="text-xl font-semibold">{student.address || 'Not provided'}</p>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Fee Summary Cards
+const FeeSummaryCards = ({ student }) => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold text-green-600">
+          ₹{student.paidFees.toLocaleString()}
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Due Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold text-amber-600">
+          ₹{(student.totalFees - student.paidFees).toLocaleString()}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+// Fee Transaction List component
+const FeeTransactionList = ({ 
+  student, 
+  studentFees, 
+  handleExportInvoice, 
+  setFeeToEdit, 
+  setIsAddFeeDialogOpen 
+}) => (
+  <Card>
+    <CardHeader className="py-4">
+      <CardTitle className="text-lg">Fee Transactions</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {studentFees.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          No fee transactions found
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {studentFees.map((fee) => (
+            <motion.div
+              key={fee.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all"
+            >
+              <div>
+                <div className="font-medium">{fee.purpose}</div>
+                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                  <CreditCard className="h-3 w-3" /> {fee.paymentMode || 'Pending'}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(fee.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {fee.paymentMode && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleExportInvoice(fee)}
+                      className="h-8 w-8"
+                    >
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setFeeToEdit(fee.id);
+                      setIsAddFeeDialogOpen(true);
+                    }}
+                    className="h-8 w-8"
+                  >
+                    <Edit3 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// Attendance Charts component
+const AttendanceCharts = ({ attendanceData, calculateMonthlyAttendance }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <Card>
+      <CardHeader className="py-4">
+        <CardTitle className="text-lg">Attendance Summary</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-center h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart className="animate-scale-in">
+              <Pie
+                data={attendanceData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              >
+                {attendanceData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={["#30D158", "#FF453A", "#FF9F0A"][index % 3]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [`${value} days`, ``]} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="py-4">
+        <CardTitle className="text-lg">Monthly Trend</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+              <Line
+                type="monotone"
+                dataKey="percentage"
+                stroke="#0A84FF"
+                animationDuration={1500}
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+// Recent Attendance List component
+const RecentAttendanceList = ({ studentAttendance }) => (
+  <Card>
+    <CardHeader className="py-4">
+      <CardTitle className="text-lg">Recent Attendance</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-2">
+      {studentAttendance.slice(0, 10).map((record) => (
+        <motion.div
+          key={record.id}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <div>{new Date(record.date).toLocaleDateString()}</div>
+          </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              record.status === "Present" ? "border-green-500 text-green-500" :
+                record.status === "Absent" ? "border-red-500 text-red-500" :
+                  record.status === "Leave" ? "border-orange-500 text-orange-500" :
+                    "border-gray-500 text-gray-500"
+            )}
+          >
+            {record.status}
+          </Badge>
+        </motion.div>
+      ))}
+
+      {studentAttendance.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No attendance records found
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// Main StudentDetail component
 export default function StudentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -103,8 +451,6 @@ export default function StudentDetail() {
     { name: "Absent", value: studentAttendance.filter((r) => r.status === "Absent").length },
     { name: "Leave", value: studentAttendance.filter((r) => r.status === "Leave").length },
   ];
-
-  const COLORS = ["#30D158", "#FF453A", "#FF9F0A"];
 
   const calculateMonthlyAttendance = () => {
     if (!student) return [];
@@ -224,7 +570,7 @@ export default function StudentDetail() {
     <div className="space-y-6 animate-slide-up pb-10">
       <EnhancedPageHeader
         title={`${student.name}'s Profile`}
-        showBackButton={true}
+        description={`Class ${student.class} · Roll #${student.rollNumber || 'N/A'}`}
         action={
           <div className="flex gap-2">
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -325,140 +671,14 @@ export default function StudentDetail() {
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
           </TabsList>
 
+          {/* Profile Tab */}
           <TabsContent value="profile" className="pb-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-4 w-4" /> Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Gender</p>
-                      <p className="font-medium">{student.gender || 'Not specified'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date of Birth</p>
-                      <p className="font-medium">
-                        {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not specified'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">Aadhaar Number</p>
-                    <p className="font-medium">{student.aadhaarNumber || 'Not provided'}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">Address</p>
-                    <p className="font-medium">{student.address || 'Not provided'}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">Joined On</p>
-                    <p className="font-medium">{new Date(student.joinDate).toLocaleDateString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="h-4 w-4" /> Family Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Father's Name</p>
-                    <p className="font-medium">{student.fatherName || 'Not provided'}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">Mother's Name</p>
-                    <p className="font-medium">{student.motherName || 'Not provided'}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">{student.phoneNumber || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">WhatsApp</p>
-                      <p className="font-medium">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Education Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <GraduationCap className="h-4 w-4" /> Class
-                  </div>
-                  <p className="text-xl font-semibold">{student.class}</p>
-                </div>
-
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <Users className="h-4 w-4" /> Roll Number
-                  </div>
-                  <p className="text-xl font-semibold">{student.rollNumber || 'Not assigned'}</p>
-                </div>
-
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <AtSign className="h-4 w-4" /> Attendance
-                  </div>
-                  <p className={cn(
-                    "text-xl font-semibold",
-                    student.attendancePercentage >= 80 ? "text-green-600" :
-                      student.attendancePercentage >= 60 ? "text-orange-600" :
-                        "text-red-600"
-                  )}>
-                    {student.attendancePercentage}%
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <PhoneIcon className="h-4 w-4" /> Phone Number
-                  </div>
-                  <p className="text-xl font-semibold">{student.phoneNumber || 'Not provided'}</p>
-                </div>
-
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <MessageSquare className="h-4 w-4" /> WhatsApp
-                  </div>
-                  <p className="text-xl font-semibold">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
-                </div>
-
-                <div className="space-y-2 bg-slate-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                    <MapPin className="h-4 w-4" /> Address
-                  </div>
-                  <p className="text-xl font-semibold">{student.address || 'Not provided'}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <StudentProfile student={student} />
+            <EducationDetails student={student} />
+            <ContactInformation student={student} />
           </TabsContent>
 
+          {/* Fees Tab */}
           <TabsContent value="fees" className="space-y-6 pb-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium">Fee Summary</h3>
@@ -489,95 +709,18 @@ export default function StudentDetail() {
               </Dialog>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-semibold text-green-600">
-                    ₹{student.paidFees.toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm text-muted-foreground">Due Fees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-semibold text-amber-600">
-                    ₹{(student.totalFees - student.paidFees).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader className="py-4">
-                <CardTitle className="text-lg">Fee Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {studentFees.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No fee transactions found
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {studentFees.map((fee) => (
-                      <div key={fee.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
-                        <div>
-                          <div className="font-medium">{fee.purpose}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <CreditCard className="h-3 w-3" /> {fee.paymentMode || 'Pending'}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(fee.date).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            {fee.paymentMode && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleExportInvoice(fee)}
-                                className="h-8 w-8"
-                              >
-                                <Download className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setFeeToEdit(fee.id);
-                                setIsAddFeeDialogOpen(true);
-                              }}
-                              className="h-8 w-8"
-                            >
-                              <Edit3 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <FeeSummaryCards student={student} />
+            
+            <FeeTransactionList 
+              student={student}
+              studentFees={studentFees}
+              handleExportInvoice={handleExportInvoice}
+              setFeeToEdit={setFeeToEdit}
+              setIsAddFeeDialogOpen={setIsAddFeeDialogOpen}
+            />
           </TabsContent>
 
+          {/* Attendance Tab */}
           <TabsContent value="attendance" className="space-y-6 pb-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium">Attendance</h3>
@@ -591,96 +734,12 @@ export default function StudentDetail() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <Card>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-lg">Attendance Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-center h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart className="animate-scale-in">
-                        <Pie
-                          data={attendanceData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={90}
-                          dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {attendanceData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value} days`, ``]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
+            <AttendanceCharts 
+              attendanceData={attendanceData}
+              calculateMonthlyAttendance={calculateMonthlyAttendance}
+            />
 
-              <Card>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-lg">Monthly Trend</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
-                        <Line
-                          type="monotone"
-                          dataKey="percentage"
-                          stroke="#0A84FF"
-                          animationDuration={1500}
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader className="py-4">
-                <CardTitle className="text-lg">Recent Attendance</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {studentAttendance.slice(0, 10).map((record) => (
-                  <div
-                    key={record.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                      <div>{new Date(record.date).toLocaleDateString()}</div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        record.status === "Present" ? "border-green-500 text-green-500" :
-                          record.status === "Absent" ? "border-red-500 text-red-500" :
-                            record.status === "Leave" ? "border-orange-500 text-orange-500" :
-                              "border-gray-500 text-gray-500"
-                      )}
-                    >
-                      {record.status}
-                    </Badge>
-                  </div>
-                ))}
-
-                {studentAttendance.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No attendance records found
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <RecentAttendanceList studentAttendance={studentAttendance} />
           </TabsContent>
         </Tabs>
       </Card>
