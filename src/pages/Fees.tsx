@@ -245,35 +245,40 @@ export default function Fees() {
   }, [selectedStudentId]);
 
   const AddPaymentForm = () => {
+    // Initialize form first before any hooks or effects
+    const defaultValues = {
+      student_id: selectedStudentId || "",
+      amount: 0,
+      date: format(new Date(), "yyyy-MM-dd"),
+      payment_mode: "Cash",
+      receipt_number: generateReceiptNumber(),
+      purpose: "Fee Payment"
+    };
+
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
-      defaultValues: {
-        student_id: "",
-        amount: 0,
-        date: format(new Date(), "yyyy-MM-dd"),
-        payment_mode: "Cash",
-        receipt_number: generateReceiptNumber(),
-        purpose: "Fee Payment"
-      }
+      defaultValues
     });
 
-    // Get student by ID for showing due amount
+    // Watch student ID for showing due amount
     const watchedStudentId = form.watch("student_id");
-
-    // Reset form when dialog opens with selected student
-    useEffect(() => {
-      if (selectedStudentId) {
-        form.setValue('student_id', selectedStudentId);
-      }
-    }, [selectedStudentId, form]);
     const selectedStudent = students.find(s => s.id === watchedStudentId);
     const outstandingAmount = selectedStudent ? 
       selectedStudent.total_fees - selectedStudent.paid_fees : 0;
-    
+
+    // Effect to update form when selected student changes
+    useEffect(() => {
+      if (selectedStudentId) {
+        form.setValue('student_id', selectedStudentId, {
+          shouldValidate: true
+        });
+      }
+    }, [selectedStudentId, form]);
+
     const onSubmit = (data: PaymentFormValues) => {
       addPaymentMutation.mutate(data);
     };
-    
+
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
