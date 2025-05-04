@@ -95,9 +95,9 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel htmlFor="name">Full Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter student's name" {...field} />
+                <Input id="name" placeholder="Enter student's name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -110,10 +110,10 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
             name="class"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Class</FormLabel>
+                <FormLabel htmlFor="class">Class</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger id="class">
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                   </FormControl>
@@ -135,9 +135,10 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
             name="rollNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Roll Number</FormLabel>
+                <FormLabel htmlFor="rollNumber">Roll Number</FormLabel>
                 <FormControl>
                   <Input
+                    id="rollNumber"
                     type="number"
                     placeholder="Enter roll number"
                     {...field}
@@ -239,9 +240,9 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
             name="phoneNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone Number</FormLabel>
+                <FormLabel htmlFor="phoneNumber">Phone Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter phone number" {...field} />
+                  <Input id="phoneNumber" placeholder="Enter phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
