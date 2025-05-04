@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -33,16 +32,20 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <DataProvider>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <DataProvider>
+            <React.Suspense fallback={<div>Loading...</div>}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 
-                <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
+                <Route element={
+                  <React.Suspense fallback={<div>Loading app...</div>}>
+                    <AuthLayout><AppLayout /></AuthLayout>
+                  </React.Suspense>
+                }>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/students" element={<Students />} />
                   <Route path="/students/:id" element={<StudentDetail />} />
@@ -57,13 +60,13 @@ const App = () => (
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </DataProvider>
-          </AuthProvider>
-        </BrowserRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
-  </React.StrictMode>
+            </React.Suspense>
+          </DataProvider>
+        </AuthProvider>
+      </BrowserRouter>
+      <Toaster />
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;
