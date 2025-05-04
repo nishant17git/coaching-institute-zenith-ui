@@ -1,4 +1,5 @@
 export interface Student {
+  created_at: string;
   id: string;
   name: string;
   class: string;

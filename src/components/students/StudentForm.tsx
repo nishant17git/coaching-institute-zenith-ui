@@ -8,6 +8,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { Student, Class } from "@/types";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
 
 // Student form schema
 const studentFormSchema = z.object({
@@ -30,12 +32,14 @@ type StudentFormValues = z.infer<typeof studentFormSchema>;
 interface StudentFormProps {
   student?: Student;
   classes: Class[];
-  onSubmit: (data: StudentFormValues) => void;
+  onSubmit: (data: StudentFormValues) => Promise<void>;
   submitLabel?: string;
+  onSuccess?: () => void;
 }
 
-export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit" }: StudentFormProps) {
+export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit", onSuccess }: StudentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   // Set default values based on whether we're editing or creating
   const defaultValues = student
@@ -74,14 +78,47 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
   });
 
   const handleSubmit = async (data: StudentFormValues) => {
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
-      form.reset(defaultValues); // Reset form after successful submission
+
+      const selectedClass = classes.find(cls => cls.name === data.class);
+      if (!selectedClass) {
+        throw new Error('Invalid class selected');
+      }
+
+      // Format the data for Supabase
+      const formattedData = {
+        ...data,
+        class: undefined, // Remove class from the spread data
+        class_id: selectedClass.id,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
+        updated_at: new Date().toISOString(),
+        created_at: student?.created_at || new Date().toISOString()
+      };
+
+      await onSubmit(formattedData);
+
+      toast({
+        title: student ? "Student Updated" : "Student Created",
+        description: `Successfully ${student ? "updated" : "created"} student: ${data.name}`,
+        variant: "default",
+      });
+
+      if (!student) {
+        form.reset(defaultValues);
+      }
+
+      onSuccess?.();
     } catch (error) {
       console.error('Form submission error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save student data";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
