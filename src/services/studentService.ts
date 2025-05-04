@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { StudentRecord, Student, FeeTransaction, AttendanceRecord } from "@/types";
 
@@ -273,13 +272,17 @@ export const studentService = {
       fatherName: record.guardian_name.split(' ')[0] || "",
       motherName: record.guardian_name.split(' ')[1] || "",
       phoneNumber: record.contact_number,
-      whatsappNumber: record.contact_number,
+      whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
       feeStatus: record.fee_status as "Paid" | "Pending" | "Partial",
       totalFees: record.total_fees,
       paidFees: record.paid_fees,
       attendancePercentage: record.attendance_percentage,
-      joinDate: new Date(record.join_date || record.created_at).toISOString().split('T')[0]
+      joinDate: new Date(record.join_date || record.created_at).toISOString().split('T')[0],
+      gender: record.gender as "Male" | "Female" | "Other" || undefined,
+      aadhaarNumber: record.aadhaar_number || undefined,
+      dateOfBirth: record.date_of_birth ? new Date(record.date_of_birth).toISOString().split('T')[0] : undefined,
+      rollNumber: record.roll_number || undefined
     };
   },
   
@@ -288,16 +291,19 @@ export const studentService = {
     return {
       full_name: student.name,
       class: parseInt(student.class.replace("Class ", "")),
-      roll_number: 0, // This will need to be assigned
-      date_of_birth: new Date().toISOString().split('T')[0], // Default value
+      roll_number: student.rollNumber || 0,
+      date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
       guardian_name: `${student.fatherName} ${student.motherName}`.trim(),
       contact_number: student.phoneNumber,
-      address: student.address,
+      whatsapp_number: student.whatsappNumber || student.phoneNumber,
+      address: student.address || "Address not provided",
       fee_status: student.feeStatus,
       total_fees: student.totalFees,
       paid_fees: student.paidFees,
       attendance_percentage: student.attendancePercentage,
-      join_date: student.joinDate
+      join_date: student.joinDate,
+      gender: student.gender,
+      aadhaar_number: student.aadhaarNumber
     };
   }
 };

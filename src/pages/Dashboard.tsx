@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { UserIcon } from "@/components/UserIcon";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();

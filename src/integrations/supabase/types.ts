@@ -90,6 +90,7 @@ export type Database = {
       }
       students: {
         Row: {
+          aadhaar_number: string | null
           address: string | null
           attendance_percentage: number | null
           class: number
@@ -98,6 +99,7 @@ export type Database = {
           date_of_birth: string
           fee_status: string | null
           full_name: string
+          gender: string | null
           guardian_name: string
           id: string
           join_date: string | null
@@ -105,8 +107,10 @@ export type Database = {
           roll_number: number
           total_fees: number | null
           updated_at: string | null
+          whatsapp_number: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
           address?: string | null
           attendance_percentage?: number | null
           class: number
@@ -115,6 +119,7 @@ export type Database = {
           date_of_birth: string
           fee_status?: string | null
           full_name: string
+          gender?: string | null
           guardian_name: string
           id?: string
           join_date?: string | null
@@ -122,8 +127,10 @@ export type Database = {
           roll_number: number
           total_fees?: number | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
           address?: string | null
           attendance_percentage?: number | null
           class?: number
@@ -132,6 +139,7 @@ export type Database = {
           date_of_birth?: string
           fee_status?: string | null
           full_name?: string
+          gender?: string | null
           guardian_name?: string
           id?: string
           join_date?: string | null
@@ -139,6 +147,7 @@ export type Database = {
           roll_number?: number
           total_fees?: number | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

@@ -1,4 +1,3 @@
-
 export interface Student {
   id: string;
   name: string;
@@ -13,6 +12,10 @@ export interface Student {
   paidFees: number;
   attendancePercentage: number;
   joinDate: string;
+  gender?: "Male" | "Female" | "Other";
+  aadhaarNumber?: string;
+  dateOfBirth?: string;
+  rollNumber?: number;
 }
 
 export interface FeeTransaction {
@@ -47,6 +50,7 @@ export interface StudentRecord {
   address: string;
   guardian_name: string;
   contact_number: string;
+  whatsapp_number?: string;
   fee_status: "Paid" | "Pending" | "Partial";
   total_fees: number;
   paid_fees: number;
@@ -54,4 +58,6 @@ export interface StudentRecord {
   join_date: string;
   created_at: string;
   updated_at: string;
+  gender?: string;
+  aadhaar_number?: string;
 }
