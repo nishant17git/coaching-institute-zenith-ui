@@ -74,11 +74,19 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
   });
 
   const handleSubmit = async (data: StudentFormValues) => {
+    if (isSubmitting) return; // Prevent multiple submissions
+
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
+      // Convert to synchronous call to prevent message channel issues
+      onSubmit(data);
+    } catch (error) {
+      console.error('Form submission error:', error);
     } finally {
-      setIsSubmitting(false);
+      // Add a small delay before resetting submission state
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 100);
     }
   };
 
