@@ -27,7 +27,8 @@ import {
   AtSign,
   Phone as PhoneIcon,
   MapPin,
-  Cake
+  Cake,
+  GraduationCap
 } from "lucide-react";
 import {
   PieChart,
