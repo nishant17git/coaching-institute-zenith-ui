@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { format, isToday, addDays, subDays, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -39,6 +38,7 @@ import { AttendanceCalendarView } from "@/components/attendance/AttendanceCalend
 import { ClassAttendanceTable } from "@/components/attendance/ClassAttendanceTable";
 import { MobileAttendanceList } from "@/components/attendance/MobileAttendanceList";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 
 interface Student {
   id: string;
@@ -458,45 +458,44 @@ export default function Attendance() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Attendance Management</h1>
-          <p className="text-muted-foreground">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
-        </div>
+      <EnhancedPageHeader
+        title="Attendance Management"
+        description={format(selectedDate, 'EEEE, MMMM d, yyyy')}
+        showBackButton
+        action={
+          <div className="flex flex-wrap gap-3">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, 'MMMM d, yyyy')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
 
-        <div className="flex flex-wrap gap-3">
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'MMMM d, yyyy')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    setSelectedDate(date);
-                    setIsCalendarOpen(false);
-                  }
-                }}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Button 
-            className="bg-apple-blue hover:bg-blue-600 text-white" 
-            onClick={exportAttendanceReport}
-          >
-            <Download className="h-4 w-4 mr-2" /> Export Report
-          </Button>
-        </div>
-      </div>
+            <Button 
+              className="bg-apple-blue hover:bg-blue-600 text-white" 
+              onClick={exportAttendanceReport}
+            >
+              <Download className="h-4 w-4 mr-2" /> Export Report
+            </Button>
+          </div>
+        }
+      />
 
       {/* View selector tabs */}
       <Tabs 
