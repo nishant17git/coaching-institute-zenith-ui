@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -239,6 +238,12 @@ export default function Fees() {
     setIsAddPaymentDialogOpen(true);
   };
 
+  useEffect(() => {
+    if (selectedStudentId) {
+      // Handle selected student effect
+    }
+  }, [selectedStudentId]);
+
   const AddPaymentForm = () => {
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
@@ -253,7 +258,7 @@ export default function Fees() {
     });
 
     // Reset form when dialog opens with selected student
-    React.useEffect(() => {
+    useEffect(() => {
       if (selectedStudentId) {
         form.setValue('student_id', selectedStudentId);
       }
