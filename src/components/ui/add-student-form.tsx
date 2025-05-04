@@ -1,5 +1,5 @@
-
 import * as React from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useData } from "@/contexts/DataContext";
@@ -14,12 +14,19 @@ interface AddStudentFormProps {
 
 export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentFormProps) {
   const { classes, addStudent } = useData();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (values: any) => {
     try {
-      // Generate a default student with required fields
+      setIsSubmitting(true);
+      
+      // Format the data before submission
       const newStudentData = {
         ...values,
+        class: values.class, // Ensure class is passed as received from form
+        rollNumber: values.rollNumber ? parseInt(values.rollNumber) : undefined,
+        totalFees: values.totalFees ? parseFloat(values.totalFees) : 0,
+        dateOfBirth: values.dateOfBirth || new Date().toISOString().split('T')[0],
         paidFees: 0,
         attendancePercentage: 100,
         feeStatus: "Pending",
@@ -36,12 +43,14 @@ export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentForm
     } catch (error) {
       toast.error("Failed to add student");
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] animate-scale-in">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>
           <DialogDescription>
@@ -51,7 +60,7 @@ export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentForm
         <StudentForm 
           classes={classes} 
           onSubmit={handleSubmit} 
-          submitLabel="Add Student"
+          submitLabel={isSubmitting ? "Adding..." : "Add Student"}
         />
       </DialogContent>
     </Dialog>

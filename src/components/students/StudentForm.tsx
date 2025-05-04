@@ -41,7 +41,7 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
   const defaultValues = student
     ? {
         name: student.name,
-        class: student.class,
+        class: student.class.toString(),
         rollNumber: student.rollNumber || undefined,
         fatherName: student.fatherName,
         motherName: student.motherName,
@@ -78,15 +78,12 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
 
     try {
       setIsSubmitting(true);
-      // Convert to synchronous call to prevent message channel issues
-      onSubmit(data);
+      await onSubmit(data);
+      form.reset(defaultValues); // Reset form after successful submission
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
-      // Add a small delay before resetting submission state
-      setTimeout(() => {
-        setIsSubmitting(false);
-      }, 100);
+      setIsSubmitting(false);
     }
   };
 
@@ -114,7 +111,7 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Class</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
