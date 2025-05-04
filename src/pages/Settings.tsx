@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -363,9 +362,9 @@ export default function Settings() {
                     </div>
                   
                     <div className="space-y-2">
-                      <Label htmlFor="instituteName">Institute Name</Label>
+                      <Label htmlFor="instituteName-input">Institute Name</Label>
                       <Input
-                        id="instituteName"
+                        id="instituteName-input"
                         value={settings.institute.instituteName}
                         onChange={(e) => setSettings(prev => ({
                           ...prev, 
@@ -375,9 +374,9 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email-input">Email Address</Label>
                       <Input
-                        id="email"
+                        id="email-input"
                         type="email"
                         value={settings.institute.email}
                         onChange={(e) => setSettings(prev => ({
@@ -388,9 +387,9 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                      <Label htmlFor="phone-input">Phone Number</Label>
                       <Input
-                        id="phone"
+                        id="phone-input"
                         value={settings.institute.phone}
                         onChange={(e) => setSettings(prev => ({
                           ...prev, 
@@ -400,9 +399,9 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="address">Address</Label>
+                      <Label htmlFor="address-input">Address</Label>
                       <Input
-                        id="address"
+                        id="address-input"
                         value={settings.institute.address}
                         onChange={(e) => setSettings(prev => ({
                           ...prev, 
@@ -415,7 +414,7 @@ export default function Settings() {
                       <Label>Regional Settings</Label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                         <div className="space-y-2">
-                          <Label htmlFor="language" className="text-sm">Language</Label>
+                          <Label htmlFor="language-select" className="text-sm">Language</Label>
                           <Select
                             value={settings.language}
                             onValueChange={(value) => setSettings(prev => ({
@@ -423,7 +422,7 @@ export default function Settings() {
                               language: value
                             }))}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger id="language-select">
                               <SelectValue placeholder="Select language" />
                             </SelectTrigger>
                             <SelectContent>
@@ -437,7 +436,7 @@ export default function Settings() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="dateFormat" className="text-sm">Date Format</Label>
+                          <Label htmlFor="dateFormat-select" className="text-sm">Date Format</Label>
                           <Select
                             value={settings.dateFormat}
                             onValueChange={(value) => setSettings(prev => ({
@@ -445,7 +444,7 @@ export default function Settings() {
                               dateFormat: value
                             }))}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger id="dateFormat-select">
                               <SelectValue placeholder="Select format" />
                             </SelectTrigger>
                             <SelectContent>
@@ -459,7 +458,7 @@ export default function Settings() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="currencyFormat" className="text-sm">Currency Format</Label>
+                          <Label htmlFor="currencyFormat-select" className="text-sm">Currency Format</Label>
                           <Select
                             value={settings.currencyFormat}
                             onValueChange={(value) => setSettings(prev => ({
@@ -467,7 +466,7 @@ export default function Settings() {
                               currencyFormat: value
                             }))}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger id="currencyFormat-select">
                               <SelectValue placeholder="Select currency" />
                             </SelectTrigger>
                             <SelectContent>
@@ -941,9 +940,9 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2 mt-4">
-                      <Label htmlFor="footerText">Default Footer Text</Label>
+                      <Label htmlFor="footerText-input">Default Footer Text</Label>
                       <Input
-                        id="footerText"
+                        id="footerText-input"
                         value={settings.exportSettings.defaultFooterText}
                         onChange={(e) => setSettings(prev => ({
                           ...prev, 
