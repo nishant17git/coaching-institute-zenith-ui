@@ -248,7 +248,7 @@ export default function Fees() {
     const form = useForm<PaymentFormValues>({
       resolver: zodResolver(paymentSchema),
       defaultValues: {
-        student_id: selectedStudentId || "",
+        student_id: "",
         amount: 0,
         date: format(new Date(), "yyyy-MM-dd"),
         payment_mode: "Cash",
@@ -257,16 +257,16 @@ export default function Fees() {
       }
     });
 
+    // Get student by ID for showing due amount
+    const watchedStudentId = form.watch("student_id");
+
     // Reset form when dialog opens with selected student
     useEffect(() => {
       if (selectedStudentId) {
         form.setValue('student_id', selectedStudentId);
       }
     }, [selectedStudentId, form]);
-    
-    // Get student by ID for showing due amount
-    const selectedStudentId = form.watch("student_id");
-    const selectedStudent = students.find(s => s.id === selectedStudentId);
+    const selectedStudent = students.find(s => s.id === watchedStudentId);
     const outstandingAmount = selectedStudent ? 
       selectedStudent.total_fees - selectedStudent.paid_fees : 0;
     
