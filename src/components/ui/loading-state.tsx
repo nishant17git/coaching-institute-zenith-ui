@@ -1,25 +1,49 @@
 
 import React from "react";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface LoadingStateProps {
   text?: string;
-  className?: string;
   size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
-export function LoadingState({ text = "Loading...", className, size = "md" }: LoadingStateProps) {
-  const sizeClasses = {
+export const LoadingState: React.FC<LoadingStateProps> = ({
+  text = "Loading...",
+  size = "md",
+  className,
+}) => {
+  const iconSizes = {
     sm: "h-4 w-4",
     md: "h-8 w-8",
     lg: "h-12 w-12",
   };
-  
+
+  const containerSizes = {
+    sm: "min-h-[100px]",
+    md: "min-h-[150px]",
+    lg: "min-h-[200px]",
+  };
+
   return (
-    <div className={cn("flex flex-col items-center justify-center py-12", className)}>
-      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
-      {text && <p className="text-sm text-muted-foreground mt-4">{text}</p>}
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className={cn(
+        "flex flex-col items-center justify-center p-8 text-center rounded-lg",
+        containerSizes[size],
+        className
+      )}
+    >
+      <Loader2 className={cn("animate-spin text-primary", iconSizes[size])} />
+      {text && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {text}
+        </p>
+      )}
+    </motion.div>
   );
-}
+};
