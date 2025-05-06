@@ -22,9 +22,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className={cn(
-        "flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed",
+        "flex flex-col items-center justify-center p-6 text-center rounded-lg border border-dashed",
         className
       )}
     >
@@ -33,13 +34,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {icon}
         </div>
       )}
-      <h3 className="mt-2 text-lg font-semibold">{title}</h3>
+      <h3 className="text-lg font-semibold">{title}</h3>
       {description && (
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+        <p className="mt-2 text-sm text-muted-foreground max-w-sm">
           {description}
         </p>
       )}
-      {action && <div className="mt-6">{action}</div>}
+      {action && <div className="mt-4">{action}</div>}
     </motion.div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,10 +8,10 @@ import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AppLayout } from "@/components/AppLayout";
 import * as React from "react";
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ThemeProvider } from "@/components/theme-provider";
 
-// Lazy load pages
+// Lazy load pages with better error boundaries
 const Login = React.lazy(() => import("./pages/Login"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Students = React.lazy(() => import("./pages/Students"));
@@ -23,11 +24,9 @@ const Settings = React.lazy(() => import("./pages/Settings"));
 const More = React.lazy(() => import("./pages/More"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
+// Improved loading fallback component with shorter timeout
+const PageLoadingFallback = () => (
+  <LoadingState text="Loading page..." size="md" />
 );
 
 const queryClient = new QueryClient({
@@ -41,39 +40,116 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <React.StrictMode>
+  <ThemeProvider defaultTheme="light">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
             <DataProvider>
-              <Suspense fallback={<LoadingFallback />}>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  
-                  <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/students" element={<Students />} />
-                    <Route path="/students/:id" element={<StudentDetail />} />
-                    <Route path="/fees" element={<Fees />} />
-                    <Route path="/attendance" element={<Attendance />} />
-                    <Route path="/tests" element={<TestRecord />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/more" element={<More />} />
+              <Routes>
+                <Route 
+                  path="/login" 
+                  element={
+                    <React.Suspense fallback={<PageLoadingFallback />}>
+                      <Login />
+                    </React.Suspense>
+                  } 
+                />
+                
+                <Route element={<AuthLayout />}>
+                  <Route element={<AppLayout />}>
+                    <Route 
+                      path="/dashboard" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Dashboard />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/students" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Students />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/students/:id" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <StudentDetail />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/fees" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Fees />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/attendance" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Attendance />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/tests" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <TestRecord />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/reports" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Reports />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <Settings />
+                        </React.Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/more" 
+                      element={
+                        <React.Suspense fallback={<PageLoadingFallback />}>
+                          <More />
+                        </React.Suspense>
+                      } 
+                    />
                   </Route>
-                  
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
+                </Route>
+                
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route 
+                  path="*" 
+                  element={
+                    <React.Suspense fallback={<PageLoadingFallback />}>
+                      <NotFound />
+                    </React.Suspense>
+                  } 
+                />
+              </Routes>
+              <Toaster />
             </DataProvider>
           </AuthProvider>
         </BrowserRouter>
-        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
-  </React.StrictMode>
+  </ThemeProvider>
 );
 
 export default App;
