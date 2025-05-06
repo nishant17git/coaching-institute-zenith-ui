@@ -2,14 +2,14 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface ErrorStateProps {
   title: string;
   description?: string;
   action?: React.ReactNode;
   className?: string;
-  retry?: () => void; // Add retry capability
+  retry?: () => void;
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
@@ -43,9 +43,9 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       {retry && !action && (
         <button
           onClick={retry}
-          className="mt-4 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-destructive hover:bg-destructive/90 transition-colors"
+          className="mt-4 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-destructive hover:bg-destructive/90 transition-colors"
         >
-          Try Again
+          <RefreshCw className="h-4 w-4" /> Try Again
         </button>
       )}
       

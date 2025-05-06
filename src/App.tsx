@@ -10,8 +10,44 @@ import { AppLayout } from "@/components/AppLayout";
 import * as React from "react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorState } from "@/components/ui/error-state";
 
-// Lazy load pages with better error boundaries
+// Improved error boundary for lazy loaded components
+const PageErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = () => setHasError(false);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
+  if (hasError) {
+    return (
+      <ErrorState 
+        title="Something went wrong" 
+        description="We couldn't load this page. Please try again."
+        retry={() => {
+          setHasError(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  return (
+    <React.ErrorBoundary fallback={null} onError={() => setHasError(true)}>
+      {children}
+    </React.ErrorBoundary>
+  );
+};
+
+// Improved loading fallback component with shorter timeout
+const PageLoadingFallback = () => (
+  <LoadingState text="Loading page..." size="md" delay={100} />
+);
+
+// Lazy load pages with better error handling
 const Login = React.lazy(() => import("./pages/Login"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Students = React.lazy(() => import("./pages/Students"));
@@ -24,20 +60,25 @@ const Settings = React.lazy(() => import("./pages/Settings"));
 const More = React.lazy(() => import("./pages/More"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
-// Improved loading fallback component with shorter timeout
-const PageLoadingFallback = () => (
-  <LoadingState text="Loading page..." size="md" />
-);
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
       staleTime: 1000 * 60 * 5, // 5 minutes
+      suspense: false, // Disable suspense mode for queries
     },
   },
 });
+
+// Helper to wrap components with Suspense and ErrorBoundary
+const SuspenseWrapper = ({ element }: { element: React.ReactNode }) => (
+  <PageErrorBoundary>
+    <React.Suspense fallback={<PageLoadingFallback />}>
+      {element}
+    </React.Suspense>
+  </PageErrorBoundary>
+);
 
 const App = () => (
   <ThemeProvider defaultTheme="light">
@@ -49,86 +90,46 @@ const App = () => (
               <Routes>
                 <Route 
                   path="/login" 
-                  element={
-                    <React.Suspense fallback={<PageLoadingFallback />}>
-                      <Login />
-                    </React.Suspense>
-                  } 
+                  element={<SuspenseWrapper element={<Login />} />} 
                 />
                 
                 <Route element={<AuthLayout />}>
                   <Route element={<AppLayout />}>
                     <Route 
                       path="/dashboard" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Dashboard />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Dashboard />} />} 
                     />
                     <Route 
                       path="/students" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Students />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Students />} />} 
                     />
                     <Route 
                       path="/students/:id" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <StudentDetail />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<StudentDetail />} />} 
                     />
                     <Route 
                       path="/fees" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Fees />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Fees />} />} 
                     />
                     <Route 
                       path="/attendance" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Attendance />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Attendance />} />} 
                     />
                     <Route 
                       path="/tests" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <TestRecord />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<TestRecord />} />} 
                     />
                     <Route 
                       path="/reports" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Reports />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Reports />} />} 
                     />
                     <Route 
                       path="/settings" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <Settings />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<Settings />} />} 
                     />
                     <Route 
                       path="/more" 
-                      element={
-                        <React.Suspense fallback={<PageLoadingFallback />}>
-                          <More />
-                        </React.Suspense>
-                      } 
+                      element={<SuspenseWrapper element={<More />} />} 
                     />
                   </Route>
                 </Route>
@@ -136,11 +137,7 @@ const App = () => (
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route 
                   path="*" 
-                  element={
-                    <React.Suspense fallback={<PageLoadingFallback />}>
-                      <NotFound />
-                    </React.Suspense>
-                  } 
+                  element={<SuspenseWrapper element={<NotFound />} />} 
                 />
               </Routes>
               <Toaster />
