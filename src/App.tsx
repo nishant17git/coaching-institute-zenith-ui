@@ -11,6 +11,7 @@ import * as React from "react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorState } from "@/components/ui/error-state";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 // Improved error boundary for lazy loaded components
 const PageErrorBoundary = ({ children }: { children: React.ReactNode }) => {
@@ -36,9 +37,12 @@ const PageErrorBoundary = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <React.ErrorBoundary fallback={null} onError={() => setHasError(true)}>
+    <ErrorBoundary 
+      fallback={null} 
+      onError={() => setHasError(true)}
+    >
       {children}
-    </React.ErrorBoundary>
+    </ErrorBoundary>
   );
 };
 
@@ -66,7 +70,6 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
       staleTime: 1000 * 60 * 5, // 5 minutes
-      suspense: false, // Disable suspense mode for queries
     },
   },
 });
