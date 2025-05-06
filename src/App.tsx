@@ -38,7 +38,14 @@ const PageErrorBoundary = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <ErrorBoundary 
-      fallback={null} 
+      fallback={<ErrorState 
+        title="Something went wrong" 
+        description="We couldn't load this page. Please try again."
+        retry={() => {
+          setHasError(false);
+          window.location.reload();
+        }}
+      />} 
       onError={() => setHasError(true)}
     >
       {children}
