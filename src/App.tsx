@@ -8,68 +8,19 @@ import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AppLayout } from "@/components/AppLayout";
 import * as React from "react";
-import { LoadingState } from "@/components/ui/loading-state";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ErrorState } from "@/components/ui/error-state";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
 
-// Improved error boundary for lazy loaded components
-const PageErrorBoundary = ({ children }: { children: React.ReactNode }) => {
-  const [hasError, setHasError] = React.useState(false);
-
-  React.useEffect(() => {
-    const handler = () => setHasError(false);
-    window.addEventListener('popstate', handler);
-    return () => window.removeEventListener('popstate', handler);
-  }, []);
-
-  if (hasError) {
-    return (
-      <ErrorState 
-        title="Something went wrong" 
-        description="We couldn't load this page. Please try again."
-        retry={() => {
-          setHasError(false);
-          window.location.reload();
-        }}
-      />
-    );
-  }
-
-  return (
-    <ErrorBoundary 
-      fallback={<ErrorState 
-        title="Something went wrong" 
-        description="We couldn't load this page. Please try again."
-        retry={() => {
-          setHasError(false);
-          window.location.reload();
-        }}
-      />} 
-      onError={() => setHasError(true)}
-    >
-      {children}
-    </ErrorBoundary>
-  );
-};
-
-// Improved loading fallback component with shorter timeout
-const PageLoadingFallback = () => (
-  <LoadingState text="Loading page..." size="md" delay={100} />
-);
-
-// Lazy load pages with better error handling
-const Login = React.lazy(() => import("./pages/Login"));
-const Dashboard = React.lazy(() => import("./pages/Dashboard"));
-const Students = React.lazy(() => import("./pages/Students"));
-const StudentDetail = React.lazy(() => import("./pages/StudentDetail"));
-const Fees = React.lazy(() => import("./pages/Fees"));
-const Attendance = React.lazy(() => import("./pages/Attendance"));
-const TestRecord = React.lazy(() => import("./pages/TestRecord"));
-const Reports = React.lazy(() => import("./pages/Reports"));
-const Settings = React.lazy(() => import("./pages/Settings"));
-const More = React.lazy(() => import("./pages/More"));
-const NotFound = React.lazy(() => import("./pages/NotFound"));
+// Pages
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Students from "./pages/Students";
+import StudentDetail from "./pages/StudentDetail";
+import Fees from "./pages/Fees";
+import Attendance from "./pages/Attendance";
+import TestRecord from "./pages/TestRecord";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import More from "./pages/More";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,82 +32,38 @@ const queryClient = new QueryClient({
   },
 });
 
-// Helper to wrap components with Suspense and ErrorBoundary
-const SuspenseWrapper = ({ element }: { element: React.ReactNode }) => (
-  <PageErrorBoundary>
-    <React.Suspense fallback={<PageLoadingFallback />}>
-      {element}
-    </React.Suspense>
-  </PageErrorBoundary>
-);
-
 const App = () => (
-  <ThemeProvider defaultTheme="light">
+  <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
             <DataProvider>
               <Routes>
-                <Route 
-                  path="/login" 
-                  element={<SuspenseWrapper element={<Login />} />} 
-                />
+                <Route path="/login" element={<Login />} />
                 
-                <Route element={<AuthLayout />}>
-                  <Route element={<AppLayout />}>
-                    <Route 
-                      path="/dashboard" 
-                      element={<SuspenseWrapper element={<Dashboard />} />} 
-                    />
-                    <Route 
-                      path="/students" 
-                      element={<SuspenseWrapper element={<Students />} />} 
-                    />
-                    <Route 
-                      path="/students/:id" 
-                      element={<SuspenseWrapper element={<StudentDetail />} />} 
-                    />
-                    <Route 
-                      path="/fees" 
-                      element={<SuspenseWrapper element={<Fees />} />} 
-                    />
-                    <Route 
-                      path="/attendance" 
-                      element={<SuspenseWrapper element={<Attendance />} />} 
-                    />
-                    <Route 
-                      path="/tests" 
-                      element={<SuspenseWrapper element={<TestRecord />} />} 
-                    />
-                    <Route 
-                      path="/reports" 
-                      element={<SuspenseWrapper element={<Reports />} />} 
-                    />
-                    <Route 
-                      path="/settings" 
-                      element={<SuspenseWrapper element={<Settings />} />} 
-                    />
-                    <Route 
-                      path="/more" 
-                      element={<SuspenseWrapper element={<More />} />} 
-                    />
-                  </Route>
+                <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/students/:id" element={<StudentDetail />} />
+                  <Route path="/fees" element={<Fees />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/tests" element={<TestRecord />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/more" element={<More />} />
                 </Route>
                 
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route 
-                  path="*" 
-                  element={<SuspenseWrapper element={<NotFound />} />} 
-                />
+                <Route path="*" element={<NotFound />} />
               </Routes>
-              <Toaster />
             </DataProvider>
           </AuthProvider>
         </BrowserRouter>
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
-  </ThemeProvider>
+  </React.StrictMode>
 );
 
 export default App;

@@ -4,43 +4,40 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface EmptyStateProps {
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
   title: string;
   description?: string;
   action?: React.ReactNode;
   className?: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
+export function EmptyState({
   icon,
   title,
   description,
   action,
   className,
-}) => {
+}: EmptyStateProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
       className={cn(
-        "flex flex-col items-center justify-center p-6 text-center rounded-lg border border-dashed",
+        "flex flex-col items-center justify-center text-center py-12 px-4",
         className
       )}
     >
-      {icon && (
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
-          {icon}
-        </div>
-      )}
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <div className="rounded-full bg-muted p-4 mb-4">
+        {icon}
+      </div>
+      <h3 className="text-lg font-medium mt-2">{title}</h3>
       {description && (
-        <p className="mt-2 text-sm text-muted-foreground max-w-sm">
+        <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
           {description}
         </p>
       )}
-      {action && <div className="mt-4">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </motion.div>
   );
-};
+}
