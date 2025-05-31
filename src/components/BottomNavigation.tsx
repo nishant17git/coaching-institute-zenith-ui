@@ -1,5 +1,6 @@
+
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, CreditCard, MoreHorizontal } from "lucide-react";
+import { Home, Users, BadgeIndianRupee, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -10,8 +11,8 @@ export function BottomNavigation() {
   const navItems = [
     { name: "Home", path: "/dashboard", icon: Home },
     { name: "Students", path: "/students", icon: Users },
-    { name: "Fees", path: "/fees", icon: CreditCard },
-    { name: "More", path: "/more", icon: MoreHorizontal },
+    { name: "Fees", path: "/fees", icon: BadgeIndianRupee },
+    { name: "More", path: "/more", icon: Menu },
   ];
 
   return (
@@ -20,7 +21,7 @@ export function BottomNavigation() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white/40 backdrop-blur-2xl border border-white/20 shadow-xl py-2 px-6 rounded-full w-full max-w-md pointer-events-auto"
+        className="bg-white/5 backdrop-blur-2xl border border-white/20 shadow-xl py-2 px-6 rounded-full w-full max-w-md pointer-events-auto"
       >
         <div className="flex justify-between items-center">
           {navItems.map((item) => {
@@ -38,7 +39,7 @@ export function BottomNavigation() {
                 {isActive && (  
                   <motion.div  
                     layoutId="navIndicator"  
-                    className="absolute inset-0 bg-apple-blue/10 rounded-xl"  
+                    className="absolute inset-0 bg-[#FF00AA]/15 rounded-xl"  
                     transition={{   
                       type: "spring",   
                       bounce: 0.2,   
@@ -59,7 +60,7 @@ export function BottomNavigation() {
                     className={cn(  
                       "transition-all",  
                       isActive   
-                        ? "text-apple-blue"   
+                        ? "text-[#FF00AA]"   
                         : "text-gray-500"  
                     )}  
                   >  
@@ -75,7 +76,7 @@ export function BottomNavigation() {
                     className={cn(  
                       "text-xs font-medium overflow-hidden transition-all",  
                       isActive   
-                        ? "text-apple-blue"   
+                        ? "text-[#FF00AA]"   
                         : "text-gray-500"  
                     )}  
                   >  

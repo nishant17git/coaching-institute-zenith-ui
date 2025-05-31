@@ -15,6 +15,8 @@ export const students: Student[] = [
     id: "s1",
     name: "Rahul Sharma",
     class: "Class 10",
+    father: "Rajesh Sharma", // Added father field
+    mother: "Sunita Sharma", // Added mother field
     fatherName: "Rajesh Sharma",
     motherName: "Sunita Sharma",
     phoneNumber: "+91 9876543210",
@@ -30,6 +32,8 @@ export const students: Student[] = [
     id: "s2",
     name: "Priya Patel",
     class: "Class 11 - Science",
+    father: "Kiran Patel", // Added father field
+    mother: "Meena Patel", // Added mother field
     fatherName: "Kiran Patel",
     motherName: "Meena Patel",
     phoneNumber: "+91 8765432109",
@@ -45,6 +49,8 @@ export const students: Student[] = [
     id: "s3",
     name: "Amit Singh",
     class: "Class 12 - Science",
+    father: "Vikram Singh", // Added father field
+    mother: "Radha Singh", // Added mother field
     fatherName: "Vikram Singh",
     motherName: "Radha Singh",
     phoneNumber: "+91 7654321098",
@@ -60,6 +66,8 @@ export const students: Student[] = [
     id: "s4",
     name: "Neha Verma",
     class: "Class 9",
+    father: "Deepak Verma", // Added father field
+    mother: "Seema Verma", // Added mother field
     fatherName: "Deepak Verma",
     motherName: "Seema Verma",
     phoneNumber: "+91 6543210987",
@@ -75,6 +83,8 @@ export const students: Student[] = [
     id: "s5",
     name: "Rohit Agarwal",
     class: "Class 12 - Commerce",
+    father: "Suresh Agarwal", // Added father field
+    mother: "Kavita Agarwal", // Added mother field
     fatherName: "Suresh Agarwal",
     motherName: "Kavita Agarwal",
     phoneNumber: "+91 5432109876",
@@ -90,6 +100,8 @@ export const students: Student[] = [
     id: "s6",
     name: "Ananya Mehta",
     class: "Class 11 - Commerce",
+    father: "Prakash Mehta", // Added father field
+    mother: "Rekha Mehta", // Added mother field
     fatherName: "Prakash Mehta",
     motherName: "Rekha Mehta",
     phoneNumber: "+91 4321098765",

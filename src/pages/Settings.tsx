@@ -1,1001 +1,282 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import { 
-  Settings as SettingsIcon, 
-  User, 
-  Bell, 
-  ShieldCheck, 
-  LogOut, 
-  Trash2, 
-  Upload, 
-  Moon, 
-  Sun, 
-  Laptop,
-  Globe,
-  Mail,
-  Phone,
-  Building,
-  Palette,
-  FileText,
-  CreditCard as PaymentIcon,
-  Users as UsersIcon
-} from "lucide-react";
-import { getStoredData, storeData, STORAGE_KEYS } from "@/services/storageService";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
-import { UserIcon } from "@/components/UserIcon";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-
-interface InstituteSettings {
-  instituteName: string;
-  email: string;
-  phone: string;
-  address: string;
-  logo?: string;
-}
-
-interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  feeReminders: boolean;
-  attendanceAlerts: boolean;
-  systemUpdates: boolean;
-}
-
-interface AppSettings {
-  institute: InstituteSettings;
-  notifications: NotificationSettings;
-  theme: "light" | "dark" | "system";
-  exportSettings: {
-    includeInstituteLogo: boolean;
-    includeContactInfo: boolean;
-    defaultFooterText: string;
-  };
-  language: string;
-  dateFormat: string;
-  currencyFormat: string;
-}
-
-// Default settings
-const defaultSettings: AppSettings = {
-  institute: {
-    instituteName: "Infinity Classes",
-    email: "theinfinityclasses1208@gmail.com",
-    phone: "+91 9905880697",
-    address: "Kandri, Mandar, Ranchi",
-    logo: "/icon.png"
-  },
-  notifications: {
-    email: true,
-    push: true,
-    feeReminders: true,
-    attendanceAlerts: true,
-    systemUpdates: false,
-  },
-  theme: "system",
-  exportSettings: {
-    includeInstituteLogo: true,
-    includeContactInfo: true,
-    defaultFooterText: "Thank you for choosing Infinity Classes."
-  },
-  language: "en",
-  dateFormat: "DD/MM/YYYY",
-  currencyFormat: "₹",
-}
-
-// Available locales
-const languages = [
-  { code: "en", name: "English" },
-  { code: "hi", name: "Hindi" },
-  { code: "bn", name: "Bengali" },
-];
-
-// Date format options
-const dateFormats = [
-  { code: "DD/MM/YYYY", label: "DD/MM/YYYY" },
-  { code: "MM/DD/YYYY", label: "MM/DD/YYYY" },
-  { code: "YYYY-MM-DD", label: "YYYY-MM-DD" },
-];
-
+import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { User, Bell, Palette, Building, Shield, Database, HelpCircle, FileText, ChevronRight, LogOut } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+const settingsGroups = [{
+  title: "Personal",
+  items: [{
+    id: "profile",
+    title: "Profile & Account",
+    description: "Personal information and account settings",
+    icon: User,
+    color: "bg-blue-500",
+    route: "/settings/profile"
+  }, {
+    id: "notifications",
+    title: "Notifications",
+    description: "Manage alerts and notifications",
+    icon: Bell,
+    color: "bg-red-500",
+    route: "/settings/notifications"
+  }]
+}, {
+  title: "Preferences",
+  items: [{
+    id: "appearance",
+    title: "Appearance",
+    description: "Customize app appearance and theme",
+    icon: Palette,
+    color: "bg-purple-500",
+    route: "/settings/appearance"
+  }, {
+    id: "institute",
+    title: "Institute Settings",
+    description: "Configure institute information",
+    icon: Building,
+    color: "bg-green-500",
+    route: "/settings/institute"
+  }]
+}, {
+  title: "Privacy & Security",
+  items: [{
+    id: "security",
+    title: "Privacy & Security",
+    description: "Security and privacy controls",
+    icon: Shield,
+    color: "bg-orange-500",
+    route: "/settings/security"
+  }, {
+    id: "data",
+    title: "Data & Storage",
+    description: "Manage app data and storage",
+    icon: Database,
+    color: "bg-indigo-500",
+    route: "/settings/data"
+  }]
+}, {
+  title: "Support",
+  items: [{
+    id: "help",
+    title: "Help & Support",
+    description: "Get help and contact support",
+    icon: HelpCircle,
+    color: "bg-cyan-500",
+    route: "/settings/help"
+  }, {
+    id: "about",
+    title: "About",
+    description: "App information and version",
+    icon: FileText,
+    color: "bg-gray-500",
+    route: "/settings/about"
+  }]
+}];
 export default function Settings() {
-  const { user, logout } = useAuth();
-  
-  // Load settings from local storage or use defaults
-  const [settings, setSettings] = useState<AppSettings>(
-    getStoredData(STORAGE_KEYS.SETTINGS, defaultSettings)
-  );
-  
-  const [activeTab, setActiveTab] = useState("general");
-  const [logoPreview, setLogoPreview] = useState<string | undefined>(settings.institute.logo);
-  const [saveIndicator, setSaveIndicator] = useState<string | null>(null);
-  
-  // Update localStorage when settings change
-  useEffect(() => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-  }, [settings]);
-  
-  const handleSaveInstitute = () => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-    setSaveIndicator("institute");
-    toast.success("Institute settings saved successfully!");
-    
-    // Reset save indicator after showing animation
-    setTimeout(() => {
-      setSaveIndicator(null);
-    }, 2000);
-  };
-  
-  const handleSaveNotifications = () => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-    setSaveIndicator("notifications");
-    toast.success("Notification preferences saved!");
-    
-    setTimeout(() => {
-      setSaveIndicator(null);
-    }, 2000);
-  };
-  
-  const handleSaveExportSettings = () => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-    setSaveIndicator("export");
-    toast.success("Export settings saved successfully!");
-    
-    setTimeout(() => {
-      setSaveIndicator(null);
-    }, 2000);
-  };
-
-  const handleSaveAppearance = () => {
-    storeData(STORAGE_KEYS.SETTINGS, settings);
-    setSaveIndicator("appearance");
-    toast.success("Appearance settings saved!");
-    
-    setTimeout(() => {
-      setSaveIndicator(null);
-    }, 2000);
-  };
-  
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const logoDataUrl = event.target.result as string;
-          setLogoPreview(logoDataUrl);
-          setSettings(prev => ({
-            ...prev,
-            institute: {
-              ...prev.institute,
-              logo: logoDataUrl
-            }
-          }));
-        }
-      };
-      
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Animation variants
-  const tabContentVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeOut"
-      }
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: {
-        duration: 0.3
-      }
-    }
-  };
-
-  const saveButtonVariants = {
-    idle: { scale: 1 },
-    saving: { 
-      scale: [1, 1.05, 1],
-      backgroundColor: ["#0284c7", "#0ea5e9", "#0284c7"],
-      transition: { 
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  // Get user profile image and name safely
-  // Updated to use the correct properties from ExtendedUser
+  const {
+    user,
+    logout
+  } = useAuth();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const userName = user?.name || "Admin User";
   const userEmail = user?.email || "admin@example.com";
-  
-  return (
-    <div className="space-y-6">
-      <EnhancedPageHeader 
-        title="Settings" 
-        description="Manage your account and application settings"
-        showBackButton
-      />
+  const handleItemClick = (route: string) => {
+    navigate(route);
+  };
+  const handleLogout = () => {
+    toast.success("Signed out successfully");
+    logout();
+  };
+  const handleToggle = (setting: string, value: boolean) => {
+    if (setting === "notifications") {
+      setPushNotifications(value);
+      toast.success(value ? "Notifications enabled" : "Notifications disabled");
+    } else if (setting === "darkMode") {
+      setDarkMode(value);
+      toast.success(value ? "Dark mode enabled" : "Light mode enabled");
+    }
+  };
+  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-4xl mx-auto space-y-8 px-0 bg-white">
+        <EnhancedPageHeader title="Settings" description="Manage your account and app preferences" showBackButton />
 
-      <Tabs 
-        defaultValue="general" 
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
-      >
-        <div className="flex flex-col sm:flex-row gap-6">
-          <Card className="sm:w-[260px]">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
-                    {userName.charAt(0) || "A"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{userName}</p>
-                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+        {/* User Profile Section */}
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5
+      }}>
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl overflow-hidden">
+            <CardContent className="p-0">
+              <div className="bg-gradient-to-r from-[#F25239] via-[#FCAF40] to-[#4FD1C5] p-8 py-[16px]">
+                <div className="flex items-center gap-6">
+                  <Avatar className="h-20 w-20 border-4 border-white/30 shadow-lg">
+                    <AvatarFallback className="bg-white text-2xl font-bold font-geist text-red-500">
+                      {userName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-white">
+                    <h2 className="font-semibold mb-1 text-sm font-geist">{userName}</h2>
+                    <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30 font-geist">
+                      Administrator
+                    </Badge>
+                  </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <TabsList className="flex flex-col h-auto w-full bg-transparent space-y-1 p-1">
-                <TabsTrigger 
-                  value="general"
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-muted w-full"
-                >
-                  <SettingsIcon className="h-4 w-4 mr-2" />
-                  General
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="profile"
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-muted w-full"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications"
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-muted w-full"
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="appearance"
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-muted w-full"
-                >
-                  <Palette className="h-4 w-4 mr-2" />
-                  Appearance
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="export"
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-muted w-full"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Export Settings
-                </TabsTrigger>
-              </TabsList>
+              
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Account Status</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 font-geist">Active</span>
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={() => navigate("/settings/profile")} className="rounded-full px-6 font-geist">
+                    Edit Profile
+                  </Button>
+                </div>
+              </div>
             </CardContent>
-            <CardFooter className="border-t p-3 mt-4">
-              <Button 
-                variant="destructive" 
-                className="w-full justify-start" 
-                onClick={logout}
-              >
-                <LogOut className="h-4 w-4 mr-2" /> Logout
-              </Button>
-            </CardFooter>
           </Card>
-          
-          <div className="flex-1 min-w-0">
-            <TabsContent value="general">
-              <motion.div
-                variants={tabContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="space-y-6"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Institute Profile</CardTitle>
-                    <CardDescription>
-                      Manage your institute's information and contact details
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col items-center mb-6">
-                      <div className="w-32 h-32 rounded-lg overflow-hidden border mb-4">
-                        <img 
-                          src={logoPreview || "/icon.png"} 
-                          alt="Institute Logo" 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <Label 
-                        htmlFor="logo-upload" 
-                        className="cursor-pointer bg-muted hover:bg-muted/80 py-2 px-4 rounded-md flex gap-2 items-center transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Upload Logo
-                      </Label>
-                      <Input 
-                        id="logo-upload" 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageUpload}
-                        className="hidden" 
-                      />
-                    </div>
-                  
-                    <div className="space-y-2">
-                      <Label htmlFor="instituteName-input">Institute Name</Label>
-                      <Input
-                        id="instituteName-input"
-                        value={settings.institute.instituteName}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev, 
-                          institute: { ...prev.institute, instituteName: e.target.value }
-                        }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email-input">Email Address</Label>
-                      <Input
-                        id="email-input"
-                        type="email"
-                        value={settings.institute.email}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev, 
-                          institute: { ...prev.institute, email: e.target.value }
-                        }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone-input">Phone Number</Label>
-                      <Input
-                        id="phone-input"
-                        value={settings.institute.phone}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev, 
-                          institute: { ...prev.institute, phone: e.target.value }
-                        }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="address-input">Address</Label>
-                      <Input
-                        id="address-input"
-                        value={settings.institute.address}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev, 
-                          institute: { ...prev.institute, address: e.target.value }
-                        }))}
-                      />
-                    </div>
+        </motion.div>
 
-                    <div className="space-y-2">
-                      <Label>Regional Settings</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="language-select" className="text-sm">Language</Label>
-                          <Select
-                            value={settings.language}
-                            onValueChange={(value) => setSettings(prev => ({
-                              ...prev, 
-                              language: value
-                            }))}
-                          >
-                            <SelectTrigger id="language-select">
-                              <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {languages.map(lang => (
-                                <SelectItem key={lang.code} value={lang.code}>
-                                  {lang.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="dateFormat-select" className="text-sm">Date Format</Label>
-                          <Select
-                            value={settings.dateFormat}
-                            onValueChange={(value) => setSettings(prev => ({
-                              ...prev, 
-                              dateFormat: value
-                            }))}
-                          >
-                            <SelectTrigger id="dateFormat-select">
-                              <SelectValue placeholder="Select format" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {dateFormats.map(format => (
-                                <SelectItem key={format.code} value={format.code}>
-                                  {format.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="currencyFormat-select" className="text-sm">Currency Format</Label>
-                          <Select
-                            value={settings.currencyFormat}
-                            onValueChange={(value) => setSettings(prev => ({
-                              ...prev, 
-                              currencyFormat: value
-                            }))}
-                          >
-                            <SelectTrigger id="currencyFormat-select">
-                              <SelectValue placeholder="Select currency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="₹">Indian Rupee (₹)</SelectItem>
-                              <SelectItem value="$">US Dollar ($)</SelectItem>
-                              <SelectItem value="€">Euro (€)</SelectItem>
-                              <SelectItem value="£">British Pound (£)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+        {/* Quick Settings */}
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.1
+      }}>
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 font-geist">
+                Quick Settings
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                      <Bell className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <motion.div 
-                      variants={saveButtonVariants}
-                      animate={saveIndicator === 'institute' ? 'saving' : 'idle'}
-                      className="w-full"
-                    >
-                      <Button 
-                        onClick={handleSaveInstitute} 
-                        className="w-full sm:w-auto"
-                      >
-                        Save Changes
-                      </Button>
-                    </motion.div>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </TabsContent>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Push Notifications</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Receive important updates</p>
+                    </div>
+                  </div>
+                  <Switch checked={pushNotifications} onCheckedChange={value => handleToggle("notifications", value)} />
+                </div>
+                
+                <Separator className="my-2" />
+                
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                      <Palette className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Dark Mode</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Switch to dark theme</p>
+                    </div>
+                  </div>
+                  <Switch checked={darkMode} onCheckedChange={value => handleToggle("darkMode", value)} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Settings Groups */}
+        {settingsGroups.map((group, groupIndex) => <motion.div key={group.title} initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.2 + groupIndex * 0.1
+      }} className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 font-geist">
+              {group.title}
+            </h3>
             
-            <TabsContent value="profile">
-              <motion.div
-                variants={tabContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Profile</CardTitle>
-                    <CardDescription>
-                      Manage your personal information
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col items-center mb-8">
-                      <Avatar className="h-24 w-24 mb-4">
-                        <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
-                          {userName.charAt(0) || "A"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Label 
-                        htmlFor="avatar-upload" 
-                        className="cursor-pointer bg-muted hover:bg-muted/80 py-2 px-4 rounded-md flex gap-2 items-center transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Upload Photo
-                      </Label>
-                      <Input 
-                        id="avatar-upload" 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="userName">Name</Label>
-                      <Input
-                        id="userName"
-                        value={userName}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="userEmail">Email</Label>
-                      <Input
-                        id="userEmail"
-                        type="email"
-                        value={userEmail}
-                      />
-                    </div>
+            <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-0">
+                {group.items.map((item, index) => <div key={item.id}>
+                    <button onClick={() => handleItemClick(item.route)} className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200">
+                      <div className="flex items-center gap-4">
+                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.color)}>
+                          <item.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">{item.title}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">{item.description}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                    </button>
+                    {index < group.items.length - 1 && <Separator />}
+                  </div>)}
+              </CardContent>
+            </Card>
+          </motion.div>)}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="userPhone">Phone</Label>
-                      <Input
-                        id="userPhone"
-                        type="tel"
-                        placeholder="Your phone number"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="flex gap-4">
-                        <Input
-                          id="password"
-                          type="password"
-                          value="********"
-                          disabled
-                          className="flex-1"
-                        />
-                        <Button variant="outline">
-                          Change Password
-                        </Button>
-                      </div>
-                    </div>
+        {/* Sign Out */}
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.6
+      }}>
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
+            <CardContent className="p-0">
+              <button onClick={handleLogout} className="w-full p-6 flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 text-red-600 dark:text-red-400">
+                <LogOut className="h-5 w-5" />
+                <span className="font-medium font-geist">Sign Out</span>
+              </button>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <h3 className="font-medium">Two-Factor Authentication</h3>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm">Protect your account with 2FA</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <Button variant="outline">
-                          <ShieldCheck className="h-4 w-4 mr-2" />
-                          Setup 2FA
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline">
-                      Delete Account
-                    </Button>
-                    <Button>
-                      Update Profile
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="notifications">
-              <motion.div
-                variants={tabContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Preferences</CardTitle>
-                    <CardDescription>
-                      Configure how and when you receive notifications
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Notification Channels</h3>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span>Email Notifications</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Receive notifications via email
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.email}
-                          onCheckedChange={(checked) => setSettings(prev => ({
-                            ...prev,
-                            notifications: { ...prev.notifications, email: checked }
-                          }))}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <Bell className="h-4 w-4 text-muted-foreground" />
-                            <span>Push Notifications</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Receive push notifications on your device
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.push}
-                          onCheckedChange={(checked) => setSettings(prev => ({
-                            ...prev,
-                            notifications: { ...prev.notifications, push: checked }
-                          }))}
-                        />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Notification Types</h3>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <PaymentIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>Fee Reminders</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Notifications about pending fees and payments
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.feeReminders}
-                          onCheckedChange={(checked) => setSettings(prev => ({
-                            ...prev,
-                            notifications: { ...prev.notifications, feeReminders: checked }
-                          }))}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <UsersIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>Attendance Alerts</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Notifications about student attendance issues
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.attendanceAlerts}
-                          onCheckedChange={(checked) => setSettings(prev => ({
-                            ...prev,
-                            notifications: { ...prev.notifications, attendanceAlerts: checked }
-                          }))}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <Bell className="h-4 w-4 text-muted-foreground" />
-                            <span>System Updates</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Notifications about new features and updates
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.systemUpdates}
-                          onCheckedChange={(checked) => setSettings(prev => ({
-                            ...prev,
-                            notifications: { ...prev.notifications, systemUpdates: checked }
-                          }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <motion.div 
-                      variants={saveButtonVariants}
-                      animate={saveIndicator === 'notifications' ? 'saving' : 'idle'}
-                      className="w-full"
-                    >
-                      <Button 
-                        onClick={handleSaveNotifications}
-                        className="w-full sm:w-auto"
-                      >
-                        Save Preferences
-                      </Button>
-                    </motion.div>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="appearance">
-              <motion.div
-                variants={tabContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Appearance Settings</CardTitle>
-                    <CardDescription>
-                      Customize how the application looks and feels
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <Label className="text-base">Theme</Label>
-                      <RadioGroup
-                        defaultValue={settings.theme}
-                        onValueChange={(value) => 
-                          setSettings(prev => ({
-                            ...prev,
-                            theme: value as "light" | "dark" | "system"
-                          }))
-                        }
-                        className="grid grid-cols-3 gap-4"
-                      >
-                        <Label
-                          htmlFor="theme-light"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-                        >
-                          <RadioGroupItem value="light" id="theme-light" className="sr-only" />
-                          <Sun className="mb-3 h-6 w-6" />
-                          <span className="text-sm font-medium">Light</span>
-                        </Label>
-                        <Label
-                          htmlFor="theme-dark"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-                        >
-                          <RadioGroupItem value="dark" id="theme-dark" className="sr-only" />
-                          <Moon className="mb-3 h-6 w-6" />
-                          <span className="text-sm font-medium">Dark</span>
-                        </Label>
-                        <Label
-                          htmlFor="theme-system"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-                        >
-                          <RadioGroupItem value="system" id="theme-system" className="sr-only" />
-                          <Laptop className="mb-3 h-6 w-6" />
-                          <span className="text-sm font-medium">System</span>
-                        </Label>
-                      </RadioGroup>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <Label className="text-base">Font Size</Label>
-                      <div className="grid gap-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Aa</span>
-                          <input
-                            type="range"
-                            min="80"
-                            max="120"
-                            defaultValue="100"
-                            step="5"
-                            className="w-full max-w-md mx-4"
-                            aria-label="Font size"
-                          />
-                          <span className="text-lg">Aa</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Adjust the font size used throughout the application
-                        </p>
-                      </div>
-                    </div>
-
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <Label className="text-base">Color Preferences</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <HoverCard>
-                          <HoverCardTrigger>
-                            <div className="flex flex-col space-y-1.5">
-                              <Label htmlFor="primary-color">Primary Color</Label>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="color"
-                                  id="primary-color"
-                                  defaultValue="#0284c7"
-                                  className="w-10 h-10 rounded cursor-pointer"
-                                />
-                                <span className="text-sm text-muted-foreground">#0284c7</span>
-                              </div>
-                            </div>
-                          </HoverCardTrigger>
-                          <HoverCardContent side="top">
-                            <div className="text-sm">
-                              <p>Primary color is used for buttons, links and active elements.</p>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                        
-                        <HoverCard>
-                          <HoverCardTrigger>
-                            <div className="flex flex-col space-y-1.5">
-                              <Label htmlFor="accent-color">Accent Color</Label>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="color"
-                                  id="accent-color"
-                                  defaultValue="#f97316"
-                                  className="w-10 h-10 rounded cursor-pointer"
-                                />
-                                <span className="text-sm text-muted-foreground">#f97316</span>
-                              </div>
-                            </div>
-                          </HoverCardTrigger>
-                          <HoverCardContent side="top">
-                            <div className="text-sm">
-                              <p>Accent color is used for highlights and secondary elements.</p>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        Advanced color customization will be available in a future update.
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <motion.div 
-                      variants={saveButtonVariants}
-                      animate={saveIndicator === 'appearance' ? 'saving' : 'idle'}
-                      className="w-full"
-                    >
-                      <Button onClick={handleSaveAppearance} className="w-full sm:w-auto">
-                        Apply Changes
-                      </Button>
-                    </motion.div>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="export">
-              <motion.div
-                variants={tabContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Export Settings</CardTitle>
-                    <CardDescription>
-                      Configure defaults for PDF exports and reports
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span>Include Institute Logo</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Add the institute logo to all exports
-                        </div>
-                      </div>
-                      <Switch 
-                        checked={settings.exportSettings.includeInstituteLogo}
-                        onCheckedChange={(checked) => setSettings(prev => ({
-                          ...prev,
-                          exportSettings: { ...prev.exportSettings, includeInstituteLogo: checked }
-                        }))}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>Include Contact Information</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Add institute contact details to exports
-                        </div>
-                      </div>
-                      <Switch 
-                        checked={settings.exportSettings.includeContactInfo}
-                        onCheckedChange={(checked) => setSettings(prev => ({
-                          ...prev,
-                          exportSettings: { ...prev.exportSettings, includeContactInfo: checked }
-                        }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2 mt-4">
-                      <Label htmlFor="footerText-input">Default Footer Text</Label>
-                      <Input
-                        id="footerText-input"
-                        value={settings.exportSettings.defaultFooterText}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev, 
-                          exportSettings: { ...prev.exportSettings, defaultFooterText: e.target.value }
-                        }))}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        This text will appear at the bottom of all exported documents
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-2 mt-6">
-                      <Label>Export File Formats</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div className="flex items-center space-x-2">
-                          <input type="checkbox" id="format-pdf" className="rounded" defaultChecked />
-                          <label htmlFor="format-pdf" className="text-sm">PDF</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input type="checkbox" id="format-xlsx" className="rounded" defaultChecked />
-                          <label htmlFor="format-xlsx" className="text-sm">Excel</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input type="checkbox" id="format-csv" className="rounded" defaultChecked />
-                          <label htmlFor="format-csv" className="text-sm">CSV</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input type="checkbox" id="format-docx" className="rounded" />
-                          <label htmlFor="format-docx" className="text-sm">Word</label>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Select default export formats that will be available
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <motion.div 
-                      variants={saveButtonVariants}
-                      animate={saveIndicator === 'export' ? 'saving' : 'idle'}
-                      className="w-full"
-                    >
-                      <Button onClick={handleSaveExportSettings} className="w-full sm:w-auto">
-                        Save Export Settings
-                      </Button>
-                    </motion.div>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </TabsContent>
-          </div>
-        </div>
-      </Tabs>
-    </div>
-  );
+        {/* App Info */}
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        duration: 0.5,
+        delay: 0.7
+      }} className="text-center py-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Molecules v2.1.0</p>
+        </motion.div>
+      </div>
+    </div>;
 }

@@ -1,59 +1,88 @@
-@import url('./fonts/spotify-mix.css');
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom India 2023 Bold Font */
+@font-face {
+  font-family: 'INDIA2023Bold';
+  src: url('/fonts/INDIA2023bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Custom NType82 Font */
+@font-face {
+  font-family: 'NType82';
+  src: url('/fonts/NType82-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 100%;    
+    --foreground: 222.2 84% 4.9%;    
+    
+    --muted: 210 40% 96.1%;    
+    --muted-foreground: 215.4 16.3% 46.9%;    
+    
+    --popover: 0 0% 100%;    
+    --popover-foreground: 222.2 84% 4.9%;    
+    
+    --card: 0 0% 100%;    
+    --card-foreground: 222.2 84% 4.9%;    
+    
+    --border: 214.3 31.8% 91.4%;    
+    --input: 214.3 31.8% 91.4%;    
+    
+    --primary: 222.2 47.4% 11.2%;    
+    --primary-foreground: 210 40% 98%;    
+    
+    --secondary: 210 40% 96.1%;    
+    --secondary-foreground: 222.2 47.4% 11.2%;    
+    
+    --accent: 210 40% 96.1%;    
+    --accent-foreground: 222.2 47.4% 11.2%;    
+    
+    --destructive: 0 84.2% 60.2%;    
+    --destructive-foreground: 210 40% 98%;    
+    
+    --ring: 215 20.2% 65.1%;    
+    
+    --radius: 0.5rem;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.75rem;
-
-    /* Custom Apple-inspired colors */
-    --apple-blue: 211 100% 50%;
-    --apple-green: 142 69% 58%;
-    --apple-red: 8 100% 58%;
-    --apple-yellow: 38 92% 50%;
-    --apple-orange: 28 100% 52%;
-    --apple-indigo: 231 48% 48%;
-  }
+    /* Define Geist font families */
+    --font-geist-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    --font-geist-mono: 'Geist Mono', "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    
+    /* Define custom India font */
+    --font-india-bold: 'INDIA2023Bold', var(--font-geist-sans), system-ui, sans-serif;
+    
+    /* Define NType82 font */
+    --font-ntype82: 'NType82', var(--font-geist-sans), system-ui, sans-serif;
+}
  
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
  
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
  
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
  
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -61,198 +90,160 @@
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
  
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 85.7% 97.3%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 217.2 32.6% 17.5%;
   }
-
+}
+ 
+@layer base {
   * {
     @apply border-border;
+    /* Disable text selection */
+    -webkit-user-select: none;
+    user-select: none;
+    /* Apply Geist font globally */
+    font-family: var(--font-geist-sans);
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Spotify Mix', 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    font-family: var(--font-geist-sans);
   }
   
-  /* Adding smooth scrolling */
-  html { 
-     scroll-behavior: smooth; 
-}
-  
-  /* Improved focus styles */
-  *:focus-visible {
-    @apply outline-none ring-2 ring-apple-blue ring-offset-2 ring-offset-background;
+  /* Ensure all text elements use Geist Sans by default */
+  h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, label {
+    font-family: var(--font-geist-sans);
   }
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-white bg-opacity-80 backdrop-filter backdrop-blur-lg border border-white/30 shadow-sm rounded-2xl;
-  }
-  
-  /* Additional button styles */
-  .btn-apple {
-    @apply bg-apple-blue text-white hover:bg-blue-600 transition-all rounded-xl px-4 py-2 font-medium shadow-sm;
-  }
-  
-  .btn-secondary {
-    @apply bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-all rounded-xl px-4 py-2 font-medium shadow-sm;
-  }
-  
-  /* Custom badge colors */
-  .badge-green {
-    @apply bg-apple-green/10 text-apple-green border-apple-green/30 rounded-full;
-  }
-  
-  .badge-red {
-    @apply bg-apple-red/10 text-apple-red border-apple-red/30 rounded-full;
-  }
-  
-  .badge-yellow {
-    @apply bg-apple-yellow/10 text-apple-yellow border-apple-yellow/30 rounded-full;
-  }
-  
-  /* Card styles */
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
-  }
-  
-  /* Apple-style button */
-  .apple-button {
-    @apply bg-apple-blue text-white font-medium py-2.5 px-5 rounded-full shadow-sm 
-           hover:shadow-md hover:bg-blue-600 transition-all duration-300 
-           active:scale-95 active:shadow-inner;
-  }
-  
-  /* Pill navigation */
-  .pill-nav {
-    @apply bg-gray-100 p-1 rounded-full flex space-x-1;
-  }
-  
-  .pill-nav-item {
-    @apply px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200;
-  }
-  
-  .pill-nav-item.active {
-    @apply bg-white text-black shadow-sm;
+/* Card shadow utility */
+.card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-shadow:hover {
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Truncate text utilities */
+.truncate-parent {
+  overflow: hidden;
+}
+
+.truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Utility class for Geist Sans font */
+.font-geist {
+  font-family: var(--font-geist-sans);
+}
+
+/* Utility class for Geist Mono font */
+.font-geist-mono {
+  font-family: var(--font-geist-mono);
+}
+
+/* Utility class for NType82 font */
+.font-ntype82 {
+  font-family: var(--font-ntype82);
+}
+
+/* Updated utility class for Infinity Classes text with custom font */
+.infinity-title {
+  font-family: var(--font-india-bold);
+  letter-spacing: 0.05em;
+  font-size: 1.75rem;
+  font-weight: bold;
+}
+
+/* Responsive adjustments for the font size */
+@media (max-width: 640px) {
+  .infinity-title {
+    font-size: 1.5rem;
   }
 }
 
+/* Animation utilities */
 @layer utilities {
-  /* Animation utilities */
-  .animate-slide-up {
-    animation: slide-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-  }
-  
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
-  
   .animate-scale-in {
-    animation: scale-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    animation: scaleIn 0.3s ease-out;
   }
   
-  .animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
   
-  /* Hover utilities */
-  .hover-scale {
-    @apply transition-transform duration-300 hover:scale-105;
-  }
-  
-  .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
-  }
-  
-  /* 3D button effect */
-  .btn-3d {
-    @apply relative shadow-md active:shadow-inner active:top-0.5;
-  }
-  
-  /* Glass effects */
-  .glass-effect {
-    @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-sm;
-  }
-  
-  /* Text gradient */
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-apple-blue to-apple-indigo;
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }
 
-@keyframes slide-up {
-  0% {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
+/* Enhanced Select component styling to ensure proper functionality */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+[data-radix-select-content] {
+  background: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  max-height: 384px;
+  overflow-y: auto;
+}
+
+/* Ensure select content is above dialog overlays */
+.dark [data-radix-select-content] {
+  background: hsl(var(--popover)) !important;
+}
+
+/* Mobile scroll optimizations */
+@media (max-width: 768px) {
+  .mobile-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
   }
 }
 
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+/* Form scroll container utility */
+.form-scroll-container {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-@keyframes scale-in {
-  0% {
-    transform: scale(0.9);
-    opacity: 0;
+/* Mobile form scroll container */
+@media (max-width: 768px) {
+  .form-scroll-container {
+    max-height: calc(100vh - 120px);
   }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* Additional animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes subtle-bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.animate-bounce-subtle {
-  animation: subtle-bounce 2s ease-in-out infinite;
 }

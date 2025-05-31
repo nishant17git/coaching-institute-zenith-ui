@@ -1,68 +1,30 @@
-
 import React from "react";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { motion, HTMLMotionProps } from "framer-motion";
-
-interface PageHeaderProps extends Omit<HTMLMotionProps<"div">, "title"> {
+export interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: string | React.ReactNode;
   showBackButton?: boolean;
+  onBack?: () => void;
   action?: React.ReactNode;
 }
-
-export function PageHeader({
+export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
-  showBackButton = true,
-  action,
-  className,
-  ...props
-}: PageHeaderProps) {
-  const navigate = useNavigate();
-  
-  const handleBack = () => {
-    navigate(-1);
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={cn(
-        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2",
-        className
-      )}
-      {...props}
-    >
+  showBackButton = false,
+  onBack,
+  action
+}) => {
+  return <div className="flex flex-row items-center justify-between gap-4 mb-4">
       <div className="flex items-center gap-3">
-        {showBackButton && (
-          <Button
-            onClick={handleBack}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            aria-label="Back"
-          >
+        {showBackButton && <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-        )}
+          </Button>}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-          )}
+          <h1 className="text-2xl tracking-tight font-semibold">{title}</h1>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
       </div>
-      
-      {action && (
-        <div className="mt-2 sm:mt-0 w-full sm:w-auto flex justify-end">
-          {action}
-        </div>
-      )}
-    </motion.div>
-  );
-}
+      {action && <div className="flex items-center">{action}</div>}
+    </div>;
+};

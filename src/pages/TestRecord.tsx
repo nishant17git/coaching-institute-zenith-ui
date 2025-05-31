@@ -1,41 +1,46 @@
-import React, { useState } from "react";
+
+import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { Badge } from "@/components/ui/badge";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, ArrowUpDown, Plus, Download, Calendar, FileText, Users, Loader2 } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { exportTestToPDF } from "@/services/pdfService";
 import {
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
-
-// Define mock test records data structure
-interface TestRecord {
-  id: string;
-  student_id: string;
-  subject: string;
-  test_date: string;
-  test_name: string;
-  marks: number;
-  total_marks: number;
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import { TestAddForm } from "@/components/tests/TestAddForm";
+import { TestResults } from "@/components/tests/TestResults";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { StudentRecord, TestRecordDb } from "@/types";
 
 export default function TestRecord() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,15 +48,19 @@ export default function TestRecord() {
   const [classFilter, setClassFilter] = useState("all");
   const [sortField, setSortField] = useState<"date" | "marks">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [isAddTestOpen, setIsAddTestOpen] = useState(false);
+  const [isEditTestOpen, setIsEditTestOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [editingTest, setEditingTest] = useState<TestRecordDb | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
-  // Mock data for test records (replace with actual implementation using Supabase when the table exists)
-  const { data: testRecords = [], isLoading: testsLoading } = useQuery({
+  const { data: testRecords = [], isLoading: testsLoading, refetch: refetchTests } = useQuery<TestRecordDb[]>({
     queryKey: ['test_records_mock'],
     queryFn: async () => {
       // In a real implementation, this would fetch from the test_records table
       // Since the table doesn't exist yet, we're using mock data
-      // You'll need to create this table first
       
       // Attempt to get data from localStorage first (for persistence between page loads)
       const storedTestRecords = localStorage.getItem('mockTestRecords');
@@ -60,7 +69,7 @@ export default function TestRecord() {
       }
       
       // Generate mock data
-      const mockData: TestRecord[] = [
+      const mockData: TestRecordDb[] = [
         {
           id: "1",
           student_id: "1",
@@ -68,7 +77,8 @@ export default function TestRecord() {
           test_date: "2024-04-15",
           test_name: "Algebra Quiz",
           marks: 42,
-          total_marks: 50
+          total_marks: 50,
+          test_type: "Chapter-wise Test"
         },
         {
           id: "2",
@@ -77,7 +87,8 @@ export default function TestRecord() {
           test_date: "2024-04-10",
           test_name: "Mechanics Test",
           marks: 35,
-          total_marks: 40
+          total_marks: 40,
+          test_type: "Chapter-wise Test"
         },
         {
           id: "3",
@@ -86,7 +97,8 @@ export default function TestRecord() {
           test_date: "2024-04-05",
           test_name: "Periodic Table Quiz",
           marks: 28,
-          total_marks: 30
+          total_marks: 30,
+          test_type: "Chapter-wise Test"
         },
         {
           id: "4",
@@ -94,8 +106,9 @@ export default function TestRecord() {
           subject: "English",
           test_date: "2024-04-01",
           test_name: "Grammar Test",
-          marks: 38,
-          total_marks: 50
+          marks: 18,
+          total_marks: 20,
+          test_type: "MCQs Test (Normal)"
         },
         {
           id: "5",
@@ -104,7 +117,8 @@ export default function TestRecord() {
           test_date: "2024-04-12",
           test_name: "Geometry Quiz",
           marks: 18,
-          total_marks: 30
+          total_marks: 20,
+          test_type: "MCQs Test (Standard)"
         },
       ];
       
@@ -115,35 +129,45 @@ export default function TestRecord() {
     }
   });
   
-  const { data: students = [], isLoading: studentsLoading } = useQuery({
+  const { data: students = [], isLoading: studentsLoading } = useQuery<StudentRecord[]>({
     queryKey: ['students'],
     queryFn: async () => {
+      // Only fetch students from class 9 and 10 with proper numeric type
       const { data, error } = await supabase
         .from('students')
-        .select('*');
+        .select('*')
+        .in('class', [9, 10]); // Using numbers for consistency
       
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        // Fallback to mock data if no data exists or there's an error
+        return [
+          { id: "1", full_name: "Rahul Sharma", class: 9, roll_number: 101, date_of_birth: "2008-05-15", address: "123 Main St", guardian_name: "Raj Sharma", contact_number: "9876543210", fee_status: "Paid", total_fees: 5000, paid_fees: 5000, attendance_percentage: 95, join_date: "2023-04-01", created_at: "2023-04-01", updated_at: "2023-04-01" },
+          { id: "2", full_name: "Priya Patel", class: 9, roll_number: 102, date_of_birth: "2008-06-20", address: "456 Oak St", guardian_name: "Sanjay Patel", contact_number: "8765432109", fee_status: "Paid", total_fees: 5000, paid_fees: 5000, attendance_percentage: 98, join_date: "2023-04-01", created_at: "2023-04-01", updated_at: "2023-04-01" },
+          { id: "3", full_name: "Amit Kumar", class: 10, roll_number: 201, date_of_birth: "2007-03-10", address: "789 Park Ave", guardian_name: "Vijay Kumar", contact_number: "7654321098", fee_status: "Partial", total_fees: 6000, paid_fees: 3000, attendance_percentage: 92, join_date: "2023-04-01", created_at: "2023-04-01", updated_at: "2023-04-01" },
+          { id: "4", full_name: "Neha Singh", class: 10, roll_number: 202, date_of_birth: "2007-09-25", address: "101 Pine Rd", guardian_name: "Rajesh Singh", contact_number: "6543210987", fee_status: "Pending", total_fees: 6000, paid_fees: 0, attendance_percentage: 88, join_date: "2023-04-01", created_at: "2023-04-01", updated_at: "2023-04-01" },
+        ] as unknown as StudentRecord[];
+      }
+      return data as unknown as StudentRecord[] || [];
     }
   });
   
   // Generate some statistics
-  const subjects = Array.from(new Set(testRecords.map((record: any) => record.subject)));
+  const subjects = Array.from(new Set(testRecords.map((record: TestRecordDb) => record.subject)));
   const totalTests = testRecords.length;
   const averageScore = testRecords.length > 0 
-    ? Math.round(testRecords.reduce((acc: number, record: any) => acc + record.marks, 0) / testRecords.length) 
+    ? Math.round(testRecords.reduce((acc: number, record: TestRecordDb) => acc + (record.marks / record.total_marks) * 100, 0) / testRecords.length) 
     : 0;
 
-  // Grade distribution
+  // Grade distribution with more vibrant colors
   const gradeDistribution = [
-    { name: 'A (90-100%)', value: 0, color: '#22c55e' }, 
-    { name: 'B (75-89%)', value: 0, color: '#3b82f6' },
-    { name: 'C (60-74%)', value: 0, color: '#eab308' },
-    { name: 'D (40-59%)', value: 0, color: '#f97316' },
-    { name: 'F (0-39%)', value: 0, color: '#ef4444' }
+    { name: 'A (90-100%)', value: 0, color: '#22c55e' }, // Green 
+    { name: 'B (75-89%)', value: 0, color: '#0EA5E9' },  // Ocean Blue
+    { name: 'C (60-74%)', value: 0, color: '#EAB308' },  // Yellow
+    { name: 'D (40-59%)', value: 0, color: '#F97316' },  // Bright Orange
+    { name: 'F (0-39%)', value: 0, color: '#EF4444' }    // Red
   ];
   
-  testRecords.forEach((record: any) => {
+  testRecords.forEach((record: TestRecordDb) => {
     const percent = (record.marks / record.total_marks) * 100;
     if (percent >= 90) gradeDistribution[0].value++;
     else if (percent >= 75) gradeDistribution[1].value++;
@@ -152,34 +176,157 @@ export default function TestRecord() {
     else gradeDistribution[4].value++;
   });
 
-  // Subject performance
-  const subjectPerformance = subjects.map(subject => {
-    const subjectTests = testRecords.filter((record: any) => record.subject === subject);
+  // Subject performance with vibrant colors
+  const subjectPerformance = subjects.map((subject, index) => {
+    const subjectTests = testRecords.filter((record: TestRecordDb) => record.subject === subject);
     const averagePercent = subjectTests.length > 0 
       ? Math.round(
-          subjectTests.reduce((acc: number, record: any) => 
+          subjectTests.reduce((acc: number, record: TestRecordDb) => 
             acc + (record.marks / record.total_marks) * 100, 0) / subjectTests.length
         ) 
       : 0;
       
+    // Vibrant colors for subjects
+    const vibrantColors = [
+      '#0EA5E9', // Ocean Blue
+      '#8B5CF6', // Vivid Purple
+      '#F97316', // Bright Orange
+      '#22C55E', // Green
+      '#F43F5E', // Raspberry
+      '#3B82F6', // Bright Blue
+      '#EC4899', // Hot Pink
+      '#EAB308', // Yellow
+      '#06B6D4', // Cyan
+      '#D946EF', // Magenta Pink (for math subject if it exists)
+    ];
+    
+    // Special color for specific subjects
+    let color = vibrantColors[index % vibrantColors.length];
+    if (subject.toLowerCase().includes('math')) {
+      color = '#D946EF'; // Magenta Pink for Math
+    } else if (subject.toLowerCase().includes('science')) {
+      color = '#06B6D4'; // Cyan for Science
+    }
+      
     return {
       name: subject,
       score: averagePercent,
-      fill: `hsl(${Math.random() * 360}, 70%, 60%)`
+      fill: color
     };
   });
   
+  // Handle new test creation
+  const handleAddTest = (testData: any) => {
+    // Get existing tests
+    const existingTests = JSON.parse(localStorage.getItem('mockTestRecords') || '[]');
+    
+    // Create new test object with explicit number conversions
+    const newTest: TestRecordDb = {
+      id: (existingTests.length + 1).toString(),
+      student_id: testData.studentId,
+      subject: testData.subject,
+      test_date: testData.testDate,
+      test_name: testData.testName,
+      test_type: testData.testType,
+      // Explicitly convert string values to numbers to fix the type errors
+      marks: Number(testData.marks),
+      total_marks: Number(testData.totalMarks)
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('mockTestRecords', JSON.stringify([...existingTests, newTest]));
+    
+    // Close dialog and refetch data
+    setIsAddTestOpen(false);
+    refetchTests();
+    
+    // Show success notification
+    toast.success("Test record added successfully");
+  };
+  
+  // Handle test update
+  const handleUpdateTest = (testData: any) => {
+    if (!editingTest) return;
+    
+    // Get existing tests
+    const existingTests = JSON.parse(localStorage.getItem('mockTestRecords') || '[]');
+    
+    // Update the test with explicit number conversions
+    const updatedTests = existingTests.map((test: TestRecordDb) => {
+      if (test.id === editingTest.id) {
+        return {
+          ...test,
+          subject: testData.subject,
+          test_date: testData.testDate,
+          test_name: testData.testName,
+          test_type: testData.testType,
+          // Explicitly convert string values to numbers to fix the type errors
+          marks: Number(testData.marks),
+          total_marks: Number(testData.totalMarks)
+        };
+      }
+      return test;
+    });
+    
+    // Save to localStorage
+    localStorage.setItem('mockTestRecords', JSON.stringify(updatedTests));
+    
+    // Close dialog, reset editing state, and refetch data
+    setIsEditTestOpen(false);
+    setEditingTest(null);
+    refetchTests();
+    
+    // Show success notification
+    toast.success("Test record updated successfully");
+  };
+  
+  // Handle test deletion
+  const handleDeleteTest = (testId: string) => {
+    // Get existing tests
+    const existingTests = JSON.parse(localStorage.getItem('mockTestRecords') || '[]');
+    
+    // Filter out the deleted test
+    const updatedTests = existingTests.filter((test: TestRecordDb) => test.id !== testId);
+    
+    // Save to localStorage
+    localStorage.setItem('mockTestRecords', JSON.stringify(updatedTests));
+    
+    // Refetch data
+    refetchTests();
+    
+    // Show success notification
+    toast.success("Test record deleted successfully");
+  };
+  
+  // Handle editing a test
+  const handleEditTest = (test: TestRecordDb) => {
+    setEditingTest(test);
+    setIsEditTestOpen(true);
+  };
+  
   // Filter and sort test records
   const filteredTests = testRecords
-    .filter((test: any) => {
+    .filter((test: TestRecordDb) => {
       const student = students.find(s => s.id === test.student_id);
-      const studentMatches = student?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+      
+      // Strongly type and check the search string
+      const searchLower = searchQuery.toLowerCase();
+      
+      // Type guard to ensure student name is a string before using toLowerCase
+      const studentName = student && student.full_name && typeof student.full_name === 'string' 
+        ? student.full_name.toLowerCase() 
+        : '';
+        
+      const studentMatches = studentName.includes(searchLower);
       const subjectMatches = subjectFilter === "all" || test.subject === subjectFilter;
-      const classMatches = classFilter === "all" || student?.class?.toString() === classFilter;
+      
+      // Type-safe class comparison
+      const classMatches = classFilter === "all" || 
+        (student && student.class !== undefined && student.class.toString() === classFilter);
       
       return studentMatches && subjectMatches && classMatches;
     })
-    .sort((a: any, b: any) => {
+    .sort((a: TestRecordDb, b: TestRecordDb) => {
       if (sortField === "date") {
         const dateA = new Date(a.test_date).getTime();
         const dateB = new Date(b.test_date).getTime();
@@ -212,14 +359,87 @@ export default function TestRecord() {
     return { grade: 'F', color: 'bg-red-500' };
   };
   
+  // Handle PDF export for a single test
+  const handleExportPDF = (test: TestRecordDb) => {
+    const student = students.find(s => s.id === test.student_id);
+    
+    if (student) {
+      exportTestToPDF({
+        test,
+        student,
+        title: "Test Result Report",
+        subtitle: `${test.subject} - ${test.test_name}`
+      });
+      
+      toast.success("PDF generated successfully");
+    } else {
+      toast.error("Could not find student information");
+    }
+  };
+  
+  // New function to get test history for a student
+  const getStudentTestHistory = (studentId: string) => {
+    return testRecords.filter((test: TestRecordDb) => test.student_id === studentId);
+  };
+  
+  // New function to handle exporting all test results for a student
+  const handleExportStudentHistory = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    const studentTests = getStudentTestHistory(studentId);
+    
+    if (student && studentTests.length > 0) {
+      // Create a test summary for the student
+      const testSummary = {
+        studentName: student.full_name || "Unknown Student",
+        class: student.class || "N/A",
+        testCount: studentTests.length,
+        averageScore: Math.round(
+          studentTests.reduce((acc: number, test: TestRecordDb) => 
+            acc + ((test.marks / test.total_marks) * 100), 0) / studentTests.length
+        )
+      };
+      
+      // Export all tests as a single PDF
+      exportTestToPDF({
+        test: studentTests[0],
+        student,
+        title: "Test History Report",
+        subtitle: `Complete Test History for ${student.full_name}`,
+        allTests: studentTests
+      });
+      
+      toast.success("Test history PDF generated successfully");
+    } else {
+      toast.error("Could not find student information or test records");
+    }
+  };
+  
+  // Handle view history - redirect to test history page
+  const handleViewHistory = (studentId: string) => {
+    navigate(`/tests/history/${studentId}`);
+  };
+  
+  // Handle back navigation
+  const handleBack = () => {
+    navigate(-1);
+  };
+  
+  // Convert test record for form
+  const convertTestToFormValues = (test: TestRecordDb) => {
+    return {
+      studentId: test.student_id,
+      subject: test.subject,
+      testName: test.test_name,
+      testDate: test.test_date,
+      testType: test.test_type || "Chapter-wise Test",
+      marks: test.marks.toString(),
+      totalMarks: test.total_marks.toString()
+    };
+  };
+  
   // Loading state
   if (testsLoading || studentsLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading test records...</p>
-      </div>
-    );
+    return <TestLoadingState />;
   }
   
   return (
@@ -229,61 +449,157 @@ export default function TestRecord() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <EnhancedPageHeader 
+      <PageHeader 
         title="Test Records" 
-        description="Track and manage student performance"
-        showBackButton
+        showBackButton={true} 
+        onBack={() => navigate(-1)}
         action={
-          <div className="flex gap-2">
-            <Button className="bg-green-500 hover:bg-green-600">
-              <Plus className="h-4 w-4 mr-2" /> Add Test
-            </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" /> Export
-            </Button>
-          </div>
+          <Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-black hover:bg-black/80 text-white">
+                <Plus className="h-4 w-4" /> Add Test
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Test Record</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the new test record below.
+                </DialogDescription>
+              </DialogHeader>
+              <TestAddForm onSubmit={handleAddTest} students={students} />
+            </DialogContent>
+          </Dialog>
         }
       />
       
+      {/* Edit Test Dialog */}
+      <Dialog open={isEditTestOpen} onOpenChange={(open) => {
+        setIsEditTestOpen(open);
+        if (!open) setEditingTest(null);
+      }}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Test Record</DialogTitle>
+            <DialogDescription>
+              Update the details of this test record.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTest && (
+            <TestAddForm 
+              onSubmit={handleUpdateTest} 
+              students={students} 
+              initialData={convertTestToFormValues(editingTest)}
+              isEditing={true}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Student History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>
+              Test History
+              {selectedStudentId && (
+                <span className="ml-2 text-muted-foreground font-normal">
+                  {students.find(s => s.id === selectedStudentId)?.full_name || "Unknown Student"}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              View all test records for this student
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedStudentId && (
+            <>
+              <div className="max-h-[400px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Test Name</TableHead>
+                      <TableHead>Test Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Grade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getStudentTestHistory(selectedStudentId).map((test: TestRecordDb) => {
+                      const { grade, color } = getGrade(test.marks, test.total_marks);
+                      const percent = Math.round((test.marks / test.total_marks) * 100);
+                      
+                      return (
+                        <TableRow key={test.id}>
+                          <TableCell>{test.subject}</TableCell>
+                          <TableCell>{test.test_name}</TableCell>
+                          <TableCell>{test.test_type || "Chapter-wise Test"}</TableCell>
+                          <TableCell>{format(new Date(test.test_date), 'dd MMM yyyy')}</TableCell>
+                          <TableCell>
+                            {test.marks}/{test.total_marks} ({percent}%)
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={color}>{grade}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsHistoryDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                  onClick={() => handleExportStudentHistory(selectedStudentId)}
+                >
+                  <FileText className="h-4 w-4" /> Export All Tests
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Tests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold">{totalTests}</div>
-            <p className="text-sm text-muted-foreground mt-1">Across all subjects and classes</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Tests"
+          value={totalTests}
+          description="Across all subjects and classes"
+          icon={<FileText className="h-5 w-5" />}
+        />
         
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Average Score</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold">{averageScore}%</div>
-            <p className="text-sm text-muted-foreground mt-1">Overall student performance</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Average Score"
+          value={`${averageScore}%`}
+          description="Overall student performance"
+          icon={<Trophy className="h-5 w-5" />}
+        />
         
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Subjects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold">{subjects.length}</div>
-            <p className="text-sm text-muted-foreground mt-1">Different subjects tested</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Subjects"
+          value={subjects.length}
+          description="Different subjects tested"
+          icon={<LibraryBig className="h-5 w-5" />}
+        />
       </div>
       
       <Tabs defaultValue="tests" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tests">Test Records</TabsTrigger>
-          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
+        <TabsList className="grid w-full sm:w-[400px] grid-cols-2 rounded-lg bg-muted/80 backdrop-blur-sm">
+          <TabsTrigger value="tests" className="font-medium">Test Records</TabsTrigger>
+          <TabsTrigger value="analytics" className="font-medium">Performance Analytics</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="tests" className="space-y-4">
+        <TabsContent value="tests" className="space-y-4 animate-fade-in">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -291,209 +607,142 @@ export default function TestRecord() {
                 placeholder="Search student name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-background/50 backdrop-blur-sm transition-all focus:bg-background"
               />
             </div>
             
             <div className="flex gap-2">
               <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px] bg-background/50 backdrop-blur-sm hover:bg-background/70 transition-all">
                   <SelectValue placeholder="Subject" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Subjects</SelectItem>
-                  {subjects.map((subject: any) => (
+                  {subjects.map((subject: string) => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               
               <Select value={classFilter} onValueChange={setClassFilter}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-[130px] bg-background/50 backdrop-blur-sm hover:bg-background/70 transition-all">
                   <SelectValue placeholder="Class" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Classes</SelectItem>
-                  {Array.from({ length: 9 }, (_, i) => i + 2).map((cls) => (
-                    <SelectItem key={cls} value={cls.toString()}>Class {cls}</SelectItem>
-                  ))}
+                  <SelectItem value="9">Class 9</SelectItem>
+                  <SelectItem value="10">Class 10</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           
-          <div className="space-y-4">
-            {isMobile ? (
-              <AnimatePresence>
-                {filteredTests.map((test: any, index) => {
-                  const student = students.find(s => s.id === test.student_id);
-                  const { grade, color } = getGrade(test.marks, test.total_marks);
-                  
-                  return (
-                    <motion.div
-                      key={test.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <Card className="overflow-hidden">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{student?.full_name || "Unknown Student"}</p>
-                              <p className="text-sm text-muted-foreground">Class {student?.class || "N/A"}</p>
-                            </div>
-                            <Badge className={color}>{grade}</Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Subject</p>
-                              <p>{test.subject}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Date</p>
-                              <p>{format(new Date(test.test_date), 'dd MMM yyyy')}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Test Name</p>
-                              <p>{test.test_name}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Score</p>
-                              <p className="font-medium">
-                                {test.marks}/{test.total_marks} ({Math.round((test.marks / test.total_marks) * 100)}%)
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            ) : (
-              <Card>
-                <div className="rounded-md overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>
-                          <div className="flex items-center cursor-pointer" onClick={() => handleSort("date")}>
-                            Date <ArrowUpDown className="ml-2 h-3 w-3" />
-                          </div>
-                        </TableHead>
-                        <TableHead>Test Name</TableHead>
-                        <TableHead>
-                          <div className="flex items-center cursor-pointer" onClick={() => handleSort("marks")}>
-                            Score <ArrowUpDown className="ml-2 h-3 w-3" />
-                          </div>
-                        </TableHead>
-                        <TableHead>Grade</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <AnimatePresence>
-                        {filteredTests.map((test: any, index) => {
-                          const student = students.find(s => s.id === test.student_id);
-                          const { grade, color } = getGrade(test.marks, test.total_marks);
-                          const percent = Math.round((test.marks / test.total_marks) * 100);
-                          
-                          return (
-                            <motion.tr
-                              key={test.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.3, delay: index * 0.02 }}
-                            >
-                              <TableCell>
-                                <div className="font-medium">{student?.full_name || "Unknown"}</div>
-                                <div className="text-xs text-muted-foreground">Class {student?.class || "N/A"}</div>
-                              </TableCell>
-                              <TableCell>{test.subject}</TableCell>
-                              <TableCell>{format(new Date(test.test_date), 'dd MMM yyyy')}</TableCell>
-                              <TableCell>{test.test_name}</TableCell>
-                              <TableCell>
-                                <div className="font-medium">{test.marks}/{test.total_marks}</div>
-                                <div className="text-xs text-muted-foreground">{percent}%</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={color}>{grade}</Badge>
-                              </TableCell>
-                            </motion.tr>
-                          );
-                        })}
-                      </AnimatePresence>
-                      
-                      {filteredTests.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
-                            No test records found matching your search criteria
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </Card>
-            )}
-          </div>
+          <TestResults 
+            tests={filteredTests}
+            students={students}
+            getGrade={getGrade}
+            handleSort={handleSort}
+            isMobile={isMobile}
+            onExportPDF={handleExportPDF}
+            onViewHistory={handleViewHistory}
+            onEditTest={handleEditTest}
+            onDeleteTest={handleDeleteTest}
+          />
         </TabsContent>
         
-        <TabsContent value="analytics" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-6 animate-fade-in">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle>Grade Distribution</CardTitle>
+            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/40 dark:to-gray-900/40 border-b border-slate-200/70 dark:border-slate-700/30 pb-3">
+                <CardTitle className="text-lg font-medium">Grade Distribution</CardTitle>
                 <CardDescription>Distribution of grades across all tests</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 h-[300px]">
+              <CardContent className="p-0 h-[250px] sm:h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                     <Pie
                       data={gradeDistribution}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={isMobile ? 40 : 60}
+                      outerRadius={isMobile ? 60 : 80}
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      label={({ name, percent }) => isMobile ? 
+                        `${name.split(' ')[0]} (${(percent * 100).toFixed(0)}%)` : 
+                        `${name} (${(percent * 100).toFixed(0)}%)`
+                      }
                     >
                       {gradeDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} tests`, 'Count']} />
+                    <RechartsTooltip 
+                      formatter={(value: number) => [`${value} tests`, 'Count']} 
+                      contentStyle={{ 
+                        background: 'rgba(255, 255, 255, 0.9)', 
+                        border: 'none', 
+                        borderRadius: '0.375rem', 
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        padding: '0.5rem 0.75rem'
+                      }}
+                    />
+                    <Legend 
+                      layout={isMobile ? "horizontal" : "vertical"} 
+                      verticalAlign={isMobile ? "bottom" : "middle"} 
+                      align={isMobile ? "center" : "right"}
+                      wrapperStyle={isMobile ? { fontSize: '10px' } : { fontSize: '12px', right: 10 }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
             
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle>Subject Performance</CardTitle>
+            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/40 dark:to-gray-900/40 border-b border-slate-200/70 dark:border-slate-700/30 pb-3">
+                <CardTitle className="text-lg font-medium">Subject Performance</CardTitle>
                 <CardDescription>Average scores by subject</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 h-[300px]">
+              <CardContent className="p-0 h-[250px] sm:h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
+                  <RechartsBarChart
                     data={subjectPerformance}
                     layout="vertical"
+                    margin={{ 
+                      top: 20, 
+                      right: isMobile ? 20 : 40, 
+                      bottom: 20, 
+                      left: isMobile ? 70 : 100 
+                    }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, 100]} />
-                    <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      type="number" 
+                      domain={[0, 100]}
+                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={isMobile ? 70 : 100}
+                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    />
+                    <RechartsTooltip 
+                      formatter={(value: number) => [`${value}%`, 'Average Score']}
+                      contentStyle={{ 
+                        background: 'rgba(255, 255, 255, 0.9)', 
+                        border: 'none', 
+                        borderRadius: '0.375rem', 
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        padding: '0.5rem 0.75rem'
+                      }}
+                    />
                     <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                       {subjectPerformance.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Bar>
-                  </BarChart>
+                  </RechartsBarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -501,5 +750,37 @@ export default function TestRecord() {
         </TabsContent>
       </Tabs>
     </motion.div>
+  );
+}
+
+// Loading state component
+function TestLoadingState() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+      
+      <Skeleton className="h-10 w-64" />
+      
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <Skeleton className="h-10 flex-1" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-[150px]" />
+            <Skeleton className="h-10 w-[130px]" />
+          </div>
+        </div>
+        
+        <Skeleton className="h-[400px]" />
+      </div>
+    </div>
   );
 }

@@ -45,6 +45,15 @@ export function AttendanceFilter({
     setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() + 1)));
   };
 
+  // Filter out any classes with empty or invalid names
+  const validClasses = classes.filter(cls => cls.name && cls.name.trim() !== "");
+  
+  // Filter out any students with empty or invalid data
+  const validStudents = students.filter(student => 
+    student.id && student.id.trim() !== "" && 
+    student.name && student.name.trim() !== ""
+  );
+
   return (
     <Card className="glass-card border border-gray-200">
       <CardContent className="py-4">
@@ -67,24 +76,35 @@ export function AttendanceFilter({
           
           <div className="flex-1">
             {filterType === "class" && (
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(cls => (
-                    <SelectItem key={cls.id} value={cls.name}>{cls.name}</SelectItem>
-                  ))}
-                  <SelectItem value="Class 2">Class 2</SelectItem>
-                  <SelectItem value="Class 3">Class 3</SelectItem>
-                  <SelectItem value="Class 4">Class 4</SelectItem>
-                  <SelectItem value="Class 5">Class 5</SelectItem>
-                  <SelectItem value="Class 6">Class 6</SelectItem>
-                  <SelectItem value="Class 7">Class 7</SelectItem>
-                  <SelectItem value="Class 8">Class 8</SelectItem>
-                  <SelectItem value="Class 9">Class 9</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search students..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validClasses.map(cls => (
+                      <SelectItem key={cls.id} value={cls.name}>{cls.name}</SelectItem>
+                    ))}
+                    <SelectItem value="Class 2">Class 2</SelectItem>
+                    <SelectItem value="Class 3">Class 3</SelectItem>
+                    <SelectItem value="Class 4">Class 4</SelectItem>
+                    <SelectItem value="Class 5">Class 5</SelectItem>
+                    <SelectItem value="Class 6">Class 6</SelectItem>
+                    <SelectItem value="Class 7">Class 7</SelectItem>
+                    <SelectItem value="Class 8">Class 8</SelectItem>
+                    <SelectItem value="Class 9">Class 9</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
             
             {filterType === "student" && (
@@ -93,7 +113,7 @@ export function AttendanceFilter({
                   <SelectValue placeholder="Select student" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map(student => (
+                  {validStudents.map(student => (
                     <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
                   ))}
                 </SelectContent>

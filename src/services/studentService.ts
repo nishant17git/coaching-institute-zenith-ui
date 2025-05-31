@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { StudentRecord, Student, FeeTransaction, AttendanceRecord } from "@/types";
 
@@ -265,12 +266,19 @@ export const studentService = {
   
   // Map Supabase StudentRecord to frontend Student type
   mapToStudentModel(record: StudentRecord): Student {
+    // Split guardian_name into father and mother
+    const guardianParts = record.guardian_name.split(' ');
+    const father = guardianParts.length > 0 ? guardianParts[0] : "";
+    const mother = guardianParts.length > 1 ? guardianParts.slice(1).join(' ') : "";
+    
     return {
       id: record.id,
       name: record.full_name,
       class: `Class ${record.class}`,
-      fatherName: record.guardian_name.split(' ')[0] || "",
-      motherName: record.guardian_name.split(' ')[1] || "",
+      father: father, // Add required father field
+      mother: mother, // Add required mother field
+      fatherName: father,
+      motherName: mother,
       phoneNumber: record.contact_number,
       whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
@@ -280,7 +288,7 @@ export const studentService = {
       attendancePercentage: record.attendance_percentage,
       joinDate: new Date(record.join_date || record.created_at).toISOString().split('T')[0],
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
-      aadhaarNumber: record.aadhaar_number || undefined,
+      aadhaarNumber: record.aadhaar_number ? String(record.aadhaar_number) : undefined,
       dateOfBirth: record.date_of_birth ? new Date(record.date_of_birth).toISOString().split('T')[0] : undefined,
       rollNumber: record.roll_number || undefined
     };

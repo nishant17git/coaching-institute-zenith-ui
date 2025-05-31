@@ -2,15 +2,18 @@
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, User, Save, Calendar } from "lucide-react";
+import { Check, X, Clock, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Student {
   id: string;
   name: string;
+  rollNumber: string;
   status: "Present" | "Absent" | "Leave" | "Holiday";
 }
 
@@ -34,172 +37,195 @@ export function ClassAttendanceTable({
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.05
+        staggerChildren: 0.03
       }
     }
   };
   
   const item = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Present": return "bg-green-100 text-green-700 border-green-200";
+      case "Absent": return "bg-red-100 text-red-700 border-red-200";
+      case "Leave": return "bg-amber-100 text-amber-700 border-amber-200";
+      case "Holiday": return "bg-blue-100 text-blue-700 border-blue-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "Present": return <Check className="h-3.5 w-3.5" />;
+      case "Absent": return <X className="h-3.5 w-3.5" />;
+      case "Leave": return <Clock className="h-3.5 w-3.5" />;
+      case "Holiday": return <Calendar className="h-3.5 w-3.5" />;
+      default: return null;
+    }
   };
 
   return (
     <div className="space-y-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white/80 p-4 rounded-xl border shadow-sm"
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
-            <Check className="h-3 w-3 mr-1" /> Present
-          </Badge>
-          <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
-            <X className="h-3 w-3 mr-1" /> Absent
-          </Badge>
-          <Badge variant="outline" className="bg-orange-50 border-orange-200 text-orange-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
-            <Clock className="h-3 w-3 mr-1" /> Leave
-          </Badge>
-          <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 px-2.5 py-0.5 text-xs whitespace-nowrap">
-            <Calendar className="h-3 w-3 mr-1" /> Holiday
-          </Badge>
-        </div>
-        
-        <Badge variant="outline" className="bg-white border-gray-200 text-gray-900 px-2.5 py-1">
-          <time dateTime={format(date, 'yyyy-MM-dd')}>{format(date, 'MMM d, yyyy')}</time>
-        </Badge>
-      </motion.div>
+      <div className="text-center text-sm text-muted-foreground pb-3 border-b border-dashed mb-4">
+        <span className="font-medium">Date: </span>
+        {format(date, 'EEEE, MMMM d, yyyy')}
+      </div>
       
       {students.length > 0 ? (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-sm border rounded-xl overflow-hidden shadow-sm"
-        >
+        <div className="overflow-hidden border rounded-lg bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50/70 hover:bg-gray-50/90">
-                  <TableHead className="w-12 py-3 pl-4">#</TableHead>
-                  <TableHead className="py-3">Student</TableHead>
-                  <TableHead className="py-3 text-center w-24">Status</TableHead>
-                  <TableHead className="py-3 text-right pr-4 w-auto md:w-[280px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <motion.tbody
-                variants={container}
-                initial="hidden"
-                animate="show"
-                className="divide-y divide-gray-100"
-              >
-                {students.map((student, index) => (
-                  <motion.tr key={student.id} variants={item} className="bg-white/70 hover:bg-gray-50/70">
-                    <TableCell className="py-2 pl-4 font-medium">{index + 1}</TableCell>
-                    <TableCell className="py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-gray-100/80 flex items-center justify-center shrink-0">
-                          <User className="h-4 w-4 text-gray-500" />
+            <TooltipProvider>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 hover:bg-gray-50/90">
+                    <TableHead className="w-16 py-3 pl-4 text-xs font-medium text-gray-500">Roll #</TableHead>
+                    <TableHead className="py-3 text-xs font-medium text-gray-500">Student</TableHead>
+                    <TableHead className="py-3 text-center w-24 text-xs font-medium text-gray-500">Status</TableHead>
+                    <TableHead className="py-3 text-right pr-4 w-auto md:w-[280px] text-xs font-medium text-gray-500">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <motion.tbody
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                  className="divide-y divide-gray-100"
+                >
+                  {students.map((student) => (
+                    <motion.tr key={student.id} variants={item} className="bg-white hover:bg-gray-50/70">
+                      <TableCell className="py-2.5 pl-4 font-medium text-xs">{student.rollNumber}</TableCell>
+                      <TableCell className="py-2.5">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              {getInitials(student.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="font-medium text-sm">{student.name}</div>
                         </div>
-                        <div className="font-medium">{student.name}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2 text-center">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-                          student.status === "Present" ? "bg-green-50 text-green-700 border-green-200" :
-                          student.status === "Absent" ? "bg-red-50 text-red-700 border-red-200" :
-                          student.status === "Holiday" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                          "bg-orange-50 text-orange-700 border-orange-200"
-                        )}
-                      >
-                        {student.status === "Present" && <Check className="h-3 w-3 mr-1 inline" />}
-                        {student.status === "Absent" && <X className="h-3 w-3 mr-1 inline" />}
-                        {student.status === "Leave" && <Clock className="h-3 w-3 mr-1 inline" />}
-                        {student.status === "Holiday" && <Calendar className="h-3 w-3 mr-1 inline" />}
-                        {student.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-2 pr-4">
-                      <div className="flex justify-end gap-1.5">
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button 
-                            variant={student.status === "Present" ? "default" : "outline"} 
-                            size="sm"
-                            className={cn(
-                              "h-7 px-2.5 text-xs whitespace-nowrap rounded-lg transition-all",
-                              student.status === "Present" 
-                                ? "bg-green-600 hover:bg-green-700 shadow-sm" 
-                                : "hover:bg-green-50 hover:text-green-700 hover:border-green-200"
-                            )}
-                            onClick={() => onStatusChange(student.id, "Present")}
-                          >
-                            <Check className="h-3 w-3 mr-1" /> Present
-                          </Button>
-                        </motion.div>
-                        
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button 
-                            variant={student.status === "Absent" ? "default" : "outline"} 
-                            size="sm"
-                            className={cn(
-                              "h-7 px-2.5 text-xs whitespace-nowrap rounded-lg transition-all",
-                              student.status === "Absent" 
-                                ? "bg-red-600 hover:bg-red-700 shadow-sm" 
-                                : "hover:bg-red-50 hover:text-red-700 hover:border-red-200"
-                            )}
-                            onClick={() => onStatusChange(student.id, "Absent")}
-                          >
-                            <X className="h-3 w-3 mr-1" /> Absent
-                          </Button>
-                        </motion.div>
-                        
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button 
-                            variant={student.status === "Leave" ? "default" : "outline"} 
-                            size="sm"
-                            className={cn(
-                              "h-7 px-2.5 text-xs whitespace-nowrap rounded-lg transition-all",
-                              student.status === "Leave" 
-                                ? "bg-orange-600 hover:bg-orange-700 shadow-sm" 
-                                : "hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200"
-                            )}
-                            onClick={() => onStatusChange(student.id, "Leave")}
-                          >
-                            <Clock className="h-3 w-3 mr-1" /> Leave
-                          </Button>
-                        </motion.div>
+                      </TableCell>
+                      <TableCell className="py-2.5 text-center">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "inline-flex items-center justify-center gap-1 px-2 py-0.5 text-xs font-medium shadow-sm",
+                            getStatusColor(student.status)
+                          )}
+                        >
+                          {getStatusIcon(student.status)}
+                          {student.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2.5 pr-4">
+                        <div className="flex justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant={student.status === "Present" ? "default" : "outline"} 
+                                size="sm"
+                                className={cn(
+                                  "h-8 rounded-md transition-all",
+                                  student.status === "Present" 
+                                    ? "bg-green-600 hover:bg-green-700 text-white" 
+                                    : "hover:bg-green-50 hover:text-green-700 hover:border-green-200"
+                                )}
+                                onClick={() => onStatusChange(student.id, "Present")}
+                              >
+                                <Check className="h-3.5 w-3.5 mr-1.5" /> Present
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark student as present</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant={student.status === "Absent" ? "default" : "outline"} 
+                                size="sm"
+                                className={cn(
+                                  "h-8 rounded-md transition-all",
+                                  student.status === "Absent" 
+                                    ? "bg-red-600 hover:bg-red-700 text-white" 
+                                    : "hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+                                )}
+                                onClick={() => onStatusChange(student.id, "Absent")}
+                              >
+                                <X className="h-3.5 w-3.5 mr-1.5" /> Absent
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark student as absent</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant={student.status === "Leave" ? "default" : "outline"} 
+                                size="sm"
+                                className={cn(
+                                  "h-8 rounded-md transition-all",
+                                  student.status === "Leave" 
+                                    ? "bg-amber-600 hover:bg-amber-700 text-white" 
+                                    : "hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200"
+                                )}
+                                onClick={() => onStatusChange(student.id, "Leave")}
+                              >
+                                <Clock className="h-3.5 w-3.5 mr-1.5" /> Leave
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark student on leave</p>
+                            </TooltipContent>
+                          </Tooltip>
 
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button 
-                            variant={student.status === "Holiday" ? "default" : "outline"} 
-                            size="sm"
-                            className={cn(
-                              "h-7 px-2.5 text-xs whitespace-nowrap rounded-lg transition-all",
-                              student.status === "Holiday" 
-                                ? "bg-blue-600 hover:bg-blue-700 shadow-sm" 
-                                : "hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
-                            )}
-                            onClick={() => onStatusChange(student.id, "Holiday")}
-                          >
-                            <Calendar className="h-3 w-3 mr-1" /> Holiday
-                          </Button>
-                        </motion.div>
-                      </div>
-                    </TableCell>
-                  </motion.tr>
-                ))}
-              </motion.tbody>
-            </Table>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant={student.status === "Holiday" ? "default" : "outline"} 
+                                size="sm"
+                                className={cn(
+                                  "h-8 rounded-md transition-all",
+                                  student.status === "Holiday" 
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                                    : "hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+                                )}
+                                onClick={() => onStatusChange(student.id, "Holiday")}
+                              >
+                                <Calendar className="h-3.5 w-3.5 mr-1.5" /> Holiday
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark as holiday</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                  ))}
+                </motion.tbody>
+              </Table>
+            </TooltipProvider>
           </div>
-        </motion.div>
+        </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-8 px-4 border rounded-xl bg-white/80 text-center shadow-sm">
-          <User className="h-10 w-10 text-muted-foreground mb-2" />
-          <p className="text-muted-foreground font-medium">No students found for this class</p>
-          <p className="text-xs text-muted-foreground mt-1">Try selecting a different class or date</p>
+        <div className="flex flex-col items-center justify-center py-10 px-4 border rounded-xl bg-white text-center shadow-sm">
+          <User className="h-12 w-12 text-muted-foreground/60 mb-3" />
+          <p className="text-lg font-medium text-muted-foreground">No students found for this class</p>
+          <p className="text-sm text-muted-foreground mt-1">Try selecting a different class or date</p>
         </div>
       )}
     </div>

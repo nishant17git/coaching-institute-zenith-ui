@@ -2,27 +2,26 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { studentService } from "@/services/studentService";
-import { StudentRecord } from "@/types";
+import { StudentRecord, Student, StudentPhone } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 
-"@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 
-"@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
-DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 
-"@/components/ui/form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Loader2, Plus, Search, Users, Rows3, LayoutGrid, Phone, MessageSquare } from "lucide-react";
+import { Loader2, Plus, Search, Users, Rows3, LayoutGrid, Phone, MessageSquare, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
-import { StudentCardView } from "@/components/ui/student-card-view";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge"; 
+import StudentCard from "@/components/ui/student-card";
+import CallModal from "@/components/ui/call-modal";
+import { Card } from "@/components/ui/card";
 
 export default function Students() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +31,8 @@ export default function Students() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<StudentRecord | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -104,7 +105,7 @@ export default function Students() {
     }
   });
 
-  // View student details
+  // View student details function
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
@@ -117,6 +118,86 @@ export default function Students() {
   const handleDeleteStudent = (student: StudentRecord) => {
     setCurrentStudent(student);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleShowCallModal = (student: Student) => {
+    setSelectedStudent(student);
+    setIsCallModalOpen(true);
+  };
+
+  const handleStudentCardCallClick = (name: string, phone: string) => {
+    // For the StudentCard component, open dialog with student info
+    const studentForModal: Student = {
+      id: "temp-id", 
+      name: name,
+      class: "", 
+      father: "", 
+      mother: "", 
+      fatherName: "",
+      motherName: "",
+      phoneNumber: "",
+      whatsappNumber: "",
+      address: "",
+      feeStatus: "Pending",
+      totalFees: 0,
+      paidFees: 0,
+      attendancePercentage: 0,
+      joinDate: "",
+      phones: [
+        {
+          id: "phone-1",
+          phone: phone,
+          is_whatsapp: false
+        }
+      ]
+    };
+    
+    setSelectedStudent(studentForModal);
+    setIsCallModalOpen(true);
+  };
+
+  // Convert StudentRecord to Student format for the new card component
+  const mapStudentToCardFormat = (student: StudentRecord, index: number): Student => {
+    const guardianParts = student.guardian_name.split(' ');
+    const father = guardianParts.length > 0 ? guardianParts[0] : '';
+    const mother = guardianParts.length > 1 ? guardianParts.slice(1).join(' ') : '';
+    
+    // Create phone objects from contact number
+    const phones: StudentPhone[] = [];
+    if (student.contact_number) {
+      phones.push({
+        id: `phone-${student.id}-1`,
+        phone: student.contact_number,
+        is_whatsapp: false
+      });
+    }
+    
+    if (student.whatsapp_number) {
+      phones.push({
+        id: `phone-${student.id}-2`,
+        phone: student.whatsapp_number,
+        is_whatsapp: true
+      });
+    }
+    
+    return {
+      id: student.id,
+      name: student.full_name,
+      class: student.class.toString(),
+      father: father, // Father name for the new field
+      mother: mother, // Mother name for the new field
+      fatherName: father,
+      motherName: mother,
+      phoneNumber: student.contact_number,
+      whatsappNumber: student.whatsapp_number || "",
+      address: student.address || "",
+      feeStatus: student.fee_status as "Paid" | "Pending" | "Partial",
+      totalFees: student.total_fees || 0,
+      paidFees: student.paid_fees || 0,
+      attendancePercentage: student.attendance_percentage || 0,
+      joinDate: student.join_date || "",
+      phones: phones
+    };
   };
 
   // Split guardian name into father and mother names
@@ -352,13 +433,12 @@ export default function Students() {
         full_name: currentStudent?.full_name || "",
         class: currentStudent?.class || 2,
         roll_number: currentStudent?.roll_number.toString() || "",
-        date_of_birth: currentStudent?.date_of_birth ? new 
-Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
+        date_of_birth: currentStudent?.date_of_birth ? new Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         address: currentStudent?.address || "",
         father_name: fatherName || "",
         mother_name: motherName || "",
         contact_number: currentStudent?.contact_number || "",
-        whatsapp_number: currentStudent?.contact_number || ""
+        whatsapp_number: currentStudent?.whatsapp_number || ""
       }
     });
 
@@ -560,12 +640,12 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-spotify">
       <div className="flex items-center justify-between">
         <EnhancedPageHeader 
           title="Students" 
         />
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="font-spotify">
           <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
@@ -623,7 +703,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
             title="Error loading students"
             description="There was an error loading the student data. Please try again later."
             action={
-              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['students'] })}>
+              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['students'] })} className="font-spotify">
                 Try Again
               </Button>
             }
@@ -636,7 +716,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
               "Add your first student by clicking the 'Add Student' button." : 
               "Try adjusting your search or filters to find what you're looking for."}
             action={
-              <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="font-spotify">
                 <Plus className="mr-2 h-4 w-4" /> Add Student
               </Button>
             }
@@ -644,23 +724,27 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
         ) : (
           <Tabs value={viewMode} className="mt-2">
             <TabsContent value="grid" className="mt-0">
-              <motion.div 
-                layout
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-              >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredStudents.map((student, index) => (
-                  <StudentCardView
-                    key={student.id}
-                    student={student}
-                    index={index}
-                    onViewDetails={handleViewDetails}
-                    onEdit={handleEditStudent}
-                    onDelete={handleDeleteStudent}
-                    onCall={handlePhoneCall}
-                    onWhatsApp={handleWhatsApp}
-                  />
+                  <Card key={student.id} className="overflow-hidden">
+                    <StudentCard
+                      student={mapStudentToCardFormat(student, index)}
+                      index={index}
+                      onCallClick={handleStudentCardCallClick}
+                      isFavorite={false}
+                    />
+                    <div className="px-4 pb-4 pt-2">
+                      <Button 
+                        variant="default" 
+                        className="w-full flex items-center justify-center gap-2"
+                        onClick={() => handleViewDetails(student.id)}
+                      >
+                        View Details <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
                 ))}
-              </motion.div>
+              </div>
             </TabsContent>
 
             <TabsContent value="table" className="mt-0">
@@ -668,13 +752,13 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">Roll No</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">Class</TableHead>
-                      <TableHead className="hidden md:table-cell">Date of Birth</TableHead>
-                      <TableHead className="hidden lg:table-cell">Guardian</TableHead>
-                      <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[80px] font-spotify">Roll No</TableHead>
+                      <TableHead className="font-spotify">Name</TableHead>
+                      <TableHead className="hidden md:table-cell font-spotify">Class</TableHead>
+                      <TableHead className="hidden md:table-cell font-spotify">Date of Birth</TableHead>
+                      <TableHead className="hidden lg:table-cell font-spotify">Guardian</TableHead>
+                      <TableHead className="hidden lg:table-cell font-spotify">Contact</TableHead>
+                      <TableHead className="text-right font-spotify">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -684,16 +768,15 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        onClick={() => handleViewDetails(student.id)}
-                        className="cursor-pointer hover:bg-muted/80"
+                        className="hover:bg-muted/80 font-spotify"
                       >
-                        <TableCell>{student.roll_number}</TableCell>
-                        <TableCell className="font-medium">{student.full_name}</TableCell>
-                        <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
-                        <TableCell className="hidden md:table-cell">
+                        <TableCell className="font-spotify">{student.roll_number}</TableCell>
+                        <TableCell className="font-medium font-spotify">{student.full_name}</TableCell>
+                        <TableCell className="hidden md:table-cell font-spotify">Class {student.class}</TableCell>
+                        <TableCell className="hidden md:table-cell font-spotify">
                           {new Date(student.date_of_birth).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">{student.guardian_name}</TableCell>
+                        <TableCell className="hidden lg:table-cell font-spotify">{student.guardian_name}</TableCell>
                         <TableCell className="hidden lg:table-cell">
                           <div className="flex gap-2">
                             <Button 
@@ -723,19 +806,31 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button 
+                              variant="default" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDetails(student.id);
+                              }}
+                              className="font-spotify"
+                            >
+                              View Details
+                            </Button>
+                            <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEditStudent(student);
                               }}
+                              className="font-spotify"
                             >
                               Edit
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-red-500"
+                              className="text-red-500 font-spotify"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteStudent(student);
@@ -757,10 +852,10 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
 
       {/* Add Student Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto font-spotify">
           <DialogHeader>
-            <DialogTitle>Add New Student</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-spotify">Add New Student</DialogTitle>
+            <DialogDescription className="font-spotify">
               Enter the details of the new student below.
             </DialogDescription>
           </DialogHeader>
@@ -770,10 +865,10 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
 
       {/* Edit Student Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto font-spotify">
           <DialogHeader>
-            <DialogTitle>Edit Student</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-spotify">Edit Student</DialogTitle>
+            <DialogDescription className="font-spotify">
               Update the details of the student below.
             </DialogDescription>
           </DialogHeader>
@@ -783,10 +878,10 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
 
       {/* Delete Student Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="font-spotify">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-spotify">Confirm Deletion</DialogTitle>
+            <DialogDescription className="font-spotify">
               Are you sure you want to delete {currentStudent?.full_name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -794,6 +889,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
             <Button 
               variant="outline" 
               onClick={() => setIsDeleteDialogOpen(false)}
+              className="font-spotify"
             >
               Cancel
             </Button>
@@ -805,6 +901,7 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
                   deleteStudentMutation.mutate(currentStudent.id);
                 }
               }}
+              className="font-spotify"
             >
               {deleteStudentMutation.isPending ? (
                 <>
@@ -816,6 +913,13 @@ Date(currentStudent.date_of_birth).toISOString().split('T')[0] : "",
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Call Modal */}
+      <CallModal 
+        open={isCallModalOpen}
+        onOpenChange={setIsCallModalOpen}
+        student={selectedStudent}
+      />
     </div>
   );
 }

@@ -57,20 +57,20 @@ export function StudentCardView({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="h-full"
     >
       <GlassCard 
-        className="h-full transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col" 
+        className="h-full transition-all duration-300 hover:shadow-lg cursor-pointer flex flex-col border-white/30" 
         animate={false}
         onClick={() => onViewDetails(student.id)}
       >
         <GlassCardContent className="p-5 flex-grow">
           <div className="flex items-center justify-between mb-4">
-            <Badge className="px-2 py-0.5 text-xs">Class {student.class}</Badge>
+            <Badge className="px-2 py-0.5 text-xs font-medium rounded-md">Class {student.class}</Badge>
             <Badge 
               className={cn(
-                "px-2 py-0.5 text-xs text-white",
+                "px-2 py-0.5 text-xs text-white font-medium rounded-md",
                 getFeeStatusColor(student.fee_status || "Pending")
               )}
             >
@@ -78,7 +78,7 @@ export function StudentCardView({
             </Badge>
           </div>
           
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <h3 className="font-semibold text-lg line-clamp-1">{student.full_name}</h3>
             <p className="text-muted-foreground text-sm flex items-center">
               <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -86,45 +86,43 @@ export function StudentCardView({
             </p>
           </div>
           
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-muted-foreground text-xs">Roll Number</p>
+              <p className="text-muted-foreground text-xs font-medium">Roll Number</p>
               <p className="font-medium">{student.roll_number}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Guardian</p>
+              <p className="text-muted-foreground text-xs font-medium">Guardian</p>
               <p className="font-medium line-clamp-1">{student.guardian_name}</p>
             </div>
           </div>
           
-          <div className="mt-3 flex justify-center gap-2">
+          <div className="mt-4 flex justify-center gap-3">
             <Button 
-              variant="ghost" 
               size="sm" 
-              className="flex-1 flex items-center justify-center gap-1 h-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+              className="flex-1 flex items-center justify-center gap-1.5 h-10 bg-blue-500/90 hover:bg-blue-600 text-white shadow-sm"
               onClick={handleCall}
             >
-              <Phone className="h-3.5 w-3.5" />
-              <span className="text-xs">Call</span>
+              <Phone className="h-4 w-4" />
+              <span>Call</span>
             </Button>
             <Button 
-              variant="ghost" 
               size="sm" 
-              className="flex-1 flex items-center justify-center gap-1 h-8 text-green-500 hover:text-green-600 hover:bg-green-50"
+              className="flex-1 flex items-center justify-center gap-1.5 h-10 bg-green-500/90 hover:bg-green-600 text-white shadow-sm"
               onClick={handleWhatsApp}
             >
-              <MessageSquare className="h-3.5 w-3.5" />
-              <span className="text-xs">WhatsApp</span>
+              <MessageSquare className="h-4 w-4" />
+              <span>WhatsApp</span>
             </Button>
           </div>
         </GlassCardContent>
         
-        <GlassCardFooter className="border-t">
-          <Button variant="ghost" size="sm" className="w-full" onClick={(e) => {
+        <GlassCardFooter className="border-t border-white/20">
+          <Button variant="ghost" size="sm" className="w-full hover:bg-white/10" onClick={(e) => {
             e.stopPropagation();
             onViewDetails(student.id);
           }}>
-            <Eye className="h-4 w-4 mr-1" />
+            <Eye className="h-4 w-4 mr-1.5" />
             Details
           </Button>
           
@@ -133,7 +131,7 @@ export function StudentCardView({
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 hover:bg-white/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(student);
@@ -147,7 +145,7 @@ export function StudentCardView({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 text-red-500"
+                className="h-8 w-8 text-red-400 hover:text-red-500 hover:bg-red-50/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(student);

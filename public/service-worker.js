@@ -1,3 +1,4 @@
+
 // Name/version of the cache
 const CACHE_NAME = 'infinity-classes-v1';
 
@@ -16,10 +17,10 @@ const urlsToCache = [
 
 // Install event: precache assets & activate immediately
 self.addEventListener('install', (event) => {
-  self.skipWaiting();  // Skip waiting phase 3
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))  // Precache all URLs 4
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
@@ -32,7 +33,7 @@ self.addEventListener('activate', (event) => {
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       ))
-      .then(() => self.clients.claim())  // Claim control immediately 5
+      .then(() => self.clients.claim())
   );
 });
 

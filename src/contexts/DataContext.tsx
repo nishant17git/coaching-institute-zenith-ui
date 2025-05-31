@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { studentService } from '@/services/studentService';
@@ -15,6 +14,7 @@ interface DataContextType {
   feeTransactions: FeeTransaction[];
   attendanceRecords: AttendanceRecord[];
   classes: Class[];
+  testRecords: any[]; // Add this property for test records
   
   // Student methods
   addStudent: (student: Omit<Student, 'id'>) => Promise<string>;
@@ -80,6 +80,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Initially we won't load all transactions and attendance records - they'll be loaded on demand
   const [feeTransactions, setFeeTransactions] = useState<FeeTransaction[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  // Initialize empty test records array
+  const [testRecords, setTestRecords] = useState<any[]>([]);
 
   // Student CRUD operations
   const addStudent = async (studentData: Omit<Student, 'id'>): Promise<string> => {
@@ -202,6 +204,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       feeTransactions,
       attendanceRecords,
       classes,
+      testRecords, // Add the testRecords property to the context value
       addStudent,
       updateStudent,
       deleteStudent,

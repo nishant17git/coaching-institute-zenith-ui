@@ -3,8 +3,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Infinity Classes - Student Management System</title>
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0">
+    <title>Infinity ATOM U-235 I</title>
     <meta name="description" content="Student Management System for Coaching Institutes" />
     <meta name="author" content="Infinity Classes" />
     <link rel="manifest" href="/manifest.json" />
@@ -25,15 +25,19 @@
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // More robust service worker registration
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then((registration) => {
-              console.log('ServiceWorker registration successful');
-            })
-            .catch((err) => {
-              console.log('ServiceWorker registration failed: ', err);
-            });
+        window.addEventListener('load', function() {
+          // Delay registration slightly to ensure page load completes first
+          setTimeout(() => {
+            navigator.serviceWorker.register('/service-worker.js')
+              .then(function(registration) {
+                console.log('ServiceWorker registration successful');
+              })
+              .catch(function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+              });
+          }, 1000);
         });
       }
     </script>

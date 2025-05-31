@@ -1,13 +1,20 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Loader2, CalendarIcon, User, Phone, MapPin, GraduationCap, CreditCard } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Student, Class } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 // Student form schema
 const studentFormSchema = z.object({
@@ -74,12 +81,12 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
   });
 
   const handleSubmit = async (data: StudentFormValues) => {
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
       await onSubmit(data);
-      form.reset(defaultValues); // Reset form after successful submission
+      form.reset(defaultValues);
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
@@ -87,224 +94,362 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
     }
   };
 
+  // Filter out classes with invalid data
+  const validClasses = classes.filter(cls => 
+    cls.id && cls.id.trim() !== "" && 
+    cls.name && cls.name.trim() !== ""
+  );
+
+  const selectedDate = form.watch("dateOfBirth") ? new Date(form.watch("dateOfBirth")) : undefined;
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="name">Full Name</FormLabel>
-              <FormControl>
-                <Input id="name" placeholder="Enter student's name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <div className="w-full h-full flex flex-col font-geist">
+      <div className="flex-1 form-scroll-container px-2 sm:px-4 py-2 sm:py-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+            {/* Personal Information Section */}
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-geist">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  Personal Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium font-geist">Full Name *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter student's full name" 
+                          className="h-10 sm:h-11 font-geist" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="font-geist" />
+                    </FormItem>
+                  )}
+                />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="class"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="class">Class</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger id="class">
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.name}>
-                        {cls.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="rollNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="rollNumber">Roll Number</FormLabel>
-                <FormControl>
-                  <Input
-                    id="rollNumber"
-                    type="number"
-                    placeholder="Enter roll number"
-                    {...field}
-                    value={field.value || ""}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Gender</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 sm:h-11 font-geist">
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel className="font-geist">Gender</SelectLabel>
+                              <SelectItem value="Male" className="font-geist">Male</SelectItem>
+                              <SelectItem value="Female" className="font-geist">Female</SelectItem>
+                              <SelectItem value="Other" className="font-geist">Other</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Date of Birth</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "h-10 sm:h-11 w-full justify-start text-left font-normal font-geist",
+                                  !selectedDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="aadhaarNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium font-geist">Aadhaar Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter Aadhaar number (optional)" 
+                          className="h-10 sm:h-11 font-geist" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="font-geist" />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Academic Information Section */}
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-geist">
+                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  Academic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="class"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Class *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 sm:h-11 font-geist">
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel className="font-geist">Available Classes</SelectLabel>
+                              {validClasses.map((cls) => (
+                                <SelectItem key={cls.id} value={cls.name} className="font-geist">
+                                  {cls.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="rollNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Roll Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Enter roll number"
+                            className="h-10 sm:h-11 font-geist"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Guardian Information Section */}
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-geist">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  Guardian Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fatherName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Father's Name *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter father's name" 
+                            className="h-10 sm:h-11 font-geist" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="motherName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Mother's Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter mother's name (optional)" 
+                            className="h-10 sm:h-11 font-geist" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact Information Section */}
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-geist">
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  Contact Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">Phone Number *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter phone number" 
+                            className="h-10 sm:h-11 font-geist" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="whatsappNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium font-geist">WhatsApp Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter WhatsApp number (optional)" 
+                            className="h-10 sm:h-11 font-geist" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage className="font-geist" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium font-geist">Address *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter complete address" 
+                          className="h-10 sm:h-11 font-geist" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="font-geist" />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Fee Information Section */}
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-geist">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  Fee Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="totalFees"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium font-geist">Total Fees (₹) *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Enter total fees amount" 
+                          className="h-10 sm:h-11 font-geist" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="font-geist" />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </form>
+        </Form>
+      </div>
+
+      {/* Submit Button - Fixed at bottom */}
+      <div className="flex-shrink-0 border-t bg-background px-2 sm:px-4 py-3 sm:py-4">
+        <div className="max-w-4xl mx-auto flex justify-end">
+          <Button 
+            type="submit" 
+            onClick={form.handleSubmit(handleSubmit)}
+            className="h-10 sm:h-11 px-6 sm:px-8 font-geist font-medium w-full sm:w-auto" 
+            disabled={isSubmitting}
+            size="lg"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              submitLabel
             )}
-          />
+          </Button>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="gender"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Gender</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="dateOfBirth"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date of Birth</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="fatherName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Father's Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter father's name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="motherName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mother's Name (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter mother's name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter address" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="phoneNumber">Phone Number</FormLabel>
-                <FormControl>
-                  <Input id="phoneNumber" placeholder="Enter phone number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="whatsappNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>WhatsApp Number (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter WhatsApp number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="totalFees"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Fees (₹)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="aadhaarNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Aadhaar Number (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter Aadhaar number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-      </form>
-    </Form>
+      </div>
+    </div>
   );
 }

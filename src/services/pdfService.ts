@@ -1,5 +1,4 @@
-
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Student, FeeTransaction, AttendanceRecord } from '@/types';
 import { format } from 'date-fns';
@@ -322,3 +321,222 @@ export const exportReportToPDF = (options: ReportPDFOptions) => {
   doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
+// Export the new questions PDF function
+export { exportQuestionsToPDF } from './questionsPdfService';
+
+// Add the new function to export test results to PDF
+export interface TestPDFOptions {
+  test: any;
+  student: any;
+  title?: string;
+  subtitle?: string;
+  logo?: string;
+  chartImage?: string;
+  allTests?: any[]; // New property for exporting multiple tests
+}
+
+export const exportTestToPDF = (options: TestPDFOptions) => {
+  const { test, student, title = "Test Results", subtitle, logo, chartImage, allTests } = options;
+  const doc = new jsPDF();
+  
+  // Add logo if provided
+  if (logo) {
+    doc.addImage(logo, 'PNG', 10, 10, 20, 20);
+  }
+  
+  // Title
+  doc.setFontSize(20);
+  doc.text(title, logo ? 40 : 10, 20);
+  
+  // Subtitle
+  if (subtitle) {
+    doc.setFontSize(12);
+    doc.text(subtitle, logo ? 40 : 10, 30);
+  }
+  
+  // Date
+  doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy')}`, 130, 20);
+  
+  // Add a line below header
+  doc.setLineWidth(0.5);
+  doc.line(10, 35, 200, 35);
+  
+  // Student details
+  doc.setFontSize(14);
+  doc.text("Student Details", 10, 45);
+  
+  doc.setFontSize(12);
+  doc.text(`Name: ${student.full_name || "Unknown"}`, 10, 55);
+  doc.text(`Class: ${student.class || "N/A"}`, 10, 63);
+  
+  let yPosition = 75;
+  
+  // Handle single test or multiple tests
+  if (allTests && allTests.length > 0) {
+    // Test summary
+    doc.setFontSize(14);
+    doc.text("Test Summary", 10, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(12);
+    doc.text(`Total Tests: ${allTests.length}`, 10, yPosition);
+    yPosition += 8;
+    
+    // Calculate average score
+    const totalPercent = allTests.reduce((sum, test) => sum + ((test.marks / test.total_marks) * 100), 0);
+    const averagePercent = Math.round(totalPercent / allTests.length);
+    
+    doc.text(`Average Score: ${averagePercent}%`, 10, yPosition);
+    yPosition += 15;
+    
+    // Test records table
+    doc.setFontSize(14);
+    doc.text("Test Records", 10, yPosition);
+    yPosition += 10;
+    
+    const tableColumn = ["Date", "Subject", "Test Name", "Score", "Grade"];
+    const tableRows = allTests.map(test => {
+      const percent = Math.round((test.marks / test.total_marks) * 100);
+      let grade = "F";
+      
+      if (percent >= 90) grade = "A";
+      else if (percent >= 75) grade = "B";
+      else if (percent >= 60) grade = "C";
+      else if (percent >= 40) grade = "D";
+      
+      return [
+        format(new Date(test.test_date), 'dd/MM/yyyy'),
+        test.subject,
+        test.test_name,
+        `${test.marks}/${test.total_marks} (${percent}%)`,
+        grade
+      ];
+    });
+    
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: yPosition,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: [255, 255, 255]
+      },
+      alternateRowStyles: {
+        fillColor: [240, 240, 250]
+      }
+    });
+    
+    // Subject performance summary if there are more than 1 test
+    if (allTests.length > 1) {
+      // Get unique subjects
+      const subjects = Array.from(new Set(allTests.map(test => test.subject)));
+      
+      // Add a new page if needed
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      if (finalY > 250) {
+        doc.addPage();
+        yPosition = 20;
+      } else {
+        yPosition = finalY;
+      }
+      
+      doc.setFontSize(14);
+      doc.text("Subject Performance", 10, yPosition);
+      yPosition += 10;
+      
+      const subjectData = subjects.map(subject => {
+        const subjectTests = allTests.filter(test => test.subject === subject);
+        const totalPercent = subjectTests.reduce((sum, test) => sum + ((test.marks / test.total_marks) * 100), 0);
+        const averagePercent = Math.round(totalPercent / subjectTests.length);
+        
+        return [
+          subject,
+          `${subjectTests.length}`,
+          `${averagePercent}%`
+        ];
+      });
+      
+      autoTable(doc, {
+        head: [["Subject", "Tests", "Average Score"]],
+        body: subjectData,
+        startY: yPosition,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [79, 70, 229],
+          textColor: [255, 255, 255]
+        }
+      });
+    }
+    
+  } else {
+    // Single test details
+    doc.setFontSize(14);
+    doc.text("Test Details", 10, yPosition);
+    
+    doc.setFontSize(12);
+    doc.text(`Test Name: ${test.test_name}`, 10, yPosition + 10);
+    doc.text(`Subject: ${test.subject}`, 10, yPosition + 18);
+    doc.text(`Date: ${format(new Date(test.test_date), 'dd/MM/yyyy')}`, 10, yPosition + 26);
+    
+    // Test score
+    doc.setFontSize(14);
+    doc.text("Score", 10, yPosition + 40);
+    
+    const percentage = Math.round((test.marks / test.total_marks) * 100);
+    doc.setFontSize(12);
+    doc.text(`Marks Obtained: ${test.marks}/${test.total_marks}`, 10, yPosition + 50);
+    doc.text(`Percentage: ${percentage}%`, 10, yPosition + 58);
+    
+    // Grade calculation
+    let grade = "F";
+    let gradeColor = "#EF4444";
+    
+    if (percentage >= 90) {
+      grade = "A";
+      gradeColor = "#22c55e";
+    } else if (percentage >= 75) {
+      grade = "B";
+      gradeColor = "#0EA5E9";
+    } else if (percentage >= 60) {
+      grade = "C";
+      gradeColor = "#EAB308";
+    } else if (percentage >= 40) {
+      grade = "D";
+      gradeColor = "#F97316";
+    }
+    
+    doc.text(`Grade: ${grade}`, 10, yPosition + 66);
+    
+    // Add chart if provided
+    if (chartImage) {
+      doc.addImage(chartImage, 'PNG', 50, yPosition + 75, 100, 60);
+    }
+    
+    // Comments section
+    doc.setFontSize(14);
+    doc.text("Teacher's Comments", 10, yPosition + 140);
+    
+    doc.setFontSize(12);
+    doc.text("This is an automatically generated test report.", 10, yPosition + 150);
+    
+    // Signature line
+    doc.line(10, 250, 70, 250);
+    doc.text("Teacher's Signature", 15, 258);
+    
+    doc.line(140, 250, 190, 250);
+    doc.text("Principal's Signature", 145, 258);
+  }
+  
+  // Footer
+  doc.setFontSize(10);
+  doc.text("This is a computer generated report and does not require physical signature.", 10, 280);
+  
+  // Save the PDF
+  const studentName = student.full_name ? student.full_name.replace(/\s+/g, "_") : "student";
+  const fileName = allTests && allTests.length > 1 
+    ? `test_history_${studentName}.pdf` 
+    : `test_report_${studentName}_${test.subject}.pdf`;
+    
+  doc.save(fileName);
+};

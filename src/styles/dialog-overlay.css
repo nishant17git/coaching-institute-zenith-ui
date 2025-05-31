@@ -1,0 +1,41 @@
+
+/* Custom styles for the dialog overlay to make it less intense */
+[data-radix-popper-content-wrapper] [role="dialog"] {
+  z-index: 50;
+}
+
+/* Target the dialog overlay */
+.Dialog__overlay {
+  background-color: rgba(0, 0, 0, 0.3) !important; /* less intense black */
+  backdrop-filter: blur(3px); /* subtle blur effect */
+}
+
+/* Target the radix dialog overlay */
+[data-radix-popper-content-wrapper] [data-radix-dialog-overlay],
+[role="dialog"] + div[style] {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(3px);
+}
+
+/* Override the Radix Dialog styles */
+[data-radix-dialog-overlay],
+[data-next-overlay="true"] {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(3px);
+}
+
+/* Add animation to dialog content */
+[data-radix-popper-content-wrapper] [role="dialog"] {
+  animation: dialogFadeIn 0.2s ease-out;
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
