@@ -168,6 +168,7 @@ export type Database = {
           aadhaar_number: string | null
           address: string | null
           admission_date: string | null
+          attendance_percentage: number | null
           blood_group: string | null
           class: number
           contact_number: string
@@ -175,12 +176,16 @@ export type Database = {
           date_of_birth: string
           email: string | null
           father_name: string
+          fee_status: string | null
           full_name: string
           gender: string | null
+          guardian_name: string | null
           id: string
           mother_name: string | null
+          paid_fees: number | null
           roll_number: number
           status: string | null
+          total_fees: number | null
           updated_at: string | null
           whatsapp_number: string | null
         }
@@ -188,6 +193,7 @@ export type Database = {
           aadhaar_number?: string | null
           address?: string | null
           admission_date?: string | null
+          attendance_percentage?: number | null
           blood_group?: string | null
           class: number
           contact_number: string
@@ -195,12 +201,16 @@ export type Database = {
           date_of_birth: string
           email?: string | null
           father_name: string
+          fee_status?: string | null
           full_name: string
           gender?: string | null
+          guardian_name?: string | null
           id?: string
           mother_name?: string | null
+          paid_fees?: number | null
           roll_number: number
           status?: string | null
+          total_fees?: number | null
           updated_at?: string | null
           whatsapp_number?: string | null
         }
@@ -208,6 +218,7 @@ export type Database = {
           aadhaar_number?: string | null
           address?: string | null
           admission_date?: string | null
+          attendance_percentage?: number | null
           blood_group?: string | null
           class?: number
           contact_number?: string
@@ -215,12 +226,16 @@ export type Database = {
           date_of_birth?: string
           email?: string | null
           father_name?: string
+          fee_status?: string | null
           full_name?: string
           gender?: string | null
+          guardian_name?: string | null
           id?: string
           mother_name?: string | null
+          paid_fees?: number | null
           roll_number?: number
           status?: string | null
+          total_fees?: number | null
           updated_at?: string | null
           whatsapp_number?: string | null
         }

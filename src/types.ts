@@ -1,3 +1,4 @@
+
 export interface Student {
   id: string;
   name: string;
@@ -65,11 +66,16 @@ export interface StudentRecord {
   total_fees: number;
   paid_fees: number;
   attendance_percentage: number;
-  join_date: string;
+  admission_date: string;
   created_at: string;
   updated_at: string;
   gender?: string;
   aadhaar_number?: string | number; // Updated to accept both string and number types
+  father_name: string;
+  mother_name?: string;
+  email?: string;
+  blood_group?: string;
+  status?: string;
 }
 
 // New interfaces for test data

@@ -178,9 +178,23 @@ export const studentService = {
       .eq("student_id", studentId);
       
     const paidFees = transactions?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
+    const totalFees = student.total_fees || 0;
     
-    // We don't have total_fees and fee_status columns in the current schema
-    // This would need to be added to the students table if fee tracking is needed
+    let feeStatus: "Paid" | "Pending" | "Partial" = "Pending";
+    if (paidFees >= totalFees && totalFees > 0) {
+      feeStatus = "Paid";
+    } else if (paidFees > 0) {
+      feeStatus = "Partial";
+    }
+    
+    // Update student with new fee information
+    await supabaseClient
+      .from("students")
+      .update({
+        paid_fees: paidFees,
+        fee_status: feeStatus
+      })
+      .eq("id", studentId);
   },
   
   // Attendance Methods
@@ -244,8 +258,11 @@ export const studentService = {
     const presentDays = records.filter(r => r.status === "Present").length;
     const attendancePercentage = Math.round((presentDays / totalDays) * 100);
     
-    // We don't have attendance_percentage column in the current schema
-    // This would need to be added to the students table if attendance tracking is needed
+    // Update student's attendance percentage
+    await supabaseClient
+      .from("students")
+      .update({ attendance_percentage: attendancePercentage })
+      .eq("id", studentId);
   },
   
   // Map Supabase StudentRecord to frontend Student type
@@ -261,13 +278,13 @@ export const studentService = {
       phoneNumber: record.contact_number,
       whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
-      feeStatus: "Pending" as "Paid" | "Pending" | "Partial", // Default since we don't have this field
-      totalFees: 0, // Default since we don't have this field
-      paidFees: 0, // Default since we don't have this field
-      attendancePercentage: 0, // Default since we don't have this field
+      feeStatus: record.fee_status || "Pending",
+      totalFees: record.total_fees || 0,
+      paidFees: record.paid_fees || 0,
+      attendancePercentage: record.attendance_percentage || 0,
       joinDate: record.admission_date || new Date(record.created_at || '').toISOString().split('T')[0],
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
-      aadhaarNumber: record.aadhaar_number || undefined,
+      aadhaarNumber: record.aadhaar_number?.toString() || undefined,
       dateOfBirth: new Date(record.date_of_birth).toISOString().split('T')[0],
       rollNumber: record.roll_number
     };
@@ -282,6 +299,7 @@ export const studentService = {
       date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
       father_name: student.fatherName,
       mother_name: student.motherName,
+      guardian_name: student.fatherName, // Use father as guardian for now
       contact_number: student.phoneNumber,
       whatsapp_number: student.whatsappNumber || student.phoneNumber,
       address: student.address || "Address not provided",
@@ -290,7 +308,11 @@ export const studentService = {
       admission_date: student.joinDate,
       email: null,
       blood_group: null,
-      status: 'Active'
+      status: 'Active',
+      fee_status: student.feeStatus || "Pending",
+      total_fees: student.totalFees || 0,
+      paid_fees: student.paidFees || 0,
+      attendance_percentage: student.attendancePercentage || 0
     };
   }
 };

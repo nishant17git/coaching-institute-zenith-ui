@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -107,14 +108,14 @@ export default function Dashboard() {
       setClassDistribution(distribution);
 
       // Calculate pending fees
-      const studentsWithPendingFees = students.filter(student => student.fee_status !== "Paid").map(student => ({
+      const studentsWithPendingFees = students.filter(student => (student.fee_status || "Pending") !== "Paid").map(student => ({
         ...student,
-        outstandingAmount: student.total_fees - student.paid_fees
+        outstandingAmount: (student.total_fees || 0) - (student.paid_fees || 0)
       })).sort((a: any, b: any) => b.outstandingAmount - a.outstandingAmount);
       setPendingFees(studentsWithPendingFees);
     }
   }, [students]);
-  const recentJoins = [...students].sort((a, b) => new Date(b.join_date).getTime() - new Date(a.join_date).getTime()).slice(0, 5);
+  const recentJoins = [...students].sort((a, b) => new Date(b.admission_date || b.created_at).getTime() - new Date(a.admission_date || a.created_at).getTime()).slice(0, 5);
   const totalFees = students.reduce((sum, student) => sum + (student.total_fees || 0), 0);
   const collectedFees = students.reduce((sum, student) => sum + (student.paid_fees || 0), 0);
   const container = {
@@ -318,17 +319,17 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <div className="text-muted-foreground">Guardian</div>
-                          <div className="truncate w-32">{student.guardian_name || 'N/A'}</div>
+                          <div className="truncate w-32">{student.guardian_name || student.father_name || 'N/A'}</div>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
                         <div>
                           <div className="text-muted-foreground">Paid</div>
-                          <div>₹{student.paid_fees.toLocaleString()}</div>
+                          <div>₹{(student.paid_fees || 0).toLocaleString()}</div>
                         </div>
                         <div>
                           <div className="text-muted-foreground">Total</div>
-                          <div>₹{student.total_fees.toLocaleString()}</div>
+                          <div>₹{(student.total_fees || 0).toLocaleString()}</div>
                         </div>
                         <div>
                           <div className="text-muted-foreground">Due</div>
@@ -356,9 +357,9 @@ export default function Dashboard() {
                       {pendingFees.slice(0, 5).map((student: any) => <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.full_name}</TableCell>
                           <TableCell className="hidden md:table-cell">Class {student.class}</TableCell>
-                          <TableCell className="hidden sm:table-cell">{student.guardian_name || 'N/A'}</TableCell>
-                          <TableCell className="text-right">₹{student.paid_fees.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">₹{student.total_fees.toLocaleString()}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{student.guardian_name || student.father_name || 'N/A'}</TableCell>
+                          <TableCell className="text-right">₹{(student.paid_fees || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">₹{(student.total_fees || 0).toLocaleString()}</TableCell>
                           <TableCell className="text-right text-apple-red">
                             ₹{student.outstandingAmount.toLocaleString()}
                           </TableCell>
