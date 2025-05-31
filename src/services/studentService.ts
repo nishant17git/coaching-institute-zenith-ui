@@ -204,7 +204,7 @@ export const studentService = {
     })) || [];
   },
   
-  async markAttendance(records: { studentId: string, date: string, status: string }[]): Promise<void> => {
+  async markAttendance(records: { studentId: string, date: string, status: string }[]): Promise<void> {
     // Convert from camelCase to snake_case for the database
     const dbRecords = records.map(record => ({
       student_id: record.studentId,
@@ -231,7 +231,7 @@ export const studentService = {
   },
   
   // Update attendance percentage for a student
-  async updateAttendancePercentage(studentId: string): Promise<void> => {
+  async updateAttendancePercentage(studentId: string): Promise<void> {
     // Get all attendance records for this student
     const { data: records } = await supabaseClient
       .from("attendance_records")
