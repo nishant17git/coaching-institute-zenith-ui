@@ -62,7 +62,7 @@ export const NewDataProvider = ({ children }: { children: ReactNode }) => {
   // Student CRUD mutations
   const addStudentMutation = useMutation({
     mutationFn: async (studentData: Omit<Student, 'id'>) => {
-      const dbStudent = newStudentService.mapToDatabase Student(studentData);
+      const dbStudent = newStudentService.mapToDatabaseStudent(studentData);
       const newStudent = await newStudentService.createStudent(dbStudent);
       return newStudent.id;
     },
@@ -77,7 +77,7 @@ export const NewDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateStudentMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Student> }) => {
-      const dbUpdates = newStudentService.mapToDataStudent(data as Omit<Student, 'id'>);
+      const dbUpdates = newStudentService.mapToDatabaseStudent(data as Omit<Student, 'id'>);
       await newStudentService.updateStudent(id, dbUpdates);
     },
     onSuccess: () => {
