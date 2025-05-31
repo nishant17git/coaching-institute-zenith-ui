@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportFeeInvoicePDF } from "@/services/pdfService";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { newStudentService } from "@/services/newStudentService";
 import { FeeTransaction } from "@/types";
 
 interface StudentFeeCardProps {
@@ -19,17 +19,34 @@ interface StudentFeeCardProps {
 }
 
 export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeCardProps) {
-  const balance = student.total_fees - student.paid_fees;
-  const percentage = student.total_fees > 0 ? Math.round(student.paid_fees / student.total_fees * 100) : 0;
+  // Get student fee transactions to calculate totals
+  const { data: feeTransactions = [] } = useQuery({
+    queryKey: ['studentFees', student.id],
+    queryFn: () => newStudentService.getStudentFees(student.id)
+  });
+
+  // Calculate fee totals from transactions
+  const totalPaid = feeTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalFees = 50000; // This should come from fee structure - using default for now
+  const balance = totalFees - totalPaid;
+  const percentage = totalFees > 0 ? Math.round(totalPaid / totalFees * 100) : 0;
+  
+  // Determine fee status
+  let feeStatus: "Paid" | "Partial" | "Pending" = "Pending";
+  if (totalPaid >= totalFees) {
+    feeStatus = "Paid";
+  } else if (totalPaid > 0) {
+    feeStatus = "Partial";
+  }
   
   // Determine status and gradient for the card
   let gradientClass = "";
   let iconColorClass = "";
   
-  if (student.fee_status === "Paid") {
+  if (feeStatus === "Paid") {
     gradientClass = "from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500";
     iconColorClass = "text-green-600 dark:text-green-400";
-  } else if (student.fee_status === "Partial") {
+  } else if (feeStatus === "Partial") {
     gradientClass = "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-b-4 border-amber-500";
     iconColorClass = "text-amber-600 dark:text-amber-400";
   } else {
@@ -41,20 +58,7 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
   const progressWidth = `${percentage}%`;
   
   // Get the latest transaction for this student
-  const { data: latestTransaction } = useQuery({
-    queryKey: ['latestStudentTransaction', student.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fee_transactions')
-        .select('*')
-        .eq('student_id', student.id)
-        .order('date', { ascending: false })
-        .limit(1);
-      
-      if (error) throw error;
-      return data && data.length > 0 ? data[0] : null;
-    }
-  });
+  const latestTransaction = feeTransactions[0]; // Already sorted by date desc
 
   const handleShareInvoice = () => {
     try {
@@ -64,15 +68,12 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
       }
 
       // Format transaction data for PDF generation
-      // Ensure the paymentMode is cast to the correct type
-      const paymentMode = latestTransaction.payment_mode as "Cash" | "Online" | "Cheque";
-      
       const formattedTransaction: FeeTransaction = {
         id: latestTransaction.id,
         studentId: latestTransaction.student_id,
         amount: latestTransaction.amount,
-        date: latestTransaction.date,
-        paymentMode: paymentMode,
+        date: latestTransaction.payment_date,
+        paymentMode: latestTransaction.payment_mode as "Cash" | "Online" | "Cheque",
         receiptNumber: latestTransaction.receipt_number || 'N/A',
         purpose: latestTransaction.purpose || 'School Fees'
       };
@@ -82,18 +83,18 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
         id: student.id,
         name: student.full_name,
         class: student.class,
-        totalFees: student.total_fees,
-        paidFees: student.paid_fees,
-        feeStatus: student.fee_status,
-        father: '', // Added father field
-        mother: '', // Added mother field
-        attendancePercentage: 0, // Not available in this context
-        joinDate: new Date().toISOString(), // Not available in this context
-        fatherName: '', // Not available in this context
-        motherName: '', // Not available in this context
-        phoneNumber: '', // Not available in this context
-        whatsappNumber: '', // Not available in this context
-        address: '', // Not available in this context
+        totalFees: totalFees,
+        paidFees: totalPaid,
+        feeStatus: feeStatus,
+        father: student.father_name,
+        mother: student.mother_name || '',
+        attendancePercentage: 0,
+        joinDate: student.admission_date || new Date().toISOString(),
+        fatherName: student.father_name,
+        motherName: student.mother_name || '',
+        phoneNumber: student.contact_number,
+        whatsappNumber: student.whatsapp_number || '',
+        address: student.address || '',
       };
 
       // Export the invoice as PDF
@@ -133,11 +134,11 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
               </div>
             </div>
             <Badge variant={
-              student.fee_status === "Paid" ? "success" : 
-              student.fee_status === "Partial" ? "warning" : 
+              feeStatus === "Paid" ? "success" : 
+              feeStatus === "Partial" ? "warning" : 
               "danger"
             } className="capitalize px-2.5 py-1">
-              {student.fee_status} {student.fee_status === "Partial" && `(${percentage}%)`}
+              {feeStatus} {feeStatus === "Partial" && `(${percentage}%)`}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -147,8 +148,8 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
           <div className="h-1.5 w-full bg-secondary/30 rounded-full mb-4 overflow-hidden">
             <div 
               className={cn("h-full rounded-full transition-all duration-700", 
-                student.fee_status === "Paid" ? "bg-green-500" : 
-                student.fee_status === "Partial" ? "bg-amber-500" : 
+                feeStatus === "Paid" ? "bg-green-500" : 
+                feeStatus === "Partial" ? "bg-amber-500" : 
                 "bg-red-500"
               )}
               style={{ width: progressWidth }}
@@ -158,11 +159,11 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1 bg-secondary/20 rounded-lg p-2.5 text-center">
               <p className="text-xs text-muted-foreground font-medium">Total</p>
-              <p className="font-semibold">₹{student.total_fees?.toLocaleString()}</p>
+              <p className="font-semibold">₹{totalFees?.toLocaleString()}</p>
             </div>
             <div className="space-y-1 bg-green-500/10 rounded-lg p-2.5 text-center">
               <p className="text-xs text-muted-foreground font-medium">Paid</p>
-              <p className="font-semibold text-green-600">₹{student.paid_fees?.toLocaleString()}</p>
+              <p className="font-semibold text-green-600">₹{totalPaid?.toLocaleString()}</p>
             </div>
             <div className="space-y-1 bg-red-500/10 rounded-lg p-2.5 text-center">
               <p className="text-xs text-muted-foreground font-medium">Balance</p>
