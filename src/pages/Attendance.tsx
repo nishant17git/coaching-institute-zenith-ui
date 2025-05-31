@@ -245,8 +245,7 @@ export default function Attendance() {
                   status: "Present" as any,
                   rollNumber: student.rollNumber?.toString() || "1"
                 }))}
-                attendanceData={attendanceData}
-                onAttendanceChange={handleAttendanceChange}
+                onStatusChange={handleAttendanceChange}
               />
             ) : (
               <ClassAttendanceTable
@@ -255,8 +254,10 @@ export default function Attendance() {
                   status: "Present" as any,
                   rollNumber: student.rollNumber?.toString() || "1"
                 }))}
-                attendanceData={attendanceData}
-                onAttendanceChange={handleAttendanceChange}
+                date={selectedDate}
+                onStatusChange={handleAttendanceChange}
+                onSaveAttendance={handleSaveAttendance}
+                isSaving={markAttendanceMutation.isPending}
               />
             )}
           </CardContent>
@@ -298,9 +299,12 @@ export default function Attendance() {
 
       {viewMode === 'calendar' && (
         <AttendanceCalendarView
-          selectedClass={selectedClass}
-          onClassChange={setSelectedClass}
-          classes={classes}
+          calendarData={[]}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+          selectedMonth={selectedDate}
+          onMonthChange={setSelectedDate}
+          isLoading={false}
         />
       )}
     </div>
