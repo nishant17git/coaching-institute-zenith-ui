@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -242,20 +241,28 @@ export default function Attendance() {
               <MobileAttendanceList
                 students={filteredStudents.map(student => ({ 
                   ...student, 
-                  status: "Present" as any,
+                  status: (attendanceData[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday",
                   rollNumber: student.rollNumber?.toString() || "1"
                 }))}
-                onStatusChange={handleAttendanceChange}
+                onStatusChange={(studentId: string, status: "Present" | "Absent" | "Leave" | "Holiday") => {
+                  // Map Leave to Late for internal consistency
+                  const mappedStatus = status === "Leave" ? "Late" : status as AttendanceStatus;
+                  handleAttendanceChange(studentId, mappedStatus);
+                }}
               />
             ) : (
               <ClassAttendanceTable
                 students={filteredStudents.map(student => ({ 
                   ...student, 
-                  status: "Present" as any,
+                  status: (attendanceData[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday",
                   rollNumber: student.rollNumber?.toString() || "1"
                 }))}
                 date={selectedDate}
-                onStatusChange={handleAttendanceChange}
+                onStatusChange={(studentId: string, status: "Present" | "Absent" | "Leave" | "Holiday") => {
+                  // Map Leave to Late for internal consistency
+                  const mappedStatus = status === "Leave" ? "Late" : status as AttendanceStatus;
+                  handleAttendanceChange(studentId, mappedStatus);
+                }}
                 onSaveAttendance={handleSaveAttendance}
                 isSaving={markAttendanceMutation.isPending}
               />
@@ -264,6 +271,7 @@ export default function Attendance() {
         </Card>
       )}
 
+      {/* Weekly View - keep existing code the same */}
       {viewMode === 'weekly' && (
         <Card>
           <CardHeader>

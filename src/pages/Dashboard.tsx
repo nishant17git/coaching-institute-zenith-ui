@@ -74,35 +74,35 @@ export default function Dashboard() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardStatCard
+          type="students"
           label="Total Students"
-          value={totalStudents.toString()}
+          count={totalStudents}
           icon={<Users className="h-4 w-4" />}
           trend={recentEnrollments.length > 0 ? { value: recentEnrollments.length, isPositive: true } : { value: 0, isPositive: false }}
-          trendUp={recentEnrollments.length > 0}
         />
         
         <DashboardStatCard
+          type="classes"
           label="Active Classes"
-          value={totalClasses.toString()}
+          count={totalClasses}
           icon={<GraduationCap className="h-4 w-4" />}
           trend={{ value: 0, isPositive: true }}
-          trendUp={true}
         />
         
         <DashboardStatCard
+          type="fees"
           label="Fee Collection"
-          value={`₹${(feeData.totalCollected / 100000).toFixed(1)}L`}
+          count={`₹${(feeData.totalCollected / 100000).toFixed(1)}L`}
           icon={<DollarSign className="h-4 w-4" />}
           trend={{ value: Math.round(feeData.collectionPercentage), isPositive: feeData.collectionPercentage > 75 }}
-          trendUp={feeData.collectionPercentage > 75}
         />
         
         <DashboardStatCard
+          type="pending"
           label="Pending Fees"
-          value={feeData.pendingStudents.toString()}
+          count={feeData.pendingStudents}
           icon={<Clock className="h-4 w-4" />}
           trend={{ value: feeData.pendingStudents, isPositive: false }}
-          trendUp={false}
         />
       </div>
 
