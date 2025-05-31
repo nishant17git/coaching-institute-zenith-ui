@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { NewDataProvider } from "@/contexts/NewDataContext";
+import { DataProvider } from "@/contexts/DataContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -33,7 +34,6 @@ import PrivacySecuritySettings from "@/pages/settings/PrivacySecuritySettings";
 import DataStorageSettings from "@/pages/settings/DataStorageSettings";
 import HelpSupportSettings from "@/pages/settings/HelpSupportSettings";
 import AboutSettings from "@/pages/settings/AboutSettings";
-import NewStudents from "./pages/NewStudents";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,7 +56,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <NewDataProvider>
+          <DataProvider>
             <Routes>
               <Route path="/login" element={
                 <ScrollWrapper>
@@ -71,7 +71,7 @@ const App = () => (
               
               <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/students" element={<NewStudents />} />
+                <Route path="/students" element={<Students />} />
                 <Route path="/students/:id" element={<StudentDetail />} />
                 <Route path="/students/:id/attendance" element={<StudentAttendanceDetails />} />
                 <Route path="/fees" element={<Fees />} />
@@ -100,7 +100,7 @@ const App = () => (
               } />
             </Routes>
             <Toaster />
-          </NewDataProvider>
+          </DataProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
