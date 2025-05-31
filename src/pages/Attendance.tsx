@@ -198,28 +198,24 @@ export default function Attendance() {
       {viewMode === 'daily' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <AttendanceStatCard
+            type="total"
+            count={attendanceStats.total}
             label="Total Students"
-            value={attendanceStats.total}
-            icon={<Users className="h-4 w-4" />}
-            variant="default"
           />
           <AttendanceStatCard
+            type="present"
+            count={attendanceStats.present}
             label="Present"
-            value={attendanceStats.present}
-            icon={<CheckCircle className="h-4 w-4" />}
-            variant="success"
           />
           <AttendanceStatCard
+            type="absent"
+            count={attendanceStats.absent}
             label="Absent"
-            value={attendanceStats.absent}
-            icon={<XCircle className="h-4 w-4" />}
-            variant="destructive"
           />
           <AttendanceStatCard
+            type="leave"
+            count={attendanceStats.late + attendanceStats.halfDay}
             label="Late/Half Day"
-            value={attendanceStats.late + attendanceStats.halfDay}
-            icon={<Clock className="h-4 w-4" />}
-            variant="warning"
           />
         </div>
       )}
@@ -244,13 +240,13 @@ export default function Attendance() {
           <CardContent>
             {isMobile ? (
               <MobileAttendanceList
-                students={filteredStudents}
+                students={filteredStudents.map(student => ({ ...student, status: "Present" as any }))}
                 attendanceData={attendanceData}
                 onAttendanceChange={handleAttendanceChange}
               />
             ) : (
               <ClassAttendanceTable
-                students={filteredStudents}
+                students={filteredStudents.map(student => ({ ...student, status: "Present" as any }))}
                 attendanceData={attendanceData}
                 onAttendanceChange={handleAttendanceChange}
               />
@@ -294,7 +290,6 @@ export default function Attendance() {
 
       {viewMode === 'calendar' && (
         <AttendanceCalendarView
-          students={filteredStudents}
           selectedClass={selectedClass}
           onClassChange={setSelectedClass}
           classes={classes}

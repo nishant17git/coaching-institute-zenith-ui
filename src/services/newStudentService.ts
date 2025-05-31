@@ -19,7 +19,8 @@ export const newStudentService = {
 
     return (data || []).map(student => ({
       ...student,
-      gender: student.gender as "Male" | "Female" | "Other" | null
+      gender: student.gender as "Male" | "Female" | "Other" | null,
+      status: student.status as "Active" | "Inactive" | "Transferred"
     }));
   },
 
@@ -40,7 +41,8 @@ export const newStudentService = {
 
     return data ? {
       ...data,
-      gender: data.gender as "Male" | "Female" | "Other" | null
+      gender: data.gender as "Male" | "Female" | "Other" | null,
+      status: data.status as "Active" | "Inactive" | "Transferred"
     } : null;
   },
 
@@ -58,7 +60,8 @@ export const newStudentService = {
 
     return {
       ...data,
-      gender: data.gender as "Male" | "Female" | "Other" | null
+      gender: data.gender as "Male" | "Female" | "Other" | null,
+      status: data.status as "Active" | "Inactive" | "Transferred"
     };
   },
 
@@ -77,7 +80,8 @@ export const newStudentService = {
 
     return {
       ...data,
-      gender: data.gender as "Male" | "Female" | "Other" | null
+      gender: data.gender as "Male" | "Female" | "Other" | null,
+      status: data.status as "Active" | "Inactive" | "Transferred"
     };
   },
 
@@ -107,7 +111,8 @@ export const newStudentService = {
 
     return (data || []).map(student => ({
       ...student,
-      gender: student.gender as "Male" | "Female" | "Other" | null
+      gender: student.gender as "Male" | "Female" | "Other" | null,
+      status: student.status as "Active" | "Inactive" | "Transferred"
     }));
   },
   
@@ -124,7 +129,10 @@ export const newStudentService = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(transaction => ({
+      ...transaction,
+      payment_mode: transaction.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer"
+    }));
   },
   
   async addFeeTransaction(transaction: Omit<DatabaseFeeTransaction, "id" | "created_at" | "updated_at">): Promise<DatabaseFeeTransaction> {
@@ -139,7 +147,10 @@ export const newStudentService = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      payment_mode: data.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer"
+    };
   },
   
   // Attendance Methods
@@ -155,7 +166,10 @@ export const newStudentService = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(record => ({
+      ...record,
+      status: record.status as "Present" | "Absent" | "Late" | "Half Day" | "Holiday"
+    }));
   },
   
   async markAttendance(records: Omit<DatabaseAttendanceRecord, "id" | "created_at" | "updated_at">[]): Promise<void> {

@@ -74,7 +74,7 @@ export default function Dashboard() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardStatCard
-          title="Total Students"
+          label="Total Students"
           value={totalStudents.toString()}
           icon={<Users className="h-4 w-4" />}
           trend={recentEnrollments.length > 0 ? { value: recentEnrollments.length, isPositive: true } : { value: 0, isPositive: false }}
@@ -82,7 +82,7 @@ export default function Dashboard() {
         />
         
         <DashboardStatCard
-          title="Active Classes"
+          label="Active Classes"
           value={totalClasses.toString()}
           icon={<GraduationCap className="h-4 w-4" />}
           trend={{ value: 0, isPositive: true }}
@@ -90,7 +90,7 @@ export default function Dashboard() {
         />
         
         <DashboardStatCard
-          title="Fee Collection"
+          label="Fee Collection"
           value={`₹${(feeData.totalCollected / 100000).toFixed(1)}L`}
           icon={<DollarSign className="h-4 w-4" />}
           trend={{ value: Math.round(feeData.collectionPercentage), isPositive: feeData.collectionPercentage > 75 }}
@@ -98,7 +98,7 @@ export default function Dashboard() {
         />
         
         <DashboardStatCard
-          title="Pending Fees"
+          label="Pending Fees"
           value={feeData.pendingStudents.toString()}
           icon={<Clock className="h-4 w-4" />}
           trend={{ value: feeData.pendingStudents, isPositive: false }}
