@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,28 +198,28 @@ export default function Attendance() {
       {viewMode === 'daily' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <AttendanceStatCard
-            title="Total Students"
+            label="Total Students"
             value={attendanceStats.total}
             icon={<Users className="h-4 w-4" />}
-            color="blue"
+            variant="default"
           />
           <AttendanceStatCard
-            title="Present"
+            label="Present"
             value={attendanceStats.present}
             icon={<CheckCircle className="h-4 w-4" />}
-            color="green"
+            variant="success"
           />
           <AttendanceStatCard
-            title="Absent"
+            label="Absent"
             value={attendanceStats.absent}
             icon={<XCircle className="h-4 w-4" />}
-            color="red"
+            variant="destructive"
           />
           <AttendanceStatCard
-            title="Late/Half Day"
+            label="Late/Half Day"
             value={attendanceStats.late + attendanceStats.halfDay}
             icon={<Clock className="h-4 w-4" />}
-            color="yellow"
+            variant="warning"
           />
         </div>
       )}
@@ -294,8 +294,6 @@ export default function Attendance() {
 
       {viewMode === 'calendar' && (
         <AttendanceCalendarView
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
           students={filteredStudents}
           selectedClass={selectedClass}
           onClassChange={setSelectedClass}

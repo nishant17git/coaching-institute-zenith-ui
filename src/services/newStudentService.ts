@@ -17,7 +17,10 @@ export const newStudentService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(student => ({
+      ...student,
+      gender: student.gender as "Male" | "Female" | "Other" | null
+    }));
   },
 
   async getStudentById(id: string): Promise<DatabaseStudent | null> {
@@ -35,7 +38,10 @@ export const newStudentService = {
       throw error;
     }
 
-    return data;
+    return data ? {
+      ...data,
+      gender: data.gender as "Male" | "Female" | "Other" | null
+    } : null;
   },
 
   async createStudent(student: Omit<DatabaseStudent, "id" | "created_at" | "updated_at">): Promise<DatabaseStudent> {
@@ -50,7 +56,10 @@ export const newStudentService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      gender: data.gender as "Male" | "Female" | "Other" | null
+    };
   },
 
   async updateStudent(id: string, student: Partial<Omit<DatabaseStudent, "id" | "created_at" | "updated_at">>): Promise<DatabaseStudent> {
@@ -66,7 +75,10 @@ export const newStudentService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      gender: data.gender as "Male" | "Female" | "Other" | null
+    };
   },
 
   async deleteStudent(id: string): Promise<void> {
@@ -93,7 +105,10 @@ export const newStudentService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(student => ({
+      ...student,
+      gender: student.gender as "Male" | "Female" | "Other" | null
+    }));
   },
   
   // Fee Transaction Methods
@@ -174,8 +189,8 @@ export const newStudentService = {
       totalFees: 0, // Will be calculated from fee structure
       paidFees: 0, // Will be calculated from transactions
       attendancePercentage: 0, // Will be calculated from attendance records
-      joinDate: dbStudent.admission_date,
-      gender: dbStudent.gender,
+      joinDate: dbStudent.admission_date || dbStudent.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      gender: dbStudent.gender || undefined,
       aadhaarNumber: dbStudent.aadhaar_number,
       dateOfBirth: dbStudent.date_of_birth,
       rollNumber: dbStudent.roll_number
@@ -190,7 +205,7 @@ export const newStudentService = {
       father_name: student.fatherName,
       mother_name: student.motherName || undefined,
       date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
-      gender: student.gender,
+      gender: student.gender || null,
       contact_number: student.phoneNumber,
       whatsapp_number: student.whatsappNumber || undefined,
       address: student.address || undefined,

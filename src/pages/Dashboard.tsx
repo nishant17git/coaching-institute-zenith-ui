@@ -77,7 +77,7 @@ export default function Dashboard() {
           title="Total Students"
           value={totalStudents.toString()}
           icon={<Users className="h-4 w-4" />}
-          trend={recentEnrollments.length > 0 ? `+${recentEnrollments.length} this month` : "No new enrollments"}
+          trend={recentEnrollments.length > 0 ? { value: recentEnrollments.length, isPositive: true } : { value: 0, isPositive: false }}
           trendUp={recentEnrollments.length > 0}
         />
         
@@ -85,7 +85,7 @@ export default function Dashboard() {
           title="Active Classes"
           value={totalClasses.toString()}
           icon={<GraduationCap className="h-4 w-4" />}
-          trend="All classes active"
+          trend={{ value: 0, isPositive: true }}
           trendUp={true}
         />
         
@@ -93,7 +93,7 @@ export default function Dashboard() {
           title="Fee Collection"
           value={`₹${(feeData.totalCollected / 100000).toFixed(1)}L`}
           icon={<DollarSign className="h-4 w-4" />}
-          trend={`${feeData.collectionPercentage.toFixed(1)}% collected`}
+          trend={{ value: Math.round(feeData.collectionPercentage), isPositive: feeData.collectionPercentage > 75 }}
           trendUp={feeData.collectionPercentage > 75}
         />
         
@@ -101,7 +101,7 @@ export default function Dashboard() {
           title="Pending Fees"
           value={feeData.pendingStudents.toString()}
           icon={<Clock className="h-4 w-4" />}
-          trend="Students with pending fees"
+          trend={{ value: feeData.pendingStudents, isPositive: false }}
           trendUp={false}
         />
       </div>
