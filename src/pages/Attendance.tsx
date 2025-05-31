@@ -240,13 +240,21 @@ export default function Attendance() {
           <CardContent>
             {isMobile ? (
               <MobileAttendanceList
-                students={filteredStudents.map(student => ({ ...student, status: "Present" as any }))}
+                students={filteredStudents.map(student => ({ 
+                  ...student, 
+                  status: "Present" as any,
+                  rollNumber: student.rollNumber?.toString() || "1"
+                }))}
                 attendanceData={attendanceData}
                 onAttendanceChange={handleAttendanceChange}
               />
             ) : (
               <ClassAttendanceTable
-                students={filteredStudents.map(student => ({ ...student, status: "Present" as any }))}
+                students={filteredStudents.map(student => ({ 
+                  ...student, 
+                  status: "Present" as any,
+                  rollNumber: student.rollNumber?.toString() || "1"
+                }))}
                 attendanceData={attendanceData}
                 onAttendanceChange={handleAttendanceChange}
               />

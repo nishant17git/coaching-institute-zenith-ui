@@ -131,7 +131,8 @@ export const newStudentService = {
     
     return (data || []).map(transaction => ({
       ...transaction,
-      payment_mode: transaction.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer"
+      payment_mode: transaction.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer",
+      term: transaction.term as "Monthly" | "Quarterly" | "Half-Yearly" | "Annual" | "Admission" | "Exam" | "Other" | null
     }));
   },
   
@@ -149,7 +150,8 @@ export const newStudentService = {
     
     return {
       ...data,
-      payment_mode: data.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer"
+      payment_mode: data.payment_mode as "Cash" | "Online" | "Cheque" | "UPI" | "Bank Transfer",
+      term: data.term as "Monthly" | "Quarterly" | "Half-Yearly" | "Annual" | "Admission" | "Exam" | "Other" | null
     };
   },
   
