@@ -144,6 +144,13 @@ export default function Students() {
     { id: "5", name: "Class 5", totalStudents: 0 },
   ];
 
+  // Mock call handler
+  const handleCallClick = (name: string, phone: string) => {
+    toast.success("Call feature", {
+      description: `Calling ${name} at ${phone}`
+    });
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -279,7 +286,7 @@ export default function Students() {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredStudents.map(student => (
+              {filteredStudents.map((student, index) => (
                 <motion.div
                   key={student.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -288,6 +295,9 @@ export default function Students() {
                 >
                   <StudentCard 
                     student={student}
+                    index={index}
+                    onCallClick={handleCallClick}
+                    isFavorite={false}
                     onEdit={(student) => setEditingStudent(student)}
                     onDelete={(studentId) => handleDeleteStudent(studentId)}
                   />
