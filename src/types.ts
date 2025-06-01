@@ -20,6 +20,7 @@ export interface Student {
   rollNumber?: string; // Keep as string for consistency
   phones?: StudentPhone[]; // For new StudentCard component
   studentStatus?: string; // Renamed from status to avoid conflict with attendance status
+  status?: "Present" | "Absent" | "Leave" | "Holiday"; // Added for attendance functionality
 }
 
 export interface StudentPhone {
@@ -193,5 +194,8 @@ export interface TestResultsProps {
 }
 
 export interface TestAddFormProps {
-  onTestAdded: () => void;
+  onSubmit: (data: TestFormData) => void;
+  students: { id: string; full_name?: string; class?: number | string }[];
+  initialData?: TestFormData;
+  isEditing?: boolean;
 }

@@ -296,6 +296,7 @@ export default function TestRecord() {
       <TestResults 
         tests={tests}
         students={students}
+        testResults={testResults}
         getGrade={getGradeWithColor}
         handleSort={() => {}}
         sortBy="percentage"
@@ -312,7 +313,10 @@ export default function TestRecord() {
               Create a new test record for your students.
             </DialogDescription>
           </DialogHeader>
-          <TestAddForm />
+          <TestAddForm 
+            onSubmit={handleAddTest}
+            students={students}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -288,6 +288,7 @@ export default function Students() {
                 >
                   <StudentCard 
                     student={student}
+                    onEdit={(student) => setEditingStudent(student)}
                     onDelete={(studentId) => handleDeleteStudent(studentId)}
                   />
                 </motion.div>

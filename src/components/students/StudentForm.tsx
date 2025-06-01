@@ -100,7 +100,7 @@ export function StudentForm({ student, classes = [], onSubmit, submitLabel = "Su
         paidFees: 0,
         attendancePercentage: 0,
         joinDate: new Date().toISOString().split('T')[0],
-        status: "Active"
+        studentStatus: "Active"
       };
       
       await onSubmit(studentData);
