@@ -3,12 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { TestRecordDb, TestRecord, HistoryStats, SubjectStat } from "@/types";
 
 export const testService = {
-  // Get all test records
-  async getTestRecords(): Promise<TestRecordDb[]> {
+  // Get all test records from test_results table
+  async getTestRecords(): Promise<any[]> {
     const { data, error } = await supabase
-      .from("test_records")
-      .select("*")
-      .order("test_date", { ascending: false });
+      .from("test_results")
+      .select(`
+        *,
+        students!inner(full_name, class),
+        tests!inner(test_name, subject, test_date, test_type)
+      `)
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching test records:", error);
@@ -19,12 +23,15 @@ export const testService = {
   },
 
   // Get test records for a specific student
-  async getStudentTestRecords(studentId: string): Promise<TestRecordDb[]> {
+  async getStudentTestRecords(studentId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from("test_records")
-      .select("*")
+      .from("test_results")
+      .select(`
+        *,
+        tests!inner(test_name, subject, test_date, test_type)
+      `)
       .eq("student_id", studentId)
-      .order("test_date", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error(`Error fetching test records for student ${studentId}:`, error);
@@ -34,48 +41,76 @@ export const testService = {
     return data || [];
   },
 
-  // Create a new test record
-  async createTestRecord(testRecord: Omit<TestRecordDb, "id">): Promise<TestRecordDb> {
-    const { data, error } = await supabase
-      .from("test_records")
-      .insert([testRecord])
+  // Create a new test and test result
+  async createTestRecord(testRecord: any): Promise<any> {
+    // First create the test
+    const { data: testData, error: testError } = await supabase
+      .from("tests")
+      .insert([{
+        test_name: testRecord.test_name,
+        subject: testRecord.subject,
+        test_date: testRecord.test_date,
+        class: testRecord.class || 10,
+        total_marks: testRecord.total_marks,
+        test_type: testRecord.test_type
+      }])
       .select()
       .single();
 
-    if (error) {
-      console.error("Error creating test record:", error);
-      throw error;
+    if (testError) {
+      console.error("Error creating test:", testError);
+      throw testError;
     }
 
-    return data;
+    // Then create the test result
+    const { data: resultData, error: resultError } = await supabase
+      .from("test_results")
+      .insert([{
+        student_id: testRecord.student_id,
+        test_id: testData.id,
+        marks_obtained: testRecord.marks,
+        total_marks: testRecord.total_marks
+      }])
+      .select()
+      .single();
+
+    if (resultError) {
+      console.error("Error creating test result:", resultError);
+      throw resultError;
+    }
+
+    return resultData;
   },
 
-  // Update a test record
-  async updateTestRecord(id: string, testRecord: Partial<Omit<TestRecordDb, "id">>): Promise<TestRecordDb> {
+  // Update a test result
+  async updateTestRecord(id: string, testRecord: any): Promise<any> {
     const { data, error } = await supabase
-      .from("test_records")
-      .update(testRecord)
+      .from("test_results")
+      .update({
+        marks_obtained: testRecord.marks,
+        total_marks: testRecord.total_marks
+      })
       .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      console.error(`Error updating test record with ID ${id}:`, error);
+      console.error(`Error updating test result with ID ${id}:`, error);
       throw error;
     }
 
     return data;
   },
 
-  // Delete a test record
+  // Delete a test result
   async deleteTestRecord(id: string): Promise<void> {
     const { error } = await supabase
-      .from("test_records")
+      .from("test_results")
       .delete()
       .eq("id", id);
 
     if (error) {
-      console.error(`Error deleting test record with ID ${id}:`, error);
+      console.error(`Error deleting test result with ID ${id}:`, error);
       throw error;
     }
   },
@@ -99,14 +134,14 @@ export const testService = {
 
     const totalTests = testRecords.length;
     const averageScore = Math.round(
-      testRecords.reduce((sum, record) => sum + (record.marks / record.total_marks) * 100, 0) / totalTests
+      testRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / totalTests
     );
 
-    const subjects = [...new Set(testRecords.map(record => record.subject))];
+    const subjects = [...new Set(testRecords.map(record => record.tests?.subject || 'Unknown'))];
 
     // Calculate grade distribution
     const gradeDistribution = testRecords.reduce((grades, record) => {
-      const percentage = (record.marks / record.total_marks) * 100;
+      const percentage = (record.marks_obtained / record.total_marks) * 100;
       let grade: string;
       let color: string;
 
@@ -139,17 +174,17 @@ export const testService = {
 
     // Calculate progress data
     const progressData = testRecords.map(record => ({
-      date: record.test_date,
-      score: Math.round((record.marks / record.total_marks) * 100),
-      subject: record.subject,
-      test: record.test_name
+      date: record.tests?.test_date || new Date().toISOString(),
+      score: Math.round((record.marks_obtained / record.total_marks) * 100),
+      subject: record.tests?.subject || 'Unknown',
+      test: record.tests?.test_name || 'Unknown Test'
     }));
 
     // Calculate subject performance
     const subjectPerformance: SubjectStat[] = subjects.map(subject => {
-      const subjectRecords = testRecords.filter(record => record.subject === subject);
+      const subjectRecords = testRecords.filter(record => record.tests?.subject === subject);
       const avgScore = Math.round(
-        subjectRecords.reduce((sum, record) => sum + (record.marks / record.total_marks) * 100, 0) / subjectRecords.length
+        subjectRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / subjectRecords.length
       );
       
       return {
@@ -160,7 +195,7 @@ export const testService = {
     });
 
     const bestSubject = subjectPerformance.reduce((best, current) => 
-      current.score > best.score ? current : best
+      current.score > best.score ? current : best, subjectPerformance[0]
     );
 
     const latestTest = testRecords[0] || null;
@@ -194,15 +229,15 @@ export const testService = {
     return colors[subject] || '#6B7280';
   },
 
-  // Map TestRecordDb to TestRecord format
-  mapToTestRecord(dbRecord: TestRecordDb, studentName: string): TestRecord {
+  // Map test result to TestRecord format
+  mapToTestRecord(dbRecord: any, studentName: string): TestRecord {
     return {
       id: dbRecord.id,
       studentId: dbRecord.student_id,
       name: studentName,
-      subject: dbRecord.subject,
-      date: dbRecord.test_date,
-      score: dbRecord.marks,
+      subject: dbRecord.tests?.subject || 'Unknown',
+      date: dbRecord.tests?.test_date || new Date().toISOString(),
+      score: dbRecord.marks_obtained,
       maxScore: dbRecord.total_marks
     };
   }

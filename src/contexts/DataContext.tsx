@@ -1,14 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { studentService } from '@/services/studentService';
-import { testService } from '@/services/testService';
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Student, 
   FeeTransaction,
   AttendanceRecord,
-  Class,
-  TestRecordDb
+  Class
 } from '@/types';
 import { toast } from 'sonner';
 
@@ -17,7 +15,7 @@ interface DataContextType {
   feeTransactions: FeeTransaction[];
   attendanceRecords: AttendanceRecord[];
   classes: Class[];
-  testRecords: TestRecordDb[];
+  testRecords: any[];
   
   // Student methods
   addStudent: (student: Omit<Student, 'id'>) => Promise<string>;
@@ -35,8 +33,8 @@ interface DataContextType {
   bulkAddAttendance: (records: Omit<AttendanceRecord, 'id'>[]) => Promise<void>;
 
   // Test methods
-  addTestRecord: (record: Omit<TestRecordDb, 'id'>) => Promise<string>;
-  updateTestRecord: (id: string, data: Partial<TestRecordDb>) => Promise<void>;
+  addTestRecord: (record: any) => Promise<string>;
+  updateTestRecord: (id: string, data: any) => Promise<void>;
   deleteTestRecord: (id: string) => Promise<void>;
 
   // Loading state
@@ -55,21 +53,61 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     refetch: refetchStudents
   } = useQuery({
     queryKey: ['students'],
-    queryFn: studentService.getStudents
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('full_name');
+      
+      if (error) throw error;
+      return data;
+    }
   });
   
-  // Fetch test records from Supabase
+  // Fetch test records from Supabase (using test_results table)
   const { 
     data: testRecords = [], 
     isLoading: isLoadingTests,
     refetch: refetchTests
   } = useQuery({
     queryKey: ['testRecords'],
-    queryFn: testService.getTestRecords
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('test_results')
+        .select(`
+          *,
+          students!inner(full_name, class),
+          tests!inner(test_name, subject, test_date, test_type)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
   });
   
   // Convert Supabase records to our frontend model
-  const students = studentsData.map(record => studentService.mapToStudentModel(record));
+  const students: Student[] = studentsData.map(record => ({
+    id: record.id,
+    name: record.full_name,
+    class: record.class.toString(),
+    father: record.father_name,
+    mother: record.mother_name || '',
+    fatherName: record.father_name,
+    motherName: record.mother_name || '',
+    phoneNumber: record.contact_number,
+    whatsappNumber: record.whatsapp_number || record.contact_number,
+    address: record.address || '',
+    feeStatus: (record.fee_status as "Paid" | "Pending" | "Partial") || "Pending",
+    totalFees: record.total_fees || 0,
+    paidFees: record.paid_fees || 0,
+    attendancePercentage: record.attendance_percentage || 0,
+    joinDate: record.admission_date || new Date().toISOString(),
+    gender: record.gender as "Male" | "Female" | "Other" | undefined,
+    aadhaarNumber: record.aadhaar_number || undefined,
+    dateOfBirth: record.date_of_birth || undefined,
+    rollNumber: record.roll_number || undefined
+  }));
   
   // Calculate class data when students change
   useEffect(() => {
@@ -102,14 +140,35 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Student CRUD operations
   const addStudent = async (studentData: Omit<Student, 'id'>): Promise<string> => {
     try {
-      const studentRecord = studentService.mapToStudentRecord(studentData);
-      const newStudent = await studentService.createStudent(studentRecord);
+      const { data, error } = await supabase
+        .from('students')
+        .insert([{
+          full_name: studentData.name,
+          class: parseInt(studentData.class),
+          roll_number: studentData.rollNumber || 1,
+          date_of_birth: studentData.dateOfBirth || new Date().toISOString().split('T')[0],
+          father_name: studentData.fatherName,
+          mother_name: studentData.motherName,
+          contact_number: studentData.phoneNumber,
+          whatsapp_number: studentData.whatsappNumber,
+          address: studentData.address,
+          gender: studentData.gender,
+          aadhaar_number: studentData.aadhaarNumber,
+          total_fees: studentData.totalFees,
+          paid_fees: studentData.paidFees,
+          fee_status: studentData.feeStatus,
+          attendance_percentage: studentData.attendancePercentage
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       // Refresh students data
       refetchStudents();
       
       toast.success(`Added student: ${studentData.name}`);
-      return newStudent.id;
+      return data.id;
     } catch (error) {
       toast.error(`Failed to add student: ${(error as Error).message}`);
       throw error;
@@ -118,12 +177,30 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateStudent = async (id: string, data: Partial<Student>): Promise<void> => {
     try {
-      const studentRecord = studentService.mapToStudentRecord({
-        ...students.find(s => s.id === id)!,
-        ...data
-      });
+      const updateData: any = {};
       
-      await studentService.updateStudent(id, studentRecord);
+      if (data.name) updateData.full_name = data.name;
+      if (data.class) updateData.class = parseInt(data.class);
+      if (data.rollNumber) updateData.roll_number = data.rollNumber;
+      if (data.dateOfBirth) updateData.date_of_birth = data.dateOfBirth;
+      if (data.fatherName) updateData.father_name = data.fatherName;
+      if (data.motherName) updateData.mother_name = data.motherName;
+      if (data.phoneNumber) updateData.contact_number = data.phoneNumber;
+      if (data.whatsappNumber) updateData.whatsapp_number = data.whatsappNumber;
+      if (data.address) updateData.address = data.address;
+      if (data.gender) updateData.gender = data.gender;
+      if (data.aadhaarNumber) updateData.aadhaar_number = data.aadhaarNumber;
+      if (data.totalFees !== undefined) updateData.total_fees = data.totalFees;
+      if (data.paidFees !== undefined) updateData.paid_fees = data.paidFees;
+      if (data.feeStatus) updateData.fee_status = data.feeStatus;
+      if (data.attendancePercentage !== undefined) updateData.attendance_percentage = data.attendancePercentage;
+      
+      const { error } = await supabase
+        .from('students')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Refresh students data
       refetchStudents();
@@ -138,7 +215,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const deleteStudent = async (id: string): Promise<void> => {
     try {
       const studentToDelete = students.find(s => s.id === id);
-      await studentService.deleteStudent(id);
+      
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Refresh students data
       refetchStudents();
@@ -153,13 +236,27 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Fee CRUD operations
   const addFeeTransaction = async (transactionData: Omit<FeeTransaction, 'id'>): Promise<string> => {
     try {
-      const newTransaction = await studentService.addFeeTransaction(transactionData);
+      const { data, error } = await supabase
+        .from('fee_transactions')
+        .insert([{
+          student_id: transactionData.studentId,
+          amount: transactionData.amount,
+          payment_date: transactionData.date,
+          payment_mode: transactionData.paymentMode,
+          receipt_number: transactionData.receiptNumber,
+          purpose: transactionData.purpose,
+          academic_year: '2024-25' // Default academic year
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       // Refresh the students to get updated fee status
       refetchStudents();
       
       toast.success(`Added fee transaction of ₹${transactionData.amount}`);
-      return newTransaction.id;
+      return data.id;
     } catch (error) {
       toast.error(`Failed to add transaction: ${(error as Error).message}`);
       throw error;
@@ -181,13 +278,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Attendance CRUD operations
   const addAttendanceRecord = async (recordData: Omit<AttendanceRecord, 'id'>): Promise<string> => {
     try {
-      await studentService.markAttendance([recordData]);
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .insert([{
+          student_id: recordData.studentId,
+          date: recordData.date,
+          status: recordData.status
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       // Refresh students to get updated attendance percentage
       refetchStudents();
       
       toast.success(`Added attendance record for ${new Date(recordData.date).toLocaleDateString()}`);
-      return ""; // We don't get the ID back from the markAttendance method
+      return data.id;
     } catch (error) {
       toast.error(`Failed to add attendance record: ${(error as Error).message}`);
       throw error;
@@ -202,7 +309,15 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const bulkAddAttendance = async (records: Omit<AttendanceRecord, 'id'>[]): Promise<void> => {
     try {
-      await studentService.markAttendance(records);
+      const { error } = await supabase
+        .from('attendance_records')
+        .insert(records.map(record => ({
+          student_id: record.studentId,
+          date: record.date,
+          status: record.status
+        })));
+      
+      if (error) throw error;
       
       // Refresh students to get updated attendance percentages
       refetchStudents();
@@ -215,24 +330,60 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Test CRUD operations
-  const addTestRecord = async (recordData: Omit<TestRecordDb, 'id'>): Promise<string> => {
+  const addTestRecord = async (recordData: any): Promise<string> => {
     try {
-      const newRecord = await testService.createTestRecord(recordData);
+      // First create the test
+      const { data: testData, error: testError } = await supabase
+        .from('tests')
+        .insert([{
+          test_name: recordData.test_name,
+          subject: recordData.subject,
+          test_date: recordData.test_date,
+          class: recordData.class || 10,
+          total_marks: recordData.total_marks,
+          test_type: recordData.test_type
+        }])
+        .select()
+        .single();
+
+      if (testError) throw testError;
+
+      // Then create the test result
+      const { data: resultData, error: resultError } = await supabase
+        .from('test_results')
+        .insert([{
+          student_id: recordData.student_id,
+          test_id: testData.id,
+          marks_obtained: recordData.marks,
+          total_marks: recordData.total_marks
+        }])
+        .select()
+        .single();
+
+      if (resultError) throw resultError;
       
       // Refresh test records
       refetchTests();
       
       toast.success(`Added test record for ${recordData.test_name}`);
-      return newRecord.id;
+      return resultData.id;
     } catch (error) {
       toast.error(`Failed to add test record: ${(error as Error).message}`);
       throw error;
     }
   };
 
-  const updateTestRecord = async (id: string, data: Partial<TestRecordDb>): Promise<void> => {
+  const updateTestRecord = async (id: string, data: any): Promise<void> => {
     try {
-      await testService.updateTestRecord(id, data);
+      const { error } = await supabase
+        .from('test_results')
+        .update({
+          marks_obtained: data.marks,
+          total_marks: data.total_marks
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Refresh test records
       refetchTests();
@@ -246,7 +397,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteTestRecord = async (id: string): Promise<void> => {
     try {
-      await testService.deleteTestRecord(id);
+      const { error } = await supabase
+        .from('test_results')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Refresh test records
       refetchTests();

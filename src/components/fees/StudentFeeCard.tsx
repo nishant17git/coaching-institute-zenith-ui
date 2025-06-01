@@ -48,7 +48,7 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
         .from('fee_transactions')
         .select('*')
         .eq('student_id', student.id)
-        .order('date', { ascending: false })
+        .order('payment_date', { ascending: false })
         .limit(1);
       
       if (error) throw error;
@@ -71,7 +71,7 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
         id: latestTransaction.id,
         studentId: latestTransaction.student_id,
         amount: latestTransaction.amount,
-        date: latestTransaction.date,
+        date: latestTransaction.payment_date, // Use payment_date instead of date
         paymentMode: paymentMode,
         receiptNumber: latestTransaction.receipt_number || 'N/A',
         purpose: latestTransaction.purpose || 'School Fees'
