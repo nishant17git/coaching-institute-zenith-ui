@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, Users, Calendar } from "lucide-react";
@@ -67,16 +68,18 @@ export default function Attendance() {
       setAttendanceRecords(attendanceMap);
       return records;
     },
-    onSuccess: () => {
-      // Invalidate the students query to refresh the student list with updated attendance
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-    },
     enabled: !!selectedDate // Only fetch when a date is selected
   });
 
+  // Update the query invalidation to use a separate effect
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['students'] });
+  }, [attendanceRecords, queryClient]);
+
   // Mutation to mark attendance
   const markAttendanceMutation = useMutation({
-    mutationFn: attendanceService.markAttendance,
+    mutationFn: (records: { studentId: string; date: string; status: string }[]) => 
+      attendanceService.markAttendance(records),
     onSuccess: () => {
       toast.success("Attendance marked successfully");
       refetchAttendance(); // Refresh attendance records after marking
@@ -114,17 +117,17 @@ export default function Attendance() {
 
   // Filter students by class for table view
   const studentsForTable = classFilter === "all" 
-    ? students.map(student => ({ ...student, status: attendanceRecords[student.id] || "Present" }))
+    ? students.map(student => ({ ...student, status: (attendanceRecords[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday" }))
     : students
         .filter(student => parseInt(student.class.replace("Class ", "")) === parseInt(classFilter))
-        .map(student => ({ ...student, status: attendanceRecords[student.id] || "Present" }));
+        .map(student => ({ ...student, status: (attendanceRecords[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday" }));
 
   // Filter students by class for card view  
   const studentsForCards = classFilter === "all"
-    ? students.map(student => ({ ...student, status: attendanceRecords[student.id] || "Present" }))
+    ? students.map(student => ({ ...student, status: (attendanceRecords[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday" }))
     : students
         .filter(student => parseInt(student.class.replace("Class ", "")) === parseInt(classFilter))
-        .map(student => ({ ...student, status: attendanceRecords[student.id] || "Present" }));
+        .map(student => ({ ...student, status: (attendanceRecords[student.id] || "Present") as "Present" | "Absent" | "Leave" | "Holiday" }));
 
   const stats = {
     presentCount,
@@ -141,10 +144,10 @@ export default function Attendance() {
         action={
           <Button 
             onClick={handleSaveAttendance}
-            disabled={markAttendanceMutation.isLoading}
+            disabled={markAttendanceMutation.isPending}
             className="bg-black hover:bg-black/80"
           >
-            {markAttendanceMutation.isLoading ? "Saving..." : "Save Attendance"}
+            {markAttendanceMutation.isPending ? "Saving..." : "Save Attendance"}
           </Button>
         } 
       />

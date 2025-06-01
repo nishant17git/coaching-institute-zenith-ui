@@ -1,3 +1,4 @@
+
 export interface Student {
   id: string;
   name: string;
@@ -146,6 +147,19 @@ export interface ChartDataPoint {
   test: string;
   date: string;
   score: number;
+}
+
+// Add TestFormData interface
+export interface TestFormData {
+  testName: string;
+  subject: string;
+  class: number;
+  testDate: string;
+  totalMarks: number;
+  durationMinutes?: number;
+  testType?: string;
+  instructions?: string;
+  syllabuseCovered?: string;
 }
 
 // Component prop interfaces
