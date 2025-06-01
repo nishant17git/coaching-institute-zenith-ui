@@ -1,3 +1,4 @@
+
 import React, { useState, Dispatch, SetStateAction } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, Save, Search } from "lucide-react";
@@ -48,7 +49,7 @@ export default function Attendance() {
     return {
       ...mappedStudent,
       rollNumber: mappedStudent.rollNumber || "0",
-      status: mappedStudent.status || "Active"
+      studentStatus: mappedStudent.studentStatus || "Active"
     };
   });
 
@@ -77,10 +78,7 @@ export default function Attendance() {
       setAttendanceRecords(initialAttendance);
       return initialAttendance;
     },
-    enabled: !studentsLoading && students.length > 0,
-    onSuccess: (data) => {
-      setAttendanceRecords(data);
-    }
+    enabled: !studentsLoading && students.length > 0
   });
 
   // Mark attendance mutation

@@ -291,7 +291,7 @@ export const studentService = {
       aadhaarNumber: record.aadhaar_number?.toString() || undefined,
       dateOfBirth: new Date(record.date_of_birth).toISOString().split('T')[0],
       rollNumber: record.roll_number.toString(), // Convert number to string
-      status: record.status || 'Active'
+      studentStatus: record.status || 'Active' // Renamed from status
     };
   },
   

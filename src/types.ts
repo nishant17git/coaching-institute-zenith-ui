@@ -1,4 +1,3 @@
-
 export interface Student {
   id: string;
   name: string;
@@ -20,7 +19,7 @@ export interface Student {
   dateOfBirth?: string;
   rollNumber?: string; // Keep as string for consistency
   phones?: StudentPhone[]; // For new StudentCard component
-  status?: string; // Added status property to fix attendance component errors
+  studentStatus?: string; // Renamed from status to avoid conflict with attendance status
 }
 
 export interface StudentPhone {

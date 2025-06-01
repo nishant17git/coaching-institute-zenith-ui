@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, Users, UserPlus, GraduationCap, Calendar } from "lucide-react";
@@ -289,7 +288,6 @@ export default function Students() {
                 >
                   <StudentCard 
                     student={student}
-                    onEdit={(student) => setEditingStudent(student)}
                     onDelete={(studentId) => handleDeleteStudent(studentId)}
                   />
                 </motion.div>
