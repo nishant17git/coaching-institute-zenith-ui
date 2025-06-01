@@ -14,11 +14,11 @@ export const attendanceService = {
       throw error;
     }
 
-    return data.map(record => ({
+    return data?.map(record => ({
       id: record.id,
       studentId: record.student_id,
       date: record.date,
-      status: record.status
+      status: record.status as "Present" | "Absent" | "Leave" | "Holiday"
     })) || [];
   },
 
