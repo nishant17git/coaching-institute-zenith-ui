@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -164,7 +163,7 @@ export default function Fees() {
     <div className="space-y-6 animate-fade-in">
       <EnhancedPageHeader 
         title="Fee Management" 
-        subtitle="Manage student fee collections and payments"
+        description="Manage student fee collections and payments"
       />
 
       {/* Statistics Cards */}

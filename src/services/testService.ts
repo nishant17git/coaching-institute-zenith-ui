@@ -137,7 +137,10 @@ export const testService = {
       testRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / totalTests
     );
 
-    const subjects = [...new Set(testRecords.map(record => record.tests?.subject || 'Unknown'))];
+    const subjects = [...new Set(testRecords.map(record => {
+      const subject = record.tests?.subject;
+      return typeof subject === 'string' ? subject : 'Unknown';
+    }))];
 
     // Calculate grade distribution
     const gradeDistribution = testRecords.reduce((grades, record) => {
@@ -176,8 +179,8 @@ export const testService = {
     const progressData = testRecords.map(record => ({
       date: record.tests?.test_date || new Date().toISOString(),
       score: Math.round((record.marks_obtained / record.total_marks) * 100),
-      subject: record.tests?.subject || 'Unknown',
-      test: record.tests?.test_name || 'Unknown Test'
+      subject: typeof record.tests?.subject === 'string' ? record.tests.subject : 'Unknown',
+      test: typeof record.tests?.test_name === 'string' ? record.tests.test_name : 'Unknown Test'
     }));
 
     // Calculate subject performance

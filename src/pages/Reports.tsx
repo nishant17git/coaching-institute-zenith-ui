@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -156,7 +155,7 @@ export default function Reports() {
     <div className="space-y-6 animate-fade-in">
       <EnhancedPageHeader 
         title="Reports & Analytics" 
-        subtitle="Comprehensive insights and analytics for your school"
+        description="Comprehensive insights and analytics for your school"
         action={
           <Button onClick={handleExportReport} className="gap-2">
             <Download className="h-4 w-4" />

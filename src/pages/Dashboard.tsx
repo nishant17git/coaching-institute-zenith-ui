@@ -64,7 +64,7 @@ export default function Dashboard() {
   
   // Recent admissions (last 30 days)
   const recentAdmissions = students.filter(student => {
-    if (!student.admission_date) return false; // Use admission_date instead of join_date
+    if (!student.admission_date) return false;
     const admissionDate = new Date(student.admission_date);
     return differenceInDays(new Date(), admissionDate) <= 30;
   }).length;
@@ -93,44 +93,52 @@ export default function Dashboard() {
           title="Total Students"
           value={totalStudents.toString()}
           icon={<Users className="h-5 w-5" />}
-          trend="up"
-          trendValue={`+${recentAdmissions}`}
-          trendLabel="new this month"
-          color="blue"
-          isLoading={isLoading}
+          trend={{
+            value: recentAdmissions,
+            isPositive: true
+          }}
+          description={`+${recentAdmissions} new this month`}
+          gradientClass="from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b-4 border-blue-500"
+          iconColorClass="text-blue-600 dark:text-blue-400"
         />
         
         <EnhancedStatCard
           title="Today's Attendance"
           value={`${attendanceRate}%`}
           icon={<Calendar className="h-5 w-5" />}
-          trend={attendanceRate >= 85 ? "up" : "down"}
-          trendValue={`${presentToday}/${totalStudents}`}
-          trendLabel="students present"
-          color="green"
-          isLoading={isLoading}
+          trend={{
+            value: attendanceRate >= 85 ? 5 : -5,
+            isPositive: attendanceRate >= 85
+          }}
+          description={`${presentToday}/${totalStudents} students present`}
+          gradientClass="from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500"
+          iconColorClass="text-green-600 dark:text-green-400"
         />
         
         <EnhancedStatCard
           title="Fee Collection"
           value={`${collectionRate}%`}
           icon={<CreditCard className="h-5 w-5" />}
-          trend={collectionRate >= 80 ? "up" : "down"}
-          trendValue={`₹${todayCollections.toLocaleString()}`}
-          trendLabel="collected today"
-          color="purple"
-          isLoading={isLoading}
+          trend={{
+            value: collectionRate >= 80 ? 8 : -3,
+            isPositive: collectionRate >= 80
+          }}
+          description={`₹${todayCollections.toLocaleString()} collected today`}
+          gradientClass="from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-b-4 border-purple-500"
+          iconColorClass="text-purple-600 dark:text-purple-400"
         />
         
         <EnhancedStatCard
           title="Academic Performance"
           value="85%"
           icon={<TrendingUp className="h-5 w-5" />}
-          trend="up"
-          trendValue="+5%"
-          trendLabel="from last term"
-          color="orange"
-          isLoading={isLoading}
+          trend={{
+            value: 5,
+            isPositive: true
+          }}
+          description="+5% from last term"
+          gradientClass="from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-b-4 border-orange-500"
+          iconColorClass="text-orange-600 dark:text-orange-400"
         />
       </div>
 
