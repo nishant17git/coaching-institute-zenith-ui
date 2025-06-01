@@ -284,11 +284,7 @@ export default function TestRecord() {
       </Card>
 
       {/* Test Results Component */}
-      <TestResults 
-        testResults={testResults} 
-        students={students}
-        tests={tests}
-      />
+      <TestResults />
 
       {/* Add Test Dialog */}
       <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
@@ -300,7 +296,6 @@ export default function TestRecord() {
             </DialogDescription>
           </DialogHeader>
           <TestAddForm 
-            students={students}
             onTestAdded={handleAddTest}
           />
         </DialogContent>

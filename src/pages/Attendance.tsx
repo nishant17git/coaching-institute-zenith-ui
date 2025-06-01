@@ -21,6 +21,7 @@ import { ClassAttendanceTable } from "@/components/attendance/ClassAttendanceTab
 import { AttendanceSummary } from "@/components/attendance/AttendanceSummary";
 import { DateSelector } from "@/components/attendance/DateSelector";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { studentService } from "@/services/studentService";
 
 // Icons
 import { Search, Calendar, Users, TrendingUp, UserCheck, UserX } from "lucide-react";
@@ -36,7 +37,7 @@ export default function Attendance() {
 
   // Fetch students data
   const {
-    data: students = [],
+    data: studentsData = [],
     isLoading: studentsLoading
   } = useQuery({
     queryKey: ['students'],
@@ -46,6 +47,9 @@ export default function Attendance() {
       return data || [];
     }
   });
+
+  // Convert StudentRecord to Student type
+  const students = studentsData.map(student => studentService.mapToStudentModel(student));
 
   // Fetch attendance records for selected date
   const {
@@ -68,7 +72,7 @@ export default function Attendance() {
   const presentToday = attendanceRecords.filter(record => record.status === "Present").length;
   const absentToday = attendanceRecords.filter(record => record.status === "Absent").length;
   const avgAttendance = students.length > 0 
-    ? Math.round(students.reduce((sum, student) => sum + (student.attendance_percentage || 0), 0) / students.length)
+    ? Math.round(students.reduce((sum, student) => sum + (student.attendancePercentage || 0), 0) / students.length)
     : 0;
 
   // Mark attendance mutation
@@ -134,8 +138,9 @@ export default function Attendance() {
   // Get filtered students based on search and class filter
   const getFilteredStudents = () => {
     return students.filter(student => {
-      const matchesSearch = student.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesClass = classFilter === "all" || student.class.toString() === classFilter;
+      const matchesSearch = student.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const classNum = parseInt(student.class.replace("Class ", ""));
+      const matchesClass = classFilter === "all" || classNum.toString() === classFilter;
       const matchesStatus = statusFilter === "all" || 
         (statusFilter === "present" && attendanceRecords.some(r => r.student_id === student.id && r.status === "Present")) ||
         (statusFilter === "absent" && attendanceRecords.some(r => r.student_id === student.id && r.status === "Absent")) ||
@@ -144,16 +149,18 @@ export default function Attendance() {
       return matchesSearch && matchesClass && matchesStatus;
     }).sort((a, b) => {
       // Sort by class first, then by roll number
-      if (a.class !== b.class) {
-        return a.class - b.class;
+      const classA = parseInt(a.class.replace("Class ", ""));
+      const classB = parseInt(b.class.replace("Class ", ""));
+      if (classA !== classB) {
+        return classA - classB;
       }
-      return a.roll_number - b.roll_number;
+      return (a.rollNumber || 0) - (b.rollNumber || 0);
     });
   };
 
   const filteredStudents = getFilteredStudents();
   const isLoading = studentsLoading || attendanceLoading;
-  const classes = [...new Set(students.map(student => student.class))].sort();
+  const classes = [...new Set(students.map(student => parseInt(student.class.replace("Class ", ""))))].sort();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -327,7 +334,6 @@ export default function Attendance() {
         {/* Calendar View Tab */}
         <TabsContent value="calendar" className="mt-4">
           <AttendanceCalendarView 
-            students={students}
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
           />
@@ -335,7 +341,7 @@ export default function Attendance() {
         
         {/* Summary Tab */}
         <TabsContent value="summary" className="mt-4">
-          <AttendanceSummary students={students} />
+          <AttendanceSummary />
         </TabsContent>
       </Tabs>
     </div>
