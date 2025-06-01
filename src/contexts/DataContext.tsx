@@ -1,11 +1,14 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { studentService } from '@/services/studentService';
+import { testService } from '@/services/testService';
 import { 
   Student, 
   FeeTransaction,
   AttendanceRecord,
-  Class
+  Class,
+  TestRecordDb
 } from '@/types';
 import { toast } from 'sonner';
 
@@ -14,7 +17,7 @@ interface DataContextType {
   feeTransactions: FeeTransaction[];
   attendanceRecords: AttendanceRecord[];
   classes: Class[];
-  testRecords: any[]; // Add this property for test records
+  testRecords: TestRecordDb[];
   
   // Student methods
   addStudent: (student: Omit<Student, 'id'>) => Promise<string>;
@@ -30,6 +33,11 @@ interface DataContextType {
   addAttendanceRecord: (record: Omit<AttendanceRecord, 'id'>) => Promise<string>;
   updateAttendanceRecord: (id: string, data: Partial<AttendanceRecord>) => Promise<void>;
   bulkAddAttendance: (records: Omit<AttendanceRecord, 'id'>[]) => Promise<void>;
+
+  // Test methods
+  addTestRecord: (record: Omit<TestRecordDb, 'id'>) => Promise<string>;
+  updateTestRecord: (id: string, data: Partial<TestRecordDb>) => Promise<void>;
+  deleteTestRecord: (id: string) => Promise<void>;
 
   // Loading state
   isLoading: boolean;
@@ -48,6 +56,16 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   } = useQuery({
     queryKey: ['students'],
     queryFn: studentService.getStudents
+  });
+  
+  // Fetch test records from Supabase
+  const { 
+    data: testRecords = [], 
+    isLoading: isLoadingTests,
+    refetch: refetchTests
+  } = useQuery({
+    queryKey: ['testRecords'],
+    queryFn: testService.getTestRecords
   });
   
   // Convert Supabase records to our frontend model
@@ -80,8 +98,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Initially we won't load all transactions and attendance records - they'll be loaded on demand
   const [feeTransactions, setFeeTransactions] = useState<FeeTransaction[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  // Initialize empty test records array
-  const [testRecords, setTestRecords] = useState<any[]>([]);
 
   // Student CRUD operations
   const addStudent = async (studentData: Omit<Student, 'id'>): Promise<string> => {
@@ -198,13 +214,59 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Test CRUD operations
+  const addTestRecord = async (recordData: Omit<TestRecordDb, 'id'>): Promise<string> => {
+    try {
+      const newRecord = await testService.createTestRecord(recordData);
+      
+      // Refresh test records
+      refetchTests();
+      
+      toast.success(`Added test record for ${recordData.test_name}`);
+      return newRecord.id;
+    } catch (error) {
+      toast.error(`Failed to add test record: ${(error as Error).message}`);
+      throw error;
+    }
+  };
+
+  const updateTestRecord = async (id: string, data: Partial<TestRecordDb>): Promise<void> => {
+    try {
+      await testService.updateTestRecord(id, data);
+      
+      // Refresh test records
+      refetchTests();
+      
+      toast.success(`Updated test record`);
+    } catch (error) {
+      toast.error(`Failed to update test record: ${(error as Error).message}`);
+      throw error;
+    }
+  };
+
+  const deleteTestRecord = async (id: string): Promise<void> => {
+    try {
+      await testService.deleteTestRecord(id);
+      
+      // Refresh test records
+      refetchTests();
+      
+      toast.success(`Deleted test record`);
+    } catch (error) {
+      toast.error(`Failed to delete test record: ${(error as Error).message}`);
+      throw error;
+    }
+  };
+
+  const isLoading = isLoadingStudents || isLoadingTests;
+
   return (
     <DataContext.Provider value={{
       students,
       feeTransactions,
       attendanceRecords,
       classes,
-      testRecords, // Add the testRecords property to the context value
+      testRecords,
       addStudent,
       updateStudent,
       deleteStudent,
@@ -214,7 +276,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       addAttendanceRecord,
       updateAttendanceRecord,
       bulkAddAttendance,
-      isLoading: isLoadingStudents
+      addTestRecord,
+      updateTestRecord,
+      deleteTestRecord,
+      isLoading
     }}>
       {children}
     </DataContext.Provider>

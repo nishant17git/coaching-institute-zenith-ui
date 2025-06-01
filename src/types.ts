@@ -1,3 +1,4 @@
+
 export interface Student {
   id: string;
   name: string;
@@ -139,4 +140,14 @@ export interface ChartDataPoint {
   test: string;
   date: string;
   score: number;
+}
+
+// StudentCard props interface
+export interface StudentCardProps {
+  student: Student;
+  index: number;
+  onCallClick: (name: string, phone: string) => void;
+  isFavorite: boolean;
+  onEdit?: (student: any) => void;
+  onDelete?: (studentId: any) => Promise<void>;
 }
