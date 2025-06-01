@@ -137,10 +137,11 @@ export const testService = {
       testRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / totalTests
     );
 
-    const subjects = [...new Set(testRecords.map(record => {
-      const subject = record.tests?.subject;
-      return typeof subject === 'string' ? subject : 'Unknown';
-    }))];
+    // Extract subjects with proper type checking
+    const subjects = [...new Set(testRecords
+      .map(record => record.tests?.subject)
+      .filter((subject): subject is string => typeof subject === 'string')
+    )];
 
     // Calculate grade distribution
     const gradeDistribution = testRecords.reduce((grades, record) => {
@@ -183,9 +184,11 @@ export const testService = {
       test: typeof record.tests?.test_name === 'string' ? record.tests.test_name : 'Unknown Test'
     }));
 
-    // Calculate subject performance
+    // Calculate subject performance with proper type checking
     const subjectPerformance: SubjectStat[] = subjects.map(subject => {
-      const subjectRecords = testRecords.filter(record => record.tests?.subject === subject);
+      const subjectRecords = testRecords.filter(record => 
+        typeof record.tests?.subject === 'string' && record.tests.subject === subject
+      );
       const avgScore = Math.round(
         subjectRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / subjectRecords.length
       );
@@ -197,9 +200,11 @@ export const testService = {
       };
     });
 
-    const bestSubject = subjectPerformance.reduce((best, current) => 
-      current.score > best.score ? current : best, subjectPerformance[0]
-    );
+    const bestSubject = subjectPerformance.length > 0 
+      ? subjectPerformance.reduce((best, current) => 
+          current.score > best.score ? current : best, subjectPerformance[0]
+        )
+      : null;
 
     const latestTest = testRecords[0] || null;
 
