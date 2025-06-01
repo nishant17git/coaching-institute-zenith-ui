@@ -1,3 +1,4 @@
+
 export interface Student {
   id: string;
   name: string;
@@ -17,7 +18,7 @@ export interface Student {
   gender?: "Male" | "Female" | "Other";
   aadhaarNumber?: string;
   dateOfBirth?: string;
-  rollNumber?: number;
+  rollNumber?: string; // Changed from number to string to match component expectations
   phones?: StudentPhone[]; // For new StudentCard component
   status?: string; // Added status property to fix attendance component errors
 }
@@ -62,7 +63,7 @@ export interface StudentRecord {
   guardian_name: string;
   contact_number: string;
   whatsapp_number?: string;
-  fee_status: "Paid" | "Pending" | "Partial";
+  fee_status: string; // Changed to string to match database reality
   total_fees: number;
   paid_fees: number;
   attendance_percentage: number;
@@ -145,4 +146,46 @@ export interface ChartDataPoint {
   test: string;
   date: string;
   score: number;
+}
+
+// Component prop interfaces
+export interface DateSelectorProps {
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
+}
+
+export interface AttendanceCalendarViewProps {
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
+}
+
+export interface AttendanceSummaryProps {
+  stats: {
+    presentCount: number;
+    absentCount: number;
+    leaveCount: number;
+    totalStudents: number;
+    attendancePercentage: number;
+  };
+}
+
+export interface StudentFormProps {
+  student?: Student;
+  onSubmit: (studentData: Omit<Student, "id">) => void | Promise<void>;
+  isLoading?: boolean;
+}
+
+export interface TestResultsProps {
+  tests: any[];
+  students: any[];
+  testResults: any[];
+  getGrade: (marks: number, totalMarks: number) => { grade: string; color: string; };
+  handleSort: (field: string) => void;
+  sortBy: string;
+  sortOrder: string;
+  onAddResult: () => void;
+}
+
+export interface TestAddFormProps {
+  onTestAdded: () => void;
 }

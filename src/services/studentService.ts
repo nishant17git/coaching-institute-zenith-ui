@@ -266,6 +266,11 @@ export const studentService = {
   
   // Map Supabase StudentRecord to frontend Student type
   mapToStudentModel(record: StudentRecord): Student {
+    // Safely cast fee_status to the expected union type
+    const feeStatus = (record.fee_status === "Paid" || record.fee_status === "Pending" || record.fee_status === "Partial") 
+      ? record.fee_status as "Paid" | "Pending" | "Partial"
+      : "Pending";
+
     return {
       id: record.id,
       name: record.full_name,
@@ -277,7 +282,7 @@ export const studentService = {
       phoneNumber: record.contact_number,
       whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
-      feeStatus: (record.fee_status as "Paid" | "Pending" | "Partial") || "Pending",
+      feeStatus: feeStatus,
       totalFees: record.total_fees || 0,
       paidFees: record.paid_fees || 0,
       attendancePercentage: record.attendance_percentage || 0,
@@ -285,7 +290,7 @@ export const studentService = {
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
       aadhaarNumber: record.aadhaar_number?.toString() || undefined,
       dateOfBirth: new Date(record.date_of_birth).toISOString().split('T')[0],
-      rollNumber: record.roll_number,
+      rollNumber: record.roll_number.toString(), // Convert number to string
       status: record.status || 'Active'
     };
   },
@@ -295,7 +300,7 @@ export const studentService = {
     return {
       full_name: student.name,
       class: parseInt(student.class.replace("Class ", "")),
-      roll_number: student.rollNumber || 0,
+      roll_number: parseInt(student.rollNumber || "0"), // Convert string to number for database
       date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
       father_name: student.fatherName,
       mother_name: student.motherName,

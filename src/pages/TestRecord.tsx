@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +109,16 @@ export default function TestRecord() {
     
     return matchesSearch && matchesSubject && matchesClass;
   });
+
+  // Helper function to get grade with color
+  const getGradeWithColor = (marks: number, totalMarks: number) => {
+    const percentage = (marks / totalMarks) * 100;
+    if (percentage >= 90) return { grade: "A+", color: "text-green-600" };
+    if (percentage >= 80) return { grade: "A", color: "text-green-500" };
+    if (percentage >= 70) return { grade: "B", color: "text-blue-500" };
+    if (percentage >= 60) return { grade: "C", color: "text-yellow-500" };
+    return { grade: "D", color: "text-red-500" };
+  };
 
   const handleAddTest = () => {
     refetchTests();
@@ -288,13 +297,7 @@ export default function TestRecord() {
         tests={tests}
         students={students}
         testResults={testResults}
-        getGrade={(percentage: number) => {
-          if (percentage >= 90) return "A+";
-          if (percentage >= 80) return "A";
-          if (percentage >= 70) return "B";
-          if (percentage >= 60) return "C";
-          return "D";
-        }}
+        getGrade={getGradeWithColor}
         handleSort={() => {}}
         sortBy="percentage"
         sortOrder="desc"

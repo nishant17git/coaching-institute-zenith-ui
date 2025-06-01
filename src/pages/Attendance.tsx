@@ -154,7 +154,7 @@ export default function Attendance() {
       if (classA !== classB) {
         return classA - classB;
       }
-      return (a.rollNumber || 0) - (b.rollNumber || 0);
+      return parseInt(a.rollNumber || "0") - parseInt(b.rollNumber || "0");
     });
   };
 
@@ -343,10 +343,11 @@ export default function Attendance() {
         <TabsContent value="summary" className="mt-4">
           <AttendanceSummary 
             stats={{
-              totalStudents,
-              presentToday,
-              absentToday,
-              avgAttendance
+              presentCount: presentToday,
+              absentCount: absentToday,
+              leaveCount: 0,
+              totalStudents: totalStudents,
+              attendancePercentage: avgAttendance
             }}
           />
         </TabsContent>

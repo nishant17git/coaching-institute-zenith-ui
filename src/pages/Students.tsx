@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
-import { StudentCard } from "@/components/ui/student-card";
+import StudentCard from "@/components/ui/student-card";
 import { StudentForm } from "@/components/students/StudentForm";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -300,7 +300,6 @@ export default function Students() {
           </DialogHeader>
           <StudentForm 
             onSubmit={handleCreateStudent}
-            isLoading={createStudentMutation.isPending}
           />
         </DialogContent>
       </Dialog>
@@ -318,7 +317,6 @@ export default function Students() {
             <StudentForm 
               student={editingStudent}
               onSubmit={handleUpdateStudent}
-              isLoading={updateStudentMutation.isPending}
             />
           )}
         </DialogContent>
