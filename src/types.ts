@@ -18,7 +18,7 @@ export interface Student {
   gender?: "Male" | "Female" | "Other";
   aadhaarNumber?: string;
   dateOfBirth?: string;
-  rollNumber?: string; // Changed from number to string to match component expectations
+  rollNumber?: string; // Keep as string for consistency
   phones?: StudentPhone[]; // For new StudentCard component
   status?: string; // Added status property to fix attendance component errors
 }
@@ -63,7 +63,7 @@ export interface StudentRecord {
   guardian_name: string;
   contact_number: string;
   whatsapp_number?: string;
-  fee_status: string; // Changed to string to match database reality
+  fee_status: "Paid" | "Pending" | "Partial"; // Fixed to match union type
   total_fees: number;
   paid_fees: number;
   attendance_percentage: number;
@@ -171,8 +171,15 @@ export interface AttendanceSummaryProps {
 
 export interface StudentFormProps {
   student?: Student;
+  classes: Class[];
   onSubmit: (studentData: Omit<Student, "id">) => void | Promise<void>;
-  isLoading?: boolean;
+  submitLabel?: string;
+}
+
+export interface StudentCardProps {
+  student: Student;
+  onEdit?: (student: Student) => void;
+  onDelete?: (studentId: string) => Promise<void>;
 }
 
 export interface TestResultsProps {

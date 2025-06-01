@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Loader2, CalendarIcon, User, Phone, MapPin, GraduationCap, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Student, Class } from "@/types";
+import { Student, Class, StudentFormProps } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 const studentFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   class: z.string().min(1, "Class is required"),
-  rollNumber: z.coerce.number().int().positive("Roll number must be positive").optional(),
+  rollNumber: z.string().optional(), // Changed to string to match Student interface
   fatherName: z.string().min(1, "Father's name is required"),
   motherName: z.string().optional(),
   phoneNumber: z.string().min(1, "Phone number is required"),
@@ -34,14 +34,7 @@ const studentFormSchema = z.object({
 
 type StudentFormValues = z.infer<typeof studentFormSchema>;
 
-interface StudentFormProps {
-  student?: Student;
-  classes: Class[];
-  onSubmit: (data: StudentFormValues) => void;
-  submitLabel?: string;
-}
-
-export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit" }: StudentFormProps) {
+export function StudentForm({ student, classes = [], onSubmit, submitLabel = "Submit" }: StudentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Set default values based on whether we're editing or creating
@@ -49,7 +42,7 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
     ? {
         name: student.name,
         class: student.class.toString(),
-        rollNumber: student.rollNumber || undefined,
+        rollNumber: student.rollNumber || "",
         fatherName: student.fatherName,
         motherName: student.motherName,
         phoneNumber: student.phoneNumber,
@@ -57,13 +50,13 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
         address: student.address,
         totalFees: student.totalFees,
         gender: student.gender,
-        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split("T")[0] : undefined,
+        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split("T")[0] : "",
         aadhaarNumber: student.aadhaarNumber,
       }
     : {
         name: "",
         class: "",
-        rollNumber: undefined,
+        rollNumber: "",
         fatherName: "",
         motherName: "",
         phoneNumber: "",
@@ -85,7 +78,32 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
 
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
+      
+      // Convert form data to Student format
+      const studentData: Omit<Student, "id"> = {
+        name: data.name,
+        class: data.class,
+        rollNumber: data.rollNumber,
+        fatherName: data.fatherName,
+        motherName: data.motherName || "",
+        phoneNumber: data.phoneNumber,
+        whatsappNumber: data.whatsappNumber || data.phoneNumber,
+        address: data.address,
+        totalFees: data.totalFees,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        aadhaarNumber: data.aadhaarNumber,
+        // Required fields for Student interface
+        father: data.fatherName,
+        mother: data.motherName || "",
+        feeStatus: "Pending",
+        paidFees: 0,
+        attendancePercentage: 0,
+        joinDate: new Date().toISOString().split('T')[0],
+        status: "Active"
+      };
+      
+      await onSubmit(studentData);
       form.reset(defaultValues);
     } catch (error) {
       console.error('Form submission error:', error);
@@ -249,6 +267,16 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
                                   {cls.name}
                                 </SelectItem>
                               ))}
+                              {/* Fallback options if no classes */}
+                              {validClasses.length === 0 && (
+                                <>
+                                  <SelectItem value="Class 1" className="font-geist">Class 1</SelectItem>
+                                  <SelectItem value="Class 2" className="font-geist">Class 2</SelectItem>
+                                  <SelectItem value="Class 3" className="font-geist">Class 3</SelectItem>
+                                  <SelectItem value="Class 4" className="font-geist">Class 4</SelectItem>
+                                  <SelectItem value="Class 5" className="font-geist">Class 5</SelectItem>
+                                </>
+                              )}
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -265,7 +293,6 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
                         <FormLabel className="text-sm font-medium font-geist">Roll Number</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
                             placeholder="Enter roll number"
                             className="h-10 sm:h-11 font-geist"
                             {...field}

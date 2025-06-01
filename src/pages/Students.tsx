@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, Users, UserPlus, GraduationCap, Calendar } from "lucide-react";
@@ -134,6 +135,15 @@ export default function Students() {
   const averageAttendance = students.length > 0 
     ? Math.round(students.reduce((sum, student) => sum + student.attendancePercentage, 0) / students.length)
     : 0;
+
+  // Mock classes data for the form
+  const mockClasses = [
+    { id: "1", name: "Class 1", totalStudents: 0 },
+    { id: "2", name: "Class 2", totalStudents: 0 },
+    { id: "3", name: "Class 3", totalStudents: 0 },
+    { id: "4", name: "Class 4", totalStudents: 0 },
+    { id: "5", name: "Class 5", totalStudents: 0 },
+  ];
 
   if (error) {
     return (
@@ -299,6 +309,7 @@ export default function Students() {
             </DialogDescription>
           </DialogHeader>
           <StudentForm 
+            classes={mockClasses}
             onSubmit={handleCreateStudent}
           />
         </DialogContent>
@@ -316,6 +327,7 @@ export default function Students() {
           {editingStudent && (
             <StudentForm 
               student={editingStudent}
+              classes={mockClasses}
               onSubmit={handleUpdateStudent}
             />
           )}
