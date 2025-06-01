@@ -1,4 +1,3 @@
-
 export interface Student {
   id: string;
   name: string;
@@ -192,6 +191,9 @@ export interface StudentFormProps {
 
 export interface StudentCardProps {
   student: Student;
+  index: number;
+  onCallClick: (name: string, phone: string) => void;
+  isFavorite: boolean;
   onEdit?: (student: Student) => void;
   onDelete?: (studentId: string) => Promise<void>;
 }
