@@ -135,7 +135,17 @@ export default function TestHistory() {
       current.score > (best?.score || 0) ? current : best, subjectPerformance[0] || null
     );
 
-    const latestTest = testResults[0] || null;
+    // Convert latest test result to match TestRecordDb interface
+    const latestTestResult = testResults[0];
+    const latestTest: TestRecordDb | null = latestTestResult ? {
+      id: latestTestResult.test_id,
+      student_id: latestTestResult.student_id,
+      subject: latestTestResult.tests?.subject || 'Unknown',
+      test_date: latestTestResult.tests?.test_date || new Date().toISOString(),
+      test_name: latestTestResult.tests?.test_name || 'Unknown Test',
+      marks: latestTestResult.marks_obtained,
+      total_marks: latestTestResult.total_marks
+    } : null;
 
     return {
       totalTests,

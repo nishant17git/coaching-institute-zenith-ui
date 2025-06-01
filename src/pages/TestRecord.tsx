@@ -284,7 +284,22 @@ export default function TestRecord() {
       </Card>
 
       {/* Test Results Component */}
-      <TestResults />
+      <TestResults 
+        tests={tests}
+        students={students}
+        testResults={testResults}
+        getGrade={(percentage: number) => {
+          if (percentage >= 90) return "A+";
+          if (percentage >= 80) return "A";
+          if (percentage >= 70) return "B";
+          if (percentage >= 60) return "C";
+          return "D";
+        }}
+        handleSort={() => {}}
+        sortBy="percentage"
+        sortOrder="desc"
+        onAddResult={() => {}}
+      />
 
       {/* Add Test Dialog */}
       <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>

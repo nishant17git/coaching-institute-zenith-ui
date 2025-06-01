@@ -341,7 +341,14 @@ export default function Attendance() {
         
         {/* Summary Tab */}
         <TabsContent value="summary" className="mt-4">
-          <AttendanceSummary />
+          <AttendanceSummary 
+            stats={{
+              totalStudents,
+              presentToday,
+              absentToday,
+              avgAttendance
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>

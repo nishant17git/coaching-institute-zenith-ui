@@ -1,371 +1,310 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
+import { Badge } from "@/components/ui/badge";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
-import { useIsMobile } from "@/hooks/use-mobile";
+
+// Charts
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
 // Icons
-import { Search, Download, FileText, Calendar, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Download, Calendar, TrendingUp, Users, DollarSign, BookOpen } from "lucide-react";
 
 export default function Reports() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [reportType, setReportType] = useState("all");
-  const [classFilter, setClassFilter] = useState("all");
-  const [dateRange, setDateRange] = useState<any>(null);
-  const isMobile = useIsMobile();
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [reportType, setReportType] = useState("fees");
 
-  // Fetch students data
-  const {
-    data: students = [],
-    isLoading: studentsLoading
-  } = useQuery({
-    queryKey: ['students'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('*');
-      if (error) throw error;
-      return data || [];
-    }
-  });
+  // Date formatting for queries
+  const startDate = startOfMonth(selectedMonth);
+  const endDate = endOfMonth(selectedMonth);
+  const formattedStartDate = format(startDate, "yyyy-MM-dd");
+  const formattedEndDate = format(endDate, "yyyy-MM-dd");
 
-  // Fetch fee transactions
-  const {
-    data: feeTransactions = [],
-    isLoading: feesLoading
-  } = useQuery({
-    queryKey: ['feeTransactions'],
+  // Fetch monthly fee collections
+  const { data: monthlyFeeCollections = [], isLoading: feesLoading } = useQuery({
+    queryKey: ['monthlyFeeCollections', formattedStartDate, formattedEndDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fee_transactions')
-        .select(`
-          *,
-          students (
-            full_name,
-            class
-          )
-        `)
-        .order('payment_date', { ascending: false });
+        .select('*')
+        .gte('payment_date', formattedStartDate)
+        .lte('payment_date', formattedEndDate);
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: reportType === 'fees'
   });
 
-  // Fetch attendance records
-  const {
-    data: attendanceRecords = [],
-    isLoading: attendanceLoading
-  } = useQuery({
-    queryKey: ['attendanceRecords'],
+  // Fetch monthly attendance
+  const { data: monthlyAttendance = [], isLoading: attendanceLoading } = useQuery({
+    queryKey: ['monthlyAttendance', formattedStartDate, formattedEndDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('attendance_records')
-        .select(`
-          *,
-          students (
-            full_name,
-            class
-          )
-        `)
-        .order('date', { ascending: false });
+        .select('*')
+        .gte('date', formattedStartDate)
+        .lte('date', formattedEndDate);
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: reportType === 'attendance'
   });
 
-  // Fetch test results
-  const {
-    data: testResults = [],
-    isLoading: testsLoading
-  } = useQuery({
-    queryKey: ['testResults'],
+  // Fetch class distribution
+  const { data: classDistribution = [], isLoading: classLoading } = useQuery({
+    queryKey: ['classDistribution'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('test_results')
-        .select(`
-          *,
-          tests (
-            test_name,
-            subject,
-            test_date,
-            class
-          ),
-          students (
-            full_name,
-            class
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .from('students')
+        .select('class');
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: reportType === 'class'
   });
 
-  // Calculate statistics
-  const totalStudents = students.length;
-  const totalFeeCollected = feeTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
-  const averageAttendance = students.length > 0 
-    ? Math.round(students.reduce((sum, student) => sum + (student.attendance_percentage || 0), 0) / students.length)
-    : 0;
-  const averageTestScore = testResults.length > 0 
-    ? Math.round(testResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / testResults.length)
-    : 0;
+  // Calculate statistics based on report type
+  const totalFeeCollection = monthlyFeeCollections.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalPresent = monthlyAttendance.filter(record => record.status === 'Present').length;
+  const totalAbsent = monthlyAttendance.filter(record => record.status === 'Absent').length;
 
-  // Filter data based on filters
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = classFilter === "all" || student.class.toString() === classFilter;
-    return matchesSearch && matchesClass;
-  });
+  // Prepare data for charts
+  const feeCollectionData = [{
+    name: format(selectedMonth, 'MMMM'),
+    value: totalFeeCollection
+  }];
 
-  const filteredFeeTransactions = feeTransactions.filter(transaction => {
-    const student = transaction.students;
-    if (!student) return false;
-    
-    const matchesSearch = student.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = classFilter === "all" || student.class.toString() === classFilter;
-    
-    let matchesDate = true;
-    if (dateRange?.from && dateRange?.to) {
-      const transactionDate = new Date(transaction.payment_date);
-      matchesDate = transactionDate >= dateRange.from && transactionDate <= dateRange.to;
-    }
-    
-    return matchesSearch && matchesClass && matchesDate;
-  });
+  const attendanceData = [
+    { name: 'Present', value: totalPresent },
+    { name: 'Absent', value: totalAbsent }
+  ];
 
-  const isLoading = studentsLoading || feesLoading || attendanceLoading || testsLoading;
-  const classes = [...new Set(students.map(student => student.class))].sort();
+  const classData = () => {
+    const classCounts: { [key: string]: number } = {};
+    classDistribution.forEach(student => {
+      const className = `Class ${student.class}`;
+      classCounts[className] = (classCounts[className] || 0) + 1;
+    });
 
-  const handleDownloadReport = (type: string) => {
-    // This would implement actual PDF/Excel generation
-    console.log(`Downloading ${type} report`);
+    return Object.entries(classCounts).map(([name, value]) => ({
+      name,
+      value
+    }));
   };
+
+  const isLoading = feesLoading || attendanceLoading || classLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <EnhancedPageHeader 
-        title="Reports" 
+        title="Reports & Analytics" 
         action={
-          <Button onClick={() => handleDownloadReport('comprehensive')} className="bg-black hover:bg-black/80">
-            <Download className="h-4 w-4 mr-2" /> Download All
-          </Button>
+          <div className="flex gap-3">
+            <Select value={reportType} onValueChange={setReportType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Report" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fees">Fee Collection</SelectItem>
+                <SelectItem value="attendance">Attendance</SelectItem>
+                <SelectItem value="class">Class Distribution</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="bg-black hover:bg-black/80">
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
+          </div>
         } 
       />
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b-4 border-blue-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-              <Users className="h-4 w-4" /> Total Students
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">Enrolled</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
-              <DollarSign className="h-4 w-4" /> Fee Collected
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{totalFeeCollected.toLocaleString()}</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">Total amount</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-b-4 border-purple-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
-              <TrendingUp className="h-4 w-4" /> Avg Attendance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageAttendance}%</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">All students</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-b-4 border-amber-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
-              <FileText className="h-4 w-4" /> Avg Test Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageTestScore}%</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">All tests</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
+      {/* Date Filter */}
       <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search students..." 
-              value={searchQuery} 
-              onChange={e => setSearchQuery(e.target.value)} 
-              className="pl-10 h-11 text-base" 
-            />
-          </div>
-
-          <div className="flex flex-row gap-3 w-full sm:w-auto">
-            <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Report Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Reports</SelectItem>
-                <SelectItem value="fees">Fee Reports</SelectItem>
-                <SelectItem value="attendance">Attendance Reports</SelectItem>
-                <SelectItem value="tests">Test Reports</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {classes.map(classNum => (
-                  <SelectItem key={classNum} value={classNum.toString()}>Class {classNum}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex items-center gap-4">
+          <Calendar className="h-5 w-5 text-muted-foreground" />
+          <h3 className="text-lg font-medium">
+            {format(selectedMonth, 'MMMM yyyy')}
+          </h3>
+          <div className="ml-auto flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedMonth(subMonths(selectedMonth, 1))}
+            >
+              Previous
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedMonth(new Date())}
+            >
+              Current
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedMonth(subMonths(new Date(), 1))}
+            >
+              Last Month
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedMonth(new Date(new Date().getFullYear(), 0, 1))}
+            >
+              This Year
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedMonth(subMonths(selectedMonth, -1))}
+            >
+              Next
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Fee Transactions Report */}
-        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-sm font-medium">
-              <div>
-                <span className="text-base block">Fee Transactions</span>
-                <span className="text-xs text-muted-foreground">{filteredFeeTransactions.length} transactions</span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDownloadReport('fees')}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Amount:</span>
-                <span className="font-medium">₹{filteredFeeTransactions.reduce((sum, tx) => sum + tx.amount, 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Latest Payment:</span>
-                <span className="font-medium">
-                  {filteredFeeTransactions.length > 0 
-                    ? format(new Date(filteredFeeTransactions[0].payment_date), 'MMM dd, yyyy')
-                    : 'No payments'
-                  }
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <LoadingState />
+      ) : (
+        <>
+          {reportType === 'fees' && (
+            <Card className="shadow-sm border-muted">
+              <CardHeader>
+                <CardTitle>Monthly Fee Collection</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Total fee collection for {format(selectedMonth, 'MMMM yyyy')}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {monthlyFeeCollections.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-4xl font-bold">
+                        ₹{totalFeeCollection.toLocaleString()}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Collected this month
+                      </p>
+                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={feeCollectionData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                        <Bar dataKey="value" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <EmptyState 
+                    icon={<DollarSign className="h-10 w-10 text-muted-foreground" />} 
+                    title="No fee collections this month" 
+                    description="No fee transactions were recorded for the selected month." 
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Students Report */}
-        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-sm font-medium">
-              <div>
-                <span className="text-base block">Students Report</span>
-                <span className="text-xs text-muted-foreground">{filteredStudents.length} students</span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDownloadReport('students')}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Classes:</span>
-                <span className="font-medium">{classes.length}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Avg Attendance:</span>
-                <span className="font-medium">{averageAttendance}%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          {reportType === 'attendance' && (
+            <Card className="shadow-sm border-muted">
+              <CardHeader>
+                <CardTitle>Monthly Attendance Report</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Attendance statistics for {format(selectedMonth, 'MMMM yyyy')}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {monthlyAttendance.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-green-600">
+                          <TrendingUp className="h-5 w-5 mr-2" /> Present
+                        </div>
+                        <div className="font-bold text-xl">{totalPresent}</div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="text-red-600">
+                          <Users className="h-5 w-5 mr-2" /> Absent
+                        </div>
+                        <div className="font-bold text-xl">{totalAbsent}</div>
+                      </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={attendanceData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label
+                        >
+                          <Cell fill="#82ca9d" name="Present" />
+                          <Cell fill="#d04848" name="Absent" />
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <EmptyState 
+                    icon={<Calendar className="h-10 w-10 text-muted-foreground" />} 
+                    title="No attendance records this month" 
+                    description="No attendance records were found for the selected month." 
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Attendance Report */}
-        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-sm font-medium">
-              <div>
-                <span className="text-base block">Attendance Report</span>
-                <span className="text-xs text-muted-foreground">{attendanceRecords.length} records</span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDownloadReport('attendance')}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Present Today:</span>
-                <span className="font-medium text-green-600">
-                  {attendanceRecords.filter(r => r.status === "Present" && r.date === format(new Date(), 'yyyy-MM-dd')).length}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Overall Avg:</span>
-                <span className="font-medium">{averageAttendance}%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {isLoading && <LoadingState />}
+          {reportType === 'class' && (
+            <Card className="shadow-sm border-muted">
+              <CardHeader>
+                <CardTitle>Class Distribution</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Distribution of students across different classes
+                </p>
+              </CardHeader>
+              <CardContent>
+                {classDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={classData()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyState
+                    icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
+                    title="No class data available"
+                    description="There is no class data to display."
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }

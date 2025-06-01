@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, Users, UserPlus, GraduationCap, Calendar } from "lucide-react";
@@ -301,7 +300,6 @@ export default function Students() {
           </DialogHeader>
           <StudentForm 
             onSubmit={handleCreateStudent}
-            onCancel={() => setIsAddStudentDialogOpen(false)}
             isLoading={createStudentMutation.isPending}
           />
         </DialogContent>
@@ -320,7 +318,6 @@ export default function Students() {
             <StudentForm 
               student={editingStudent}
               onSubmit={handleUpdateStudent}
-              onCancel={() => setEditingStudent(null)}
               isLoading={updateStudentMutation.isPending}
             />
           )}

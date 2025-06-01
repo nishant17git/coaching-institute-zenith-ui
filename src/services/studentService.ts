@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { StudentRecord, Student, FeeTransaction, AttendanceRecord } from "@/types";
 
@@ -278,7 +277,7 @@ export const studentService = {
       phoneNumber: record.contact_number,
       whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
-      feeStatus: record.fee_status || "Pending",
+      feeStatus: (record.fee_status as "Paid" | "Pending" | "Partial") || "Pending",
       totalFees: record.total_fees || 0,
       paidFees: record.paid_fees || 0,
       attendancePercentage: record.attendance_percentage || 0,
@@ -286,7 +285,8 @@ export const studentService = {
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
       aadhaarNumber: record.aadhaar_number?.toString() || undefined,
       dateOfBirth: new Date(record.date_of_birth).toISOString().split('T')[0],
-      rollNumber: record.roll_number
+      rollNumber: record.roll_number,
+      status: record.status || 'Active'
     };
   },
   
