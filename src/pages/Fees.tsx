@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -82,11 +83,10 @@ export default function Fees() {
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: paymentData.date,
+        date: paymentData.date,
         payment_mode: paymentData.paymentMode,
         receipt_number: paymentData.receiptNumber,
-        purpose: paymentData.purpose,
-        academic_year: new Date().getFullYear().toString()
+        purpose: paymentData.purpose
       };
 
       // Insert the fee transaction
@@ -100,15 +100,7 @@ export default function Fees() {
       const student = students.find(s => s.id === paymentData.student_id);
       if (student) {
         const newPaidFees = (student.paid_fees || 0) + paymentData.amount;
-        const totalFees = student.total_fees || 0;
-        let newFeeStatus: "Paid" | "Pending" | "Partial" = "Pending";
-        
-        if (newPaidFees >= totalFees && totalFees > 0) {
-          newFeeStatus = "Paid";
-        } else if (newPaidFees > 0) {
-          newFeeStatus = "Partial";
-        }
-
+        const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : newPaidFees > 0 ? 'Partial' : 'Pending';
         const {
           error: updateError
         } = await supabase.from('students').update({
@@ -149,7 +141,7 @@ export default function Fees() {
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: paymentData.date,
+        date: paymentData.date,
         payment_mode: paymentData.paymentMode,
         receipt_number: paymentData.receiptNumber,
         purpose: paymentData.purpose
@@ -171,15 +163,7 @@ export default function Fees() {
         const student = students.find(s => s.id === paymentData.student_id);
         if (student) {
           const newPaidFees = (student.paid_fees || 0) + amountDifference;
-          const totalFees = student.total_fees || 0;
-          let newFeeStatus: "Paid" | "Pending" | "Partial" = "Pending";
-          
-          if (newPaidFees >= totalFees && totalFees > 0) {
-            newFeeStatus = "Paid";
-          } else if (newPaidFees > 0) {
-            newFeeStatus = "Partial";
-          }
-
+          const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : newPaidFees > 0 ? 'Partial' : 'Pending';
           const {
             error: updateError
           } = await supabase.from('students').update({
@@ -232,15 +216,7 @@ export default function Fees() {
       const student = students.find(s => s.id === transaction.student_id);
       if (student) {
         const newPaidFees = Math.max(0, (student.paid_fees || 0) - transaction.amount);
-        const totalFees = student.total_fees || 0;
-        let newFeeStatus: "Paid" | "Pending" | "Partial" = "Pending";
-        
-        if (newPaidFees >= totalFees && totalFees > 0) {
-          newFeeStatus = "Paid";
-        } else if (newPaidFees > 0) {
-          newFeeStatus = "Partial";
-        }
-
+        const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : newPaidFees > 0 ? 'Partial' : 'Pending';
         const {
           error: updateError
         } = await supabase.from('students').update({
@@ -284,7 +260,7 @@ export default function Fees() {
     let periodMatches = true;
     if (periodFilter !== "all") {
       const today = new Date();
-      const transactionDate = new Date(transaction.payment_date);
+      const transactionDate = new Date(transaction.date);
       if (periodFilter === "thisMonth") {
         periodMatches = transactionDate.getMonth() === today.getMonth() && transactionDate.getFullYear() === today.getFullYear();
       } else if (periodFilter === "lastMonth") {
@@ -299,8 +275,8 @@ export default function Fees() {
   }).sort((a, b) => {
     // Handle sorting
     if (sortField === "date") {
-      const dateA = new Date(a.payment_date).getTime();
-      const dateB = new Date(b.payment_date).getTime();
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
       return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
     } else if (sortField === "amount") {
       return sortDirection === "asc" ? a.amount - b.amount : b.amount - a.amount;
@@ -330,7 +306,7 @@ export default function Fees() {
       feeTransactions.forEach(transaction => {
         const student = students.find(s => s.id === transaction.student_id);
         if (student) {
-          const row = [student.full_name, `Class ${student.class}`, new Date(transaction.payment_date).toLocaleDateString(), `₹${transaction.amount}`, transaction.payment_mode, transaction.receipt_number, transaction.purpose || ""].map(item => `"${item}"`).join(",");
+          const row = [student.full_name, `Class ${student.class}`, new Date(transaction.date).toLocaleDateString(), `₹${transaction.amount}`, transaction.payment_mode, transaction.receipt_number, transaction.purpose || ""].map(item => `"${item}"`).join(",");
           csvContent += row + "\n";
         }
       });
@@ -397,8 +373,8 @@ export default function Fees() {
       "Partial": 1,
       "Paid": 2
     };
-    const statusA = statusOrder[(a.fee_status || "Pending") as keyof typeof statusOrder] || 0;
-    const statusB = statusOrder[(b.fee_status || "Pending") as keyof typeof statusOrder] || 0;
+    const statusA = statusOrder[a.fee_status as keyof typeof statusOrder] || 0;
+    const statusB = statusOrder[b.fee_status as keyof typeof statusOrder] || 0;
     return statusA - statusB;
   });
 

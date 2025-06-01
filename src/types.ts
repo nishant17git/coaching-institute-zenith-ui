@@ -17,10 +17,8 @@ export interface Student {
   gender?: "Male" | "Female" | "Other";
   aadhaarNumber?: string;
   dateOfBirth?: string;
-  rollNumber?: string; // Keep as string for consistency
+  rollNumber?: number;
   phones?: StudentPhone[]; // For new StudentCard component
-  studentStatus?: string; // Renamed from status to avoid conflict with attendance status
-  status?: "Present" | "Absent" | "Leave" | "Holiday"; // Added for attendance functionality
 }
 
 export interface StudentPhone {
@@ -63,20 +61,15 @@ export interface StudentRecord {
   guardian_name: string;
   contact_number: string;
   whatsapp_number?: string;
-  fee_status: "Paid" | "Pending" | "Partial"; // Fixed to match union type
+  fee_status: "Paid" | "Pending" | "Partial";
   total_fees: number;
   paid_fees: number;
   attendance_percentage: number;
-  admission_date: string;
+  join_date: string;
   created_at: string;
   updated_at: string;
   gender?: string;
   aadhaar_number?: string | number; // Updated to accept both string and number types
-  father_name: string;
-  mother_name?: string;
-  email?: string;
-  blood_group?: string;
-  status?: string;
 }
 
 // New interfaces for test data
@@ -146,72 +139,4 @@ export interface ChartDataPoint {
   test: string;
   date: string;
   score: number;
-}
-
-// Add TestFormData interface
-export interface TestFormData {
-  testName: string;
-  subject: string;
-  class: number;
-  testDate: string;
-  totalMarks: number;
-  durationMinutes?: number;
-  testType?: string;
-  instructions?: string;
-  syllabuseCovered?: string;
-}
-
-// Component prop interfaces
-export interface DateSelectorProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-}
-
-export interface AttendanceCalendarViewProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-}
-
-export interface AttendanceSummaryProps {
-  stats: {
-    presentCount: number;
-    absentCount: number;
-    leaveCount: number;
-    totalStudents: number;
-    attendancePercentage: number;
-  };
-}
-
-export interface StudentFormProps {
-  student?: Student;
-  classes: Class[];
-  onSubmit: (studentData: Omit<Student, "id">) => void | Promise<void>;
-  submitLabel?: string;
-}
-
-export interface StudentCardProps {
-  student: Student;
-  index: number;
-  onCallClick: (name: string, phone: string) => void;
-  isFavorite: boolean;
-  onEdit?: (student: Student) => void;
-  onDelete?: (studentId: string) => Promise<void>;
-}
-
-export interface TestResultsProps {
-  tests: any[];
-  students: any[];
-  testResults: any[];
-  getGrade: (marks: number, totalMarks: number) => { grade: string; color: string; };
-  handleSort: (field: string) => void;
-  sortBy: string;
-  sortOrder: string;
-  onAddResult: () => void;
-}
-
-export interface TestAddFormProps {
-  onSubmit: (data: TestFormData) => void;
-  students: { id: string; full_name?: string; class?: number | string }[];
-  initialData?: TestFormData;
-  isEditing?: boolean;
 }

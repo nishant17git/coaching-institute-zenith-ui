@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { StudentRecord, Student, FeeTransaction, AttendanceRecord } from "@/types";
 
@@ -104,7 +105,7 @@ export const studentService = {
       .from("fee_transactions")
       .select("*")
       .eq("student_id", studentId)
-      .order("payment_date", { ascending: false });
+      .order("date", { ascending: false });
       
     if (error) {
       console.error(`Error fetching fees for student ${studentId}:`, error);
@@ -115,7 +116,7 @@ export const studentService = {
       id: fee.id,
       studentId: fee.student_id,
       amount: fee.amount,
-      date: fee.payment_date,
+      date: fee.date,
       paymentMode: fee.payment_mode,
       receiptNumber: fee.receipt_number,
       purpose: fee.purpose
@@ -127,11 +128,10 @@ export const studentService = {
     const dbTransaction = {
       student_id: transaction.studentId,
       amount: transaction.amount,
-      payment_date: transaction.date,
+      date: transaction.date,
       payment_mode: transaction.paymentMode,
       receipt_number: transaction.receiptNumber,
-      purpose: transaction.purpose,
-      academic_year: new Date().getFullYear().toString()
+      purpose: transaction.purpose
     };
     
     const { data, error } = await supabaseClient
@@ -152,7 +152,7 @@ export const studentService = {
       id: data.id,
       studentId: data.student_id,
       amount: data.amount,
-      date: data.payment_date,
+      date: data.date,
       paymentMode: data.payment_mode,
       receiptNumber: data.receipt_number,
       purpose: data.purpose
@@ -177,19 +177,19 @@ export const studentService = {
       .eq("student_id", studentId);
       
     const paidFees = transactions?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
-    const totalFees = student.total_fees || 0;
+    const totalFees = student.total_fees;
     
-    let feeStatus: "Paid" | "Pending" | "Partial" = "Pending";
-    if (paidFees >= totalFees && totalFees > 0) {
+    let feeStatus = "Pending";
+    if (paidFees >= totalFees) {
       feeStatus = "Paid";
     } else if (paidFees > 0) {
       feeStatus = "Partial";
     }
     
-    // Update student with new fee information
+    // Update the student record
     await supabaseClient
       .from("students")
-      .update({
+      .update({ 
         paid_fees: paidFees,
         fee_status: feeStatus
       })
@@ -257,7 +257,7 @@ export const studentService = {
     const presentDays = records.filter(r => r.status === "Present").length;
     const attendancePercentage = Math.round((presentDays / totalDays) * 100);
     
-    // Update student's attendance percentage
+    // Update the student record
     await supabaseClient
       .from("students")
       .update({ attendance_percentage: attendancePercentage })
@@ -266,32 +266,31 @@ export const studentService = {
   
   // Map Supabase StudentRecord to frontend Student type
   mapToStudentModel(record: StudentRecord): Student {
-    // Safely cast fee_status to the expected union type
-    const feeStatus = (record.fee_status === "Paid" || record.fee_status === "Pending" || record.fee_status === "Partial") 
-      ? record.fee_status as "Paid" | "Pending" | "Partial"
-      : "Pending";
-
+    // Split guardian_name into father and mother
+    const guardianParts = record.guardian_name.split(' ');
+    const father = guardianParts.length > 0 ? guardianParts[0] : "";
+    const mother = guardianParts.length > 1 ? guardianParts.slice(1).join(' ') : "";
+    
     return {
       id: record.id,
       name: record.full_name,
       class: `Class ${record.class}`,
-      father: record.father_name,
-      mother: record.mother_name || "",
-      fatherName: record.father_name,
-      motherName: record.mother_name || "",
+      father: father, // Add required father field
+      mother: mother, // Add required mother field
+      fatherName: father,
+      motherName: mother,
       phoneNumber: record.contact_number,
       whatsappNumber: record.whatsapp_number || record.contact_number,
       address: record.address || "",
-      feeStatus: feeStatus,
-      totalFees: record.total_fees || 0,
-      paidFees: record.paid_fees || 0,
-      attendancePercentage: record.attendance_percentage || 0,
-      joinDate: record.admission_date || new Date(record.created_at || '').toISOString().split('T')[0],
+      feeStatus: record.fee_status as "Paid" | "Pending" | "Partial",
+      totalFees: record.total_fees,
+      paidFees: record.paid_fees,
+      attendancePercentage: record.attendance_percentage,
+      joinDate: new Date(record.join_date || record.created_at).toISOString().split('T')[0],
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
-      aadhaarNumber: record.aadhaar_number?.toString() || undefined,
-      dateOfBirth: new Date(record.date_of_birth).toISOString().split('T')[0],
-      rollNumber: record.roll_number.toString(), // Convert number to string
-      studentStatus: record.status || 'Active' // Renamed from status
+      aadhaarNumber: record.aadhaar_number ? String(record.aadhaar_number) : undefined,
+      dateOfBirth: record.date_of_birth ? new Date(record.date_of_birth).toISOString().split('T')[0] : undefined,
+      rollNumber: record.roll_number || undefined
     };
   },
   
@@ -300,24 +299,19 @@ export const studentService = {
     return {
       full_name: student.name,
       class: parseInt(student.class.replace("Class ", "")),
-      roll_number: parseInt(student.rollNumber || "0"), // Convert string to number for database
+      roll_number: student.rollNumber || 0,
       date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
-      father_name: student.fatherName,
-      mother_name: student.motherName,
-      guardian_name: student.fatherName, // Use father as guardian for now
+      guardian_name: `${student.fatherName} ${student.motherName}`.trim(),
       contact_number: student.phoneNumber,
       whatsapp_number: student.whatsappNumber || student.phoneNumber,
       address: student.address || "Address not provided",
+      fee_status: student.feeStatus,
+      total_fees: student.totalFees,
+      paid_fees: student.paidFees,
+      attendance_percentage: student.attendancePercentage,
+      join_date: student.joinDate,
       gender: student.gender,
-      aadhaar_number: student.aadhaarNumber,
-      admission_date: student.joinDate,
-      email: null,
-      blood_group: null,
-      status: 'Active',
-      fee_status: student.feeStatus || "Pending",
-      total_fees: student.totalFees || 0,
-      paid_fees: student.paidFees || 0,
-      attendance_percentage: student.attendancePercentage || 0
+      aadhaar_number: student.aadhaarNumber
     };
   }
 };

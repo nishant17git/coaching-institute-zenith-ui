@@ -11,45 +11,27 @@ export type Database = {
     Tables: {
       attendance_records: {
         Row: {
-          check_in_time: string | null
-          check_out_time: string | null
           created_at: string | null
           date: string
           id: string
-          marked_by: string | null
-          period: number | null
-          remarks: string | null
           status: string
           student_id: string
-          subject: string | null
           updated_at: string | null
         }
         Insert: {
-          check_in_time?: string | null
-          check_out_time?: string | null
           created_at?: string | null
           date: string
           id?: string
-          marked_by?: string | null
-          period?: number | null
-          remarks?: string | null
           status: string
           student_id: string
-          subject?: string | null
           updated_at?: string | null
         }
         Update: {
-          check_in_time?: string | null
-          check_out_time?: string | null
           created_at?: string | null
           date?: string
           id?: string
-          marked_by?: string | null
-          period?: number | null
-          remarks?: string | null
           status?: string
           student_id?: string
-          subject?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -62,95 +44,38 @@ export type Database = {
           },
         ]
       }
-      fee_structure: {
-        Row: {
-          academic_year: string
-          amount: number
-          class: number
-          created_at: string | null
-          description: string | null
-          fee_type: string
-          frequency: string
-          id: string
-          is_mandatory: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          academic_year: string
-          amount: number
-          class: number
-          created_at?: string | null
-          description?: string | null
-          fee_type: string
-          frequency: string
-          id?: string
-          is_mandatory?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          academic_year?: string
-          amount?: number
-          class?: number
-          created_at?: string | null
-          description?: string | null
-          fee_type?: string
-          frequency?: string
-          id?: string
-          is_mandatory?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       fee_transactions: {
         Row: {
-          academic_year: string
           amount: number
           created_at: string | null
-          discount: number | null
-          due_date: string | null
+          date: string
           id: string
-          late_fee: number | null
-          notes: string | null
-          payment_date: string
           payment_mode: string
-          purpose: string
+          purpose: string | null
           receipt_number: string
           student_id: string
-          term: string | null
           updated_at: string | null
         }
         Insert: {
-          academic_year: string
           amount: number
           created_at?: string | null
-          discount?: number | null
-          due_date?: string | null
+          date: string
           id?: string
-          late_fee?: number | null
-          notes?: string | null
-          payment_date?: string
           payment_mode: string
-          purpose: string
+          purpose?: string | null
           receipt_number: string
           student_id: string
-          term?: string | null
           updated_at?: string | null
         }
         Update: {
-          academic_year?: string
           amount?: number
           created_at?: string | null
-          discount?: number | null
-          due_date?: string | null
+          date?: string
           id?: string
-          late_fee?: number | null
-          notes?: string | null
-          payment_date?: string
           payment_mode?: string
-          purpose?: string
+          purpose?: string | null
           receipt_number?: string
           student_id?: string
-          term?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -165,184 +90,64 @@ export type Database = {
       }
       students: {
         Row: {
-          aadhaar_number: string | null
+          aadhaar_number: number | null
           address: string | null
-          admission_date: string | null
           attendance_percentage: number | null
-          blood_group: string | null
           class: number
           contact_number: string
           created_at: string | null
           date_of_birth: string
-          email: string | null
-          father_name: string
           fee_status: string | null
           full_name: string
           gender: string | null
-          guardian_name: string | null
+          guardian_name: string
           id: string
-          mother_name: string | null
+          join_date: string | null
           paid_fees: number | null
           roll_number: number
-          status: string | null
           total_fees: number | null
           updated_at: string | null
           whatsapp_number: string | null
         }
         Insert: {
-          aadhaar_number?: string | null
+          aadhaar_number?: number | null
           address?: string | null
-          admission_date?: string | null
           attendance_percentage?: number | null
-          blood_group?: string | null
           class: number
           contact_number: string
           created_at?: string | null
           date_of_birth: string
-          email?: string | null
-          father_name: string
           fee_status?: string | null
           full_name: string
           gender?: string | null
-          guardian_name?: string | null
+          guardian_name: string
           id?: string
-          mother_name?: string | null
+          join_date?: string | null
           paid_fees?: number | null
           roll_number: number
-          status?: string | null
           total_fees?: number | null
           updated_at?: string | null
           whatsapp_number?: string | null
         }
         Update: {
-          aadhaar_number?: string | null
+          aadhaar_number?: number | null
           address?: string | null
-          admission_date?: string | null
           attendance_percentage?: number | null
-          blood_group?: string | null
           class?: number
           contact_number?: string
           created_at?: string | null
           date_of_birth?: string
-          email?: string | null
-          father_name?: string
           fee_status?: string | null
           full_name?: string
           gender?: string | null
-          guardian_name?: string | null
+          guardian_name?: string
           id?: string
-          mother_name?: string | null
+          join_date?: string | null
           paid_fees?: number | null
           roll_number?: number
-          status?: string | null
           total_fees?: number | null
           updated_at?: string | null
           whatsapp_number?: string | null
-        }
-        Relationships: []
-      }
-      test_results: {
-        Row: {
-          absent: boolean | null
-          created_at: string | null
-          grade: string | null
-          id: string
-          marks_obtained: number
-          percentage: number | null
-          rank: number | null
-          remarks: string | null
-          student_id: string
-          test_id: string
-          total_marks: number
-          updated_at: string | null
-        }
-        Insert: {
-          absent?: boolean | null
-          created_at?: string | null
-          grade?: string | null
-          id?: string
-          marks_obtained: number
-          percentage?: number | null
-          rank?: number | null
-          remarks?: string | null
-          student_id: string
-          test_id: string
-          total_marks: number
-          updated_at?: string | null
-        }
-        Update: {
-          absent?: boolean | null
-          created_at?: string | null
-          grade?: string | null
-          id?: string
-          marks_obtained?: number
-          percentage?: number | null
-          rank?: number | null
-          remarks?: string | null
-          student_id?: string
-          test_id?: string
-          total_marks?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "test_results_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "test_results_test_id_fkey"
-            columns: ["test_id"]
-            isOneToOne: false
-            referencedRelation: "tests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tests: {
-        Row: {
-          class: number
-          created_at: string | null
-          duration_minutes: number | null
-          id: string
-          instructions: string | null
-          subject: string
-          syllabus_covered: string | null
-          test_date: string
-          test_name: string
-          test_type: string | null
-          total_marks: number
-          updated_at: string | null
-        }
-        Insert: {
-          class: number
-          created_at?: string | null
-          duration_minutes?: number | null
-          id?: string
-          instructions?: string | null
-          subject: string
-          syllabus_covered?: string | null
-          test_date: string
-          test_name: string
-          test_type?: string | null
-          total_marks: number
-          updated_at?: string | null
-        }
-        Update: {
-          class?: number
-          created_at?: string | null
-          duration_minutes?: number | null
-          id?: string
-          instructions?: string | null
-          subject?: string
-          syllabus_covered?: string | null
-          test_date?: string
-          test_name?: string
-          test_type?: string | null
-          total_marks?: number
-          updated_at?: string | null
         }
         Relationships: []
       }
