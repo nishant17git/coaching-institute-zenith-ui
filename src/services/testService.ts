@@ -137,11 +137,14 @@ export const testService = {
       testRecords.reduce((sum, record) => sum + (record.marks_obtained / record.total_marks) * 100, 0) / totalTests
     );
 
-    // Extract subjects with proper type checking
-    const subjects = [...new Set(testRecords
-      .map(record => record.tests?.subject)
-      .filter((subject): subject is string => typeof subject === 'string')
-    )];
+    // Extract subjects with proper type checking and filtering
+    const subjectsSet = new Set<string>();
+    testRecords.forEach(record => {
+      if (record.tests?.subject && typeof record.tests.subject === 'string') {
+        subjectsSet.add(record.tests.subject);
+      }
+    });
+    const subjects: string[] = Array.from(subjectsSet);
 
     // Calculate grade distribution
     const gradeDistribution = testRecords.reduce((grades, record) => {
@@ -185,7 +188,7 @@ export const testService = {
     }));
 
     // Calculate subject performance with proper type checking
-    const subjectPerformance: SubjectStat[] = subjects.map(subject => {
+    const subjectPerformance: SubjectStat[] = subjects.map((subject: string) => {
       const subjectRecords = testRecords.filter(record => 
         typeof record.tests?.subject === 'string' && record.tests.subject === subject
       );
