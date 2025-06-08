@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -322,7 +321,7 @@ export function QuestionBank() {
                       <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          <span>{question.estimated_time}</span>
+                          <span>{question.estimatedTime}</span>
                         </div>
                         {question.source && (
                           <div className="flex items-center gap-1">
