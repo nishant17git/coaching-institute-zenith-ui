@@ -23,6 +23,138 @@
   font-style: normal;
   font-display: swap;
 }
+
+/* Spotify Mix Font Family – Modularized for maintainability */
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Black.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-BlackItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-BlackItalic.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Bold.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-BoldItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Extrabold.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Extrabold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-ExtraboldItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-ExtraboldItalic.woff') format('woff');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Light.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-LightItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-LightItalic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Medium.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-MediumItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Regular.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-RegularItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-RegularItalic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-Thin.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix';
+  src: url('/fonts/SpotifyMix-ThinItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-ThinItalic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Spotify Mix Ultra – bold display styles */
+@font-face {
+  font-family: 'Spotify Mix Ultra';
+  src: url('/fonts/SpotifyMix-Ultra.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-Ultra.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Spotify Mix Ultra';
+  src: url('/fonts/SpotifyMix-UltraItalic.woff2') format('woff2'),
+       url('/fonts/SpotifyMix-UltraItalic.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
  
 @layer base {
   :root {
@@ -57,15 +189,15 @@
     
     --radius: 0.5rem;
 
-    /* Define Geist font families */
-    --font-geist-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-    --font-geist-mono: 'Geist Mono', "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    /* Define Spotify Mix font families */
+    --font-spotify-mix: 'Spotify Mix', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    --font-spotify-mix-mono: 'Spotify Mix', "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     
     /* Define custom India font */
-    --font-india-bold: 'INDIA2023Bold', var(--font-geist-sans), system-ui, sans-serif;
+    --font-india-bold: 'INDIA2023Bold', var(--font-spotify-mix), system-ui, sans-serif;
     
     /* Define NType82 font */
-    --font-ntype82: 'NType82', var(--font-geist-sans), system-ui, sans-serif;
+    --font-ntype82: 'NType82', var(--font-spotify-mix), system-ui, sans-serif;
 }
  
   .dark {
@@ -106,17 +238,17 @@
     /* Disable text selection */
     -webkit-user-select: none;
     user-select: none;
-    /* Apply Geist font globally */
-    font-family: var(--font-geist-sans);
+    /* Apply Spotify Mix font globally */
+    font-family: var(--font-spotify-mix);
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-geist-sans);
+    font-family: var(--font-spotify-mix);
   }
   
-  /* Ensure all text elements use Geist Sans by default */
+  /* Ensure all text elements use Spotify Mix by default */
   h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, label {
-    font-family: var(--font-geist-sans);
+    font-family: var(--font-spotify-mix);
   }
 }
 
@@ -142,14 +274,14 @@
   text-overflow: ellipsis;
 }
 
-/* Utility class for Geist Sans font */
-.font-geist {
-  font-family: var(--font-geist-sans);
+/* Utility class for Spotify Mix font */
+.font-spotify {
+  font-family: var(--font-spotify-mix);
 }
 
-/* Utility class for Geist Mono font */
-.font-geist-mono {
-  font-family: var(--font-geist-mono);
+/* Utility class for Spotify Mix Mono font */
+.font-spotify-mono {
+  font-family: var(--font-spotify-mix-mono);
 }
 
 /* Utility class for NType82 font */

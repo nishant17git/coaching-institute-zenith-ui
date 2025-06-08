@@ -1,466 +1,830 @@
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { toast } from "sonner";
-
-// Components
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoadingState } from "@/components/ui/loading-state";
-import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { OptimizedStudentForm } from "@/components/students/OptimizedStudentForm";
+import { cn } from "@/lib/utils";
+import { Phone, MessageSquare, Clock, CreditCard, CalendarDays, Edit3, Download, Trash2, Plus, User, Users, IdCard, Calendar, AtSign, Phone as PhoneIcon, MapPin, Cake, GraduationCap, FileText } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { useData } from "@/contexts/DataContext";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { exportAttendanceToPDF, exportFeeInvoicePDF, type AttendancePDFOptions, type FeeInvoicePDFOptions } from "@/services/pdfService";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { FeeTransactionForm } from "@/components/fees/FeeTransactionForm";
+import { motion } from "framer-motion";
 import { StudentDetailHeader } from "@/components/students/StudentDetailHeader";
 import { StudentTestResults } from "@/components/students/StudentTestResults";
 
-// Icons
-import { ArrowLeft, Phone, MessageCircle, Calendar, CreditCard, BookOpen, TrendingUp } from "lucide-react";
+// Logo placeholder
+const INSTITUTE_LOGO = "https://placehold.co/200x200/4F46E5/FFFFFF?text=IC";
 
+// Student Profile component to show personal information
+const StudentProfile = ({
+  student
+}) => <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <User className="h-4 w-4" /> Personal Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Gender</p>
+            <p className="font-medium">{student.gender || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Date of Birth</p>
+            <p className="font-medium">
+              {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not specified'}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Aadhaar Number</p>
+          <p className="font-medium">{student.aadhaarNumber || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Address</p>
+          <p className="font-medium">{student.address || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Joined On</p>
+          <p className="font-medium">{new Date(student.joinDate).toLocaleDateString()}</p>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Users className="h-4 w-4" /> Family Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Father's Name</p>
+          <p className="font-medium">{student.fatherName || 'Not provided'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Mother's Name</p>
+          <p className="font-medium">{student.motherName || 'Not provided'}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Phone</p>
+            <p className="font-medium">{student.phoneNumber || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">WhatsApp</p>
+            <p className="font-medium">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>;
+
+// Education Details component
+const EducationDetails = ({
+  student
+}) => <Card>
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg">Education Details</CardTitle>
+    </CardHeader>
+    <CardContent className="grid md:grid-cols-3 gap-6">
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <GraduationCap className="h-4 w-4" /> Class
+        </div>
+        <p className="text-xl font-semibold">{student.class}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <Users className="h-4 w-4" /> Roll Number
+        </div>
+        <p className="text-xl font-semibold">{student.rollNumber || 'Not assigned'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <AtSign className="h-4 w-4" /> Attendance
+        </div>
+        <p className={cn("text-xl font-semibold", student.attendancePercentage >= 80 ? "text-green-600 dark:text-green-400" : student.attendancePercentage >= 60 ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400")}>
+          {student.attendancePercentage}%
+        </p>
+      </div>
+    </CardContent>
+  </Card>;
+
+// Contact Information component
+const ContactInformation = ({
+  student
+}) => <Card>
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg">Contact Information</CardTitle>
+    </CardHeader>
+    <CardContent className="grid md:grid-cols-3 gap-6">
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <PhoneIcon className="h-4 w-4" /> Phone Number
+        </div>
+        <p className="text-xl font-semibold">{student.phoneNumber || 'Not provided'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <MessageSquare className="h-4 w-4" /> WhatsApp
+        </div>
+        <p className="text-xl font-semibold">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
+      </div>
+
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <MapPin className="h-4 w-4" /> Address
+        </div>
+        <p className="text-xl font-semibold">{student.address || 'Not provided'}</p>
+      </div>
+    </CardContent>
+  </Card>;
+
+// Fee Summary Cards
+const FeeSummaryCards = ({
+  student
+}) => <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold text-green-600">
+          ₹{student.paidFees.toLocaleString()}
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm text-muted-foreground">Due Fees</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold text-amber-600">
+          ₹{(student.totalFees - student.paidFees).toLocaleString()}
+        </div>
+      </CardContent>
+    </Card>
+  </div>;
+
+// Fee Transaction List component
+const FeeTransactionList = ({
+  student,
+  studentFees,
+  handleExportInvoice,
+  setFeeToEdit,
+  setIsAddFeeDialogOpen
+}) => <Card>
+    <CardHeader className="py-4">
+      <CardTitle className="text-lg">Fee Transactions</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {studentFees.length === 0 ? <div className="text-center py-8 text-muted-foreground">
+          No fee transactions found
+        </div> : <div className="space-y-3">
+          {studentFees.map(fee => <motion.div key={fee.id} initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.2
+      }} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
+              <div>
+                <div className="font-medium">{fee.purpose}</div>
+                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                  <CreditCard className="h-3 w-3" /> {fee.paymentMode || 'Pending'}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(fee.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {fee.paymentMode && <Button variant="ghost" size="icon" onClick={() => handleExportInvoice(fee)} className="h-8 w-8">
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </Button>}
+                  <Button variant="ghost" size="icon" onClick={() => {
+              setFeeToEdit(fee.id);
+              setIsAddFeeDialogOpen(true);
+            }} className="h-8 w-8">
+                    <Edit3 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>)}
+        </div>}
+    </CardContent>
+  </Card>;
+
+// Attendance Charts component
+const AttendanceCharts = ({
+  attendanceData,
+  calculateMonthlyAttendance
+}) => <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <Card>
+      <CardHeader className="py-4">
+        <CardTitle className="text-lg">Attendance Summary</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-center h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart className="animate-scale-in">
+              <Pie data={attendanceData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" label={({
+              name,
+              percent
+            }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                {attendanceData.map((entry, index) => <Cell key={`cell-${index}`} fill={["#30D158", "#FF453A", "#FF9F0A"][index % 3]} />)}
+              </Pie>
+              <Tooltip formatter={value => [`${value} days`, ``]} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="py-4">
+        <CardTitle className="text-lg">Monthly Trend</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={value => [`${value}%`, "Attendance"]} />
+              <Line type="monotone" dataKey="percentage" stroke="#0A84FF" animationDuration={1500} strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  </div>;
+
+// Recent Attendance List component
+const RecentAttendanceList = ({
+  studentAttendance
+}) => <Card>
+    <CardHeader className="py-4">
+      <CardTitle className="text-lg">Recent Attendance</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-2">
+      {studentAttendance.slice(0, 10).map(record => <motion.div key={record.id} initial={{
+      opacity: 0,
+      y: 5
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.2
+    }} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <div>{new Date(record.date).toLocaleDateString()}</div>
+          </div>
+          <Badge variant="outline" className={cn(record.status === "Present" ? "border-green-500 text-green-500" : record.status === "Absent" ? "border-red-500 text-red-500" : record.status === "Leave" ? "border-orange-500 text-orange-500" : "border-gray-500 text-gray-500")}>
+            {record.status}
+          </Badge>
+        </motion.div>)}
+
+      {studentAttendance.length === 0 && <div className="text-center py-8 text-muted-foreground">
+          No attendance records found
+        </div>}
+    </CardContent>
+  </Card>;
+
+// Main StudentDetail component
 export default function StudentDetail() {
-  const { id } = useParams<{ id: string }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-
-  // Fetch student data
   const {
-    data: student,
-    isLoading: isLoadingStudent
-  } = useQuery({
-    queryKey: ['student', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Student ID is required');
-      
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id
-  });
+    students,
+    feeTransactions,
+    attendanceRecords,
+    testRecords,
+    classes,
+    updateStudent,
+    deleteStudent,
+    addFeeTransaction,
+    updateFeeTransaction,
+    deleteFeeTransaction
+  } = useData();
+  const student = students.find(s => s.id === id);
+  const studentFees = feeTransactions.filter(fee => fee.studentId === id);
+  const studentAttendance = attendanceRecords.filter(record => record.studentId === id);
+  const studentTests = testRecords?.filter(test => test.studentId === id) || [];
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false);
+  const [feeToEdit, setFeeToEdit] = useState<string | null>(null);
+  const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
-  // Fetch fee transactions for this student
-  const {
-    data: feeTransactions = [],
-    isLoading: isLoadingTransactions
-  } = useQuery({
-    queryKey: ['studentFeeTransactions', id],
-    queryFn: async () => {
-      if (!id) return [];
-      
-      const { data, error } = await supabase
-        .from('fee_transactions')
-        .select('*')
-        .eq('student_id', id)
-        .order('payment_date', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id
-  });
+  // Functions to get grade and color based on marks
+  const getGrade = (marks: number, totalMarks: number) => {
+    const percent = marks / totalMarks * 100;
+    if (percent >= 90) return {
+      grade: 'A',
+      color: 'bg-emerald-500'
+    };
+    if (percent >= 75) return {
+      grade: 'B',
+      color: 'bg-blue-500'
+    };
+    if (percent >= 60) return {
+      grade: 'C',
+      color: 'bg-yellow-500'
+    };
+    if (percent >= 40) return {
+      grade: 'D',
+      color: 'bg-orange-500'
+    };
+    return {
+      grade: 'F',
+      color: 'bg-red-500'
+    };
+  };
 
-  // Fetch attendance records for this student
-  const {
-    data: attendanceRecords = [],
-    isLoading: isLoadingAttendance
-  } = useQuery({
-    queryKey: ['studentAttendance', id],
-    queryFn: async () => {
-      if (!id) return [];
-      
-      const { data, error } = await supabase
-        .from('attendance_records')
-        .select('*')
-        .eq('student_id', id)
-        .order('date', { ascending: false })
-        .limit(30); // Last 30 records
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id
-  });
+  const handleExportAttendance = () => {
+    if (!student) return;
+    const options: AttendancePDFOptions = {
+      records: studentAttendance,
+      studentData: student,
+      title: `Attendance Report - ${student.name}`,
+      subtitle: `Class: ${student.class}`,
+      logo: INSTITUTE_LOGO
+    };
+    exportAttendanceToPDF(options);
+    toast.success("Attendance report exported successfully!");
+  };
 
-  // Fetch test results for this student
-  const {
-    data: testResults = [],
-    isLoading: isLoadingTests
-  } = useQuery({
-    queryKey: ['studentTestResults', id],
-    queryFn: async () => {
-      if (!id) return [];
-      
-      const { data, error } = await supabase
-        .from('test_results')
-        .select(`
-          *,
-          tests!inner(test_name, subject, test_date, test_type)
-        `)
-        .eq('student_id', id) // Use student_id instead of studentId
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id
-  });
+  const handleExportInvoice = (transaction: any) => {
+    if (!student) return;
+    const options: FeeInvoicePDFOptions = {
+      transaction,
+      student,
+      instituteName: 'Infinity Classes',
+      instituteAddress: '123 Education Lane, Knowledge City',
+      institutePhone: '+91 9876543210',
+      logo: INSTITUTE_LOGO
+    };
+    exportFeeInvoicePDF(options);
+    toast.success("Fee invoice exported successfully!");
+  };
 
-  const isLoading = isLoadingStudent || isLoadingTransactions || isLoadingAttendance || isLoadingTests;
+  const handleEditStudent = (data: any) => {
+    if (!student) return;
+    
+    // Transform the form data to match the expected format
+    const transformedData = {
+      name: data.name,
+      class: data.class, // Keep as string, don't convert to number
+      rollNumber: data.rollNumber,
+      fatherName: data.fatherName,
+      motherName: data.motherName,
+      phoneNumber: data.phoneNumber,
+      whatsappNumber: data.whatsappNumber,
+      address: data.address,
+      totalFees: data.totalFees,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth,
+      aadhaarNumber: data.aadhaarNumber,
+    };
+    
+    updateStudent(student.id, transformedData);
+    setIsEditDialogOpen(false);
+    toast.success("Student information updated successfully!");
+  };
 
-  if (isLoading) {
-    return <LoadingState />;
-  }
+  const handleFeeSubmit = (data: any) => {
+    if (!student) return;
+    if (feeToEdit) {
+      updateFeeTransaction(feeToEdit, {
+        ...data,
+        amount: Number(data.amount)
+      });
+      toast.success("Fee transaction updated successfully!");
+    } else {
+      addFeeTransaction({
+        studentId: student.id,
+        ...data,
+        amount: Number(data.amount)
+      });
+      toast.success("Fee transaction added successfully!");
+    }
+    setIsAddFeeDialogOpen(false);
+    setFeeToEdit(null);
+  };
+
+  const handleDeleteFee = () => {
+    if (feeToEdit) {
+      deleteFeeTransaction(feeToEdit);
+      setIsAddFeeDialogOpen(false);
+      setFeeToEdit(null);
+      toast.success("Fee transaction deleted successfully!");
+    }
+  };
+
+  const handleDelete = () => {
+    if (!student) return;
+    deleteStudent(student.id);
+    navigate("/students");
+    toast.success(`${student.name} has been removed`);
+  };
 
   if (!student) {
-    return (
-      <EmptyState 
-        icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
-        title="Student not found"
-        description="The requested student could not be found."
-      />
-    );
+    return <div className="flex items-center justify-center h-full animate-fade-in">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Student not found</CardTitle>
+            <CardDescription>The requested student could not be found.</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button variant="outline" onClick={() => navigate("/students")} className="w-full">
+              Back to Students
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>;
   }
 
-  const handleCall = () => {
-    if (student.contact_number) {
-      window.open(`tel:${student.contact_number}`, '_self');
-      toast.success(`Calling ${student.full_name}...`);
-    } else {
-      toast.error("No phone number available");
-    }
+  const attendanceData = [{
+    name: "Present",
+    value: studentAttendance.filter(r => r.status === "Present").length
+  }, {
+    name: "Absent",
+    value: studentAttendance.filter(r => r.status === "Absent").length
+  }, {
+    name: "Leave",
+    value: studentAttendance.filter(r => r.status === "Leave").length
+  }];
+  const calculateMonthlyAttendance = () => {
+    if (!student) return [];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return months.map((month, index) => {
+      return {
+        month,
+        percentage: student?.attendancePercentage || 0
+      };
+    });
   };
 
-  const handleWhatsApp = () => {
-    if (student.whatsapp_number || student.contact_number) {
-      const number = student.whatsapp_number || student.contact_number;
-      window.open(`https://wa.me/${number.replace(/[^0-9]/g, '')}`, '_blank');
-      toast.success("Opening WhatsApp...");
-    } else {
-      toast.error("No WhatsApp number available");
-    }
-  };
+  return <div className="space-y-6 animate-fade-in pb-10">
+      <StudentDetailHeader student={student} onEdit={() => setIsEditDialogOpen(true)} onDelete={() => setConfirmDeleteDialogOpen(true)} />
 
-  // Calculate statistics
-  const totalPaid = feeTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const balance = (student.total_fees || 0) - totalPaid;
-  const presentDays = attendanceRecords.filter(r => r.status === 'Present').length;
-  const totalDays = attendanceRecords.length;
-  const attendancePercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
-  const averageScore = testResults.length > 0 
-    ? Math.round(testResults.reduce((sum, r) => sum + (r.marks_obtained / r.total_marks) * 100, 0) / testResults.length)
-    : 0;
+      <Card className="rounded-xl overflow-hidden shadow-sm border-white/20">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 md:px-6">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto my-6">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="fees">Fees</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="tests" className="flex gap-1.5 items-center">
+              <FileText className="h-3.5 w-3.5" /> Tests
+            </TabsTrigger>
+          </TabsList>
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate('/students')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Students
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{student.full_name}</h1>
-          <p className="text-muted-foreground">Class {student.class} • Roll No. {student.roll_number}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleCall}
-            disabled={!student.contact_number}
-          >
-            <Phone className="h-4 w-4 mr-2" />
-            Call
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleWhatsApp}
-            disabled={!student.whatsapp_number && !student.contact_number}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            WhatsApp
-          </Button>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fee Balance</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{balance.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              ₹{totalPaid.toLocaleString()} paid of ₹{(student.total_fees || 0).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Attendance</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{attendancePercentage}%</div>
-            <p className="text-xs text-muted-foreground">
-              {presentDays}/{totalDays} days present
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Academic Performance</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageScore}%</div>
-            <p className="text-xs text-muted-foreground">
-              Average from {testResults.length} tests
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Badge variant={student.status === 'Active' ? 'success' : 'secondary'} className="text-sm">
-              {student.status}
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-1">
-              Since {format(new Date(student.admission_date || new Date()), 'MMM yyyy')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detailed Information */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="fees">Fee History</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="academic">Academic Records</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="pb-6 space-y-6">
+            <StudentProfile student={student} />
+            
+            {/* Education Details */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Education Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                    <p className="font-medium">{student.full_name}</p>
+              <CardContent className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <GraduationCap className="h-4 w-4" /> Class
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Gender</p>
-                    <p className="font-medium">{student.gender || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                    <p className="font-medium">{format(new Date(student.date_of_birth), 'MMM dd, yyyy')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Blood Group</p>
-                    <p className="font-medium">{student.blood_group || 'Not specified'}</p>
-                  </div>
+                  <p className="font-semibold text-base">{student.class}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="font-medium">{student.address || 'Not provided'}</p>
+
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <Users className="h-4 w-4" /> Roll Number
+                  </div>
+                  <p className="font-semibold text-base">{student.rollNumber || 'Not assigned'}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Aadhaar Number</p>
-                  <p className="font-medium">{student.aadhaar_number || 'Not provided'}</p>
+
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <AtSign className="h-4 w-4" /> Attendance
+                  </div>
+                  <p className={cn("text-xl font-semibold", student.attendancePercentage >= 80 ? "text-green-600 dark:text-green-400" : student.attendancePercentage >= 60 ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400")}>
+                    {student.attendancePercentage}%
+                  </p>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Guardian Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Guardian Information</CardTitle>
+            
+            {/* Contact Information */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Contact Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Father's Name</p>
-                  <p className="font-medium">{student.father_name}</p>
+              <CardContent className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <PhoneIcon className="h-4 w-4" /> Phone Number
+                  </div>
+                  <p className="font-semibold text-base">{student.phoneNumber || 'Not provided'}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Mother's Name</p>
-                  <p className="font-medium">{student.mother_name || 'Not provided'}</p>
+
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <MessageSquare className="h-4 w-4" /> WhatsApp
+                  </div>
+                  <p className="font-semibold text-base">{student.whatsappNumber || student.phoneNumber || 'Not provided'}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Guardian Name</p>
-                  <p className="font-medium">{student.guardian_name || 'Not provided'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-                  <p className="font-medium">{student.contact_number}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">WhatsApp Number</p>
-                  <p className="font-medium">{student.whatsapp_number || 'Same as contact'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p className="font-medium">{student.email || 'Not provided'}</p>
+
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <MapPin className="h-4 w-4" /> Address
+                  </div>
+                  <p className="font-semibold text-base">{student.address || 'Not provided'}</p>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="fees" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fee Transaction History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {feeTransactions.length === 0 ? (
-                <EmptyState 
-                  icon={<CreditCard className="h-8 w-8 text-muted-foreground" />}
-                  title="No fee transactions"
-                  description="No fee payments have been recorded for this student."
-                />
-              ) : (
-                <div className="space-y-3">
-                  {feeTransactions.map(transaction => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">₹{transaction.amount.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(transaction.payment_date), 'MMM dd, yyyy')} • {transaction.payment_mode}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{transaction.purpose}</p>
-                      </div>
-                      <Badge variant="outline">#{transaction.receipt_number}</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Fees Tab */}
+          <TabsContent value="fees" className="space-y-6 pb-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Fee Summary</h3>
+              <Dialog open={isAddFeeDialogOpen} onOpenChange={open => {
+              setIsAddFeeDialogOpen(open);
+              if (!open) setFeeToEdit(null);
+            }}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4 mr-2" /> Add Fee
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>{feeToEdit ? 'Edit' : 'Add'} Fee Transaction</DialogTitle>
+                    <DialogDescription>
+                      {feeToEdit ? 'Make changes to the fee transaction.' : 'Add a new fee transaction for this student.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <FeeTransactionForm transaction={feeToEdit ? feeTransactions.find(fee => fee.id === feeToEdit) : undefined} onSubmit={handleFeeSubmit} onDelete={feeToEdit ? handleDeleteFee : undefined} />
+                </DialogContent>
+              </Dialog>
+            </div>
 
-        <TabsContent value="attendance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Attendance Records</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {attendanceRecords.length === 0 ? (
-                <EmptyState 
-                  icon={<Calendar className="h-8 w-8 text-muted-foreground" />}
-                  title="No attendance records"
-                  description="No attendance records have been found for this student."
-                />
-              ) : (
-                <div className="space-y-3">
-                  {attendanceRecords.map(record => (
-                    <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{format(new Date(record.date), 'MMM dd, yyyy')}</p>
-                        {record.check_in_time && (
-                          <p className="text-sm text-muted-foreground">
-                            Check-in: {record.check_in_time}
-                            {record.check_out_time && ` | Check-out: ${record.check_out_time}`}
-                          </p>
-                        )}
-                        {record.remarks && (
-                          <p className="text-sm text-muted-foreground">{record.remarks}</p>
-                        )}
-                      </div>
-                      <Badge variant={
-                        record.status === 'Present' ? 'success' : 
-                        record.status === 'Absent' ? 'destructive' : 
-                        record.status === 'Leave' ? 'warning' : 
-                        'secondary'
-                      }>
-                        {record.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="academic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {testResults.length === 0 ? (
-                <EmptyState 
-                  icon={<BookOpen className="h-8 w-8 text-muted-foreground" />}
-                  title="No test results"
-                  description="No test results have been recorded for this student."
-                />
-              ) : (
-                <div className="space-y-3">
-                  {testResults.map(result => {
-                    const percentage = Math.round((result.marks_obtained / result.total_marks) * 100);
-                    const getGrade = (pct: number) => {
-                      if (pct >= 90) return { grade: 'A+', color: 'bg-green-500' };
-                      if (pct >= 80) return { grade: 'A', color: 'bg-blue-500' };
-                      if (pct >= 70) return { grade: 'B', color: 'bg-purple-500' };
-                      if (pct >= 60) return { grade: 'C', color: 'bg-yellow-500' };
-                      return { grade: 'D', color: 'bg-red-500' };
-                    };
-                    
-                    const { grade, color } = getGrade(percentage);
-                    
-                    return (
-                      <div key={result.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-medium">{result.tests?.test_name || 'Unknown Test'}</h4>
-                            <Badge variant="outline">{result.tests?.subject || 'Unknown Subject'}</Badge>
-                            <Badge className={`${color} text-white`}>
-                              {grade}
-                            </Badge>
+            {/* Fee Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="shadow-sm">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm text-muted-foreground">Total Fees</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">₹{student.totalFees.toLocaleString()}</div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm text-muted-foreground">Paid Fees</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold text-green-600">
+                    ₹{student.paidFees.toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm text-muted-foreground">Due Fees</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold text-amber-600">
+                    ₹{(student.totalFees - student.paidFees).toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Fee Transaction List */}
+            <Card className="shadow-sm">
+              <CardHeader className="py-4">
+                <CardTitle className="text-lg">Fee Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {studentFees.length === 0 ? <div className="text-center py-8 text-muted-foreground">
+                    No fee transactions found
+                  </div> : <div className="space-y-3">
+                    {studentFees.map(fee => <motion.div key={fee.id} initial={{
+                  opacity: 0,
+                  y: 10
+                }} animate={{
+                  opacity: 1,
+                  y: 0
+                }} transition={{
+                  duration: 0.2
+                }} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
+                        <div>
+                          <div className="font-medium">{fee.purpose}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" /> {fee.paymentMode || 'Pending'}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {result.tests?.test_date && format(new Date(result.tests.test_date), 'MMM dd, yyyy')} • {result.tests?.test_type}
-                          </p>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">{result.marks_obtained}/{result.total_marks}</div>
-                          <div className="text-sm text-muted-foreground">{percentage}%</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className="font-medium">₹{fee.amount.toLocaleString()}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(fee.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {fee.paymentMode && <Button variant="ghost" size="icon" onClick={() => handleExportInvoice(fee)} className="h-8 w-8">
+                                <Download className="h-4 w-4 text-muted-foreground" />
+                              </Button>}
+                            <Button variant="ghost" size="icon" onClick={() => {
+                        setFeeToEdit(fee.id);
+                        setIsAddFeeDialogOpen(true);
+                      }} className="h-8 w-8">
+                              <Edit3 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+                      </motion.div>)}
+                  </div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance" className="space-y-6 pb-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Attendance</h3>
+              <Button size="sm" variant="outline" onClick={handleExportAttendance} className="flex gap-1 items-center">
+                <Download className="h-4 w-4" /> Export
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card className="shadow-sm">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-lg">Attendance Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart className="animate-scale-in">
+                        <Pie data={attendanceData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" label={({
+                        name,
+                        percent
+                      }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                          {attendanceData.map((entry, index) => <Cell key={`cell-${index}`} fill={["#30D158", "#FF453A", "#FF9F0A"][index % 3]} />)}
+                        </Pie>
+                        <Tooltip formatter={value => [`${value} days`, ``]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-lg">Monthly Trend</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={calculateMonthlyAttendance().slice(0, 7)} className="animate-fade-in">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={value => [`${value}%`, "Attendance"]} />
+                        <Line type="monotone" dataKey="percentage" stroke="#0A84FF" animationDuration={1500} strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="shadow-sm">
+              <CardHeader className="py-4">
+                <CardTitle className="text-lg">Recent Attendance</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {studentAttendance.slice(0, 10).map(record => <motion.div key={record.id} initial={{
+                opacity: 0,
+                y: 5
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                duration: 0.2
+              }} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
+                    <div className="flex items-center gap-3">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                      <div>{new Date(record.date).toLocaleDateString()}</div>
+                    </div>
+                    <Badge variant="outline" className={cn(record.status === "Present" ? "border-green-500 text-green-500" : record.status === "Absent" ? "border-red-500 text-red-500" : record.status === "Leave" ? "border-orange-500 text-orange-500" : "border-gray-500 text-gray-500")}>
+                      {record.status}
+                    </Badge>
+                  </motion.div>)}
+
+                {studentAttendance.length === 0 && <div className="text-center py-8 text-muted-foreground">
+                    No attendance records found
+                  </div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Test Results Tab */}
+          <TabsContent value="tests" className="space-y-6 pb-6">
+            <StudentTestResults students={[student]} tests={studentTests} getGrade={getGrade} handleSort={() => {}} isMobile={false} onExportPDF={() => {}} onViewHistory={studentId => navigate(`/tests/history/${studentId}`)} />
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student Information</DialogTitle>
+            <DialogDescription>
+              Make changes to the student's profile here.
+            </DialogDescription>
+          </DialogHeader>
+          <OptimizedStudentForm 
+            student={{
+              full_name: student.name,
+              class: parseInt(student.class.replace("Class ", "")),
+              roll_number: student.rollNumber,
+              father_name: student.fatherName,
+              mother_name: student.motherName,
+              contact_number: student.phoneNumber,
+              whatsapp_number: student.whatsappNumber,
+              address: student.address,
+              total_fees: student.totalFees,
+              gender: student.gender,
+              date_of_birth: student.dateOfBirth,
+              aadhaar_number: student.aadhaarNumber,
+            }}
+            classes={classes}
+            onSubmit={handleEditStudent}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDeleteDialogOpen} onOpenChange={setConfirmDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this student? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>;
 }

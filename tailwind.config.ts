@@ -78,6 +78,7 @@ export default {
 			},
 			fontFamily: {
                 'spotify': ['Spotify Mix', 'SF Pro Display', 'system-ui', 'sans-serif'],
+                'spotify-ultra': ['Spotify Mix Ultra', 'Spotify Mix', 'SF Pro Display', 'system-ui', 'sans-serif'],
             },
 			keyframes: {
 				'accordion-down': {
@@ -115,6 +116,14 @@ export default {
                 'pulse-soft': {
                     '0%, 100%': { opacity: '1' },
                     '50%': { opacity: '0.8' }
+                },
+                'star-movement-bottom': {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(200%)' }
+                },
+                'star-movement-top': {
+                    '0%': { transform: 'translateX(200%)' },
+                    '100%': { transform: 'translateX(-100%)' }
                 }
 			},
 			animation: {
@@ -124,7 +133,9 @@ export default {
                 'scale-in': 'scale-in 0.2s ease-out',
                 'slide-up': 'slide-up 0.3s ease-out',
 				'float': 'float 3s ease-in-out infinite',
-                'pulse-soft': 'pulse-soft 2s ease-in-out infinite'
+                'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
+                'star-movement-bottom': 'star-movement-bottom 6s linear infinite',
+                'star-movement-top': 'star-movement-top 6s linear infinite'
 			}
 		}
 	},

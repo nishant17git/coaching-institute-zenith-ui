@@ -5,56 +5,59 @@ import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { User, Bell, Palette, Building, Shield, Database, HelpCircle, FileText, ChevronRight, LogOut } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 const settingsGroups = [{
-  title: "Personal",
+  title: "ACCOUNT",
   items: [{
     id: "profile",
     title: "Profile & Account",
-    description: "Personal information and account settings",
+    description: "Edit personal details and login",
     icon: User,
     color: "bg-blue-500",
+    type: "link",
     route: "/settings/profile"
-  }, {
+  }]
+}, {
+  title: "PREFERENCES",
+  items: [{
     id: "notifications",
     title: "Notifications",
     description: "Manage alerts and notifications",
     icon: Bell,
     color: "bg-red-500",
-    route: "/settings/notifications"
+    type: "toggle",
+    stateKey: "pushNotifications"
+  }, {
+    id: "appearance",
+    title: "Dark Mode",
+    description: "Toggle light/dark theme",
+    icon: Palette,
+    color: "bg-gray-600",
+    type: "toggle",
+    stateKey: "darkMode"
   }]
 }, {
-  title: "Preferences",
+  title: "ORGANIZATION",
   items: [{
-    id: "appearance",
-    title: "Appearance",
-    description: "Customize app appearance and theme",
-    icon: Palette,
-    color: "bg-purple-500",
-    route: "/settings/appearance"
-  }, {
     id: "institute",
     title: "Institute Settings",
-    description: "Configure institute information",
+    description: "Configure institute details",
     icon: Building,
     color: "bg-green-500",
+    type: "link",
     route: "/settings/institute"
   }]
 }, {
-  title: "Privacy & Security",
+  title: "SECURITY",
   items: [{
-    id: "security",
+    id: "privacy",
     title: "Privacy & Security",
-    description: "Security and privacy controls",
+    description: "Security controls and privacy",
     icon: Shield,
     color: "bg-orange-500",
+    type: "link",
     route: "/settings/security"
   }, {
     id: "data",
@@ -62,23 +65,26 @@ const settingsGroups = [{
     description: "Manage app data and storage",
     icon: Database,
     color: "bg-indigo-500",
+    type: "link",
     route: "/settings/data"
   }]
 }, {
-  title: "Support",
+  title: "SUPPORT",
   items: [{
     id: "help",
     title: "Help & Support",
-    description: "Get help and contact support",
+    description: "Help articles and contact",
     icon: HelpCircle,
     color: "bg-cyan-500",
+    type: "link",
     route: "/settings/help"
   }, {
     id: "about",
     title: "About",
-    description: "App information and version",
+    description: "App version and legal info",
     icon: FileText,
     color: "bg-gray-500",
+    type: "link",
     route: "/settings/about"
   }]
 }];
@@ -92,190 +98,141 @@ export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const userName = user?.name || "Admin User";
-  const userEmail = user?.email || "admin@example.com";
   const handleItemClick = (route: string) => {
     navigate(route);
+  };
+  const handleToggle = (key: string, value: boolean) => {
+    if (key === "pushNotifications") {
+      setPushNotifications(value);
+      toast.success(value ? "Notifications enabled" : "Notifications disabled");
+    } else if (key === "darkMode") {
+      setDarkMode(value);
+      toast.success(value ? "Dark mode enabled" : "Light mode enabled");
+    }
   };
   const handleLogout = () => {
     toast.success("Signed out successfully");
     logout();
   };
-  const handleToggle = (setting: string, value: boolean) => {
-    if (setting === "notifications") {
-      setPushNotifications(value);
-      toast.success(value ? "Notifications enabled" : "Notifications disabled");
-    } else if (setting === "darkMode") {
-      setDarkMode(value);
-      toast.success(value ? "Dark mode enabled" : "Light mode enabled");
-    }
+  const rowHover = darkMode ? {
+    backgroundColor: "#1F2937"
+  } : {
+    backgroundColor: "#F3F4F6"
   };
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl mx-auto space-y-8 px-0 bg-white">
-        <EnhancedPageHeader title="Settings" description="Manage your account and app preferences" showBackButton />
+      {/* HEADER (UNCHANGED) */}
+      <EnhancedPageHeader title="Settings" description="Manage your account and app preferences" showBackButton className="bg-white" />
 
-        {/* User Profile Section */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.5
-      }}>
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl overflow-hidden">
-            <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-[#F25239] via-[#FCAF40] to-[#4FD1C5] p-8 py-[16px]">
-                <div className="flex items-center gap-6">
-                  <Avatar className="h-20 w-20 border-4 border-white/30 shadow-lg">
-                    <AvatarFallback className="bg-white text-2xl font-bold font-geist text-red-500">
-                      {userName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-white">
-                    <h2 className="font-semibold mb-1 text-sm font-geist">{userName}</h2>
-                    <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30 font-geist">
-                      Administrator
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Account Status</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 font-geist">Active</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" onClick={() => navigate("/settings/profile")} className="rounded-full px-6 font-geist">
-                    Edit Profile
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* MAIN CONTENT */}
+      <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-xl sm:px-6 lg:px-8 py-6 space-y-8 px-0 bg-white">
+        {/* 1. PROFILE ROW */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <motion.div initial={{
+          opacity: 0,
+          y: 8
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.2
+        }} whileHover={!isMobile ? rowHover : {}} whileTap={{
+          scale: 0.98
+        }} className="flex items-center px-4 py-4 cursor-pointer" onClick={() => handleItemClick("/settings/profile")}>
+            <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+            </div>
+            <div className="ml-4 flex-1">
+              <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {userName}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Administrator
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </motion.div>
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Account Status
+            </span>
+            <div className="flex items-center space-x-2">
+              <span className="block h-2 w-2 bg-green-500 rounded-full"></span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Active
+              </span>
+            </div>
+          </div>
+        </div>
 
-        {/* Quick Settings */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.5,
-        delay: 0.1
-      }}>
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 font-geist">
-                Quick Settings
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                      <Bell className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Push Notifications</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Receive important updates</p>
-                    </div>
-                  </div>
-                  <Switch checked={pushNotifications} onCheckedChange={value => handleToggle("notifications", value)} />
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
-                      <Palette className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">Dark Mode</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Switch to dark theme</p>
-                    </div>
-                  </div>
-                  <Switch checked={darkMode} onCheckedChange={value => handleToggle("darkMode", value)} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Settings Groups */}
-        {settingsGroups.map((group, groupIndex) => <motion.div key={group.title} initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.5,
-        delay: 0.2 + groupIndex * 0.1
-      }} className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 font-geist">
+        {/* 2. SETTINGS GROUPS */}
+        {settingsGroups.map((group, gi) => <div key={group.title} className="space-y-1">
+            <p className="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
               {group.title}
-            </h3>
-            
-            <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-0">
-                {group.items.map((item, index) => <div key={item.id}>
-                    <button onClick={() => handleItemClick(item.route)} className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200">
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.color)}>
-                          <item.icon className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-medium text-gray-900 dark:text-gray-100 font-geist">{item.title}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">{item.description}</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </button>
-                    {index < group.items.length - 1 && <Separator />}
-                  </div>)}
-              </CardContent>
-            </Card>
-          </motion.div>)}
+            </p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
+              {group.items.map((item, idx) => {
+            const isToggle = item.type === "toggle";
+            const checked = isToggle ? item.stateKey === "pushNotifications" ? pushNotifications : darkMode : false;
+            return <motion.div key={item.id} initial={{
+              opacity: 0,
+              y: 8
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              duration: 0.2,
+              delay: 0.1 * (gi + idx)
+            }} whileHover={!isMobile ? rowHover : {}} whileTap={{
+              scale: 0.98
+            }} className="flex items-center px-4 py-4 cursor-pointer" onClick={() => isToggle ? handleToggle(item.stateKey!, !checked) : item.route && handleItemClick(item.route)}>
+                    <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", item.color)}>
+                      <item.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                        {item.title}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {item.description}
+                      </p>
+                    </div>
+                    {isToggle ? <Switch checked={checked} onCheckedChange={v => handleToggle(item.stateKey!, v)} /> : <ChevronRight className="h-5 w-5 text-gray-400" />}
+                  </motion.div>;
+          })}
+            </div>
+          </div>)}
 
-        {/* Sign Out */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.5,
-        delay: 0.6
-      }}>
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
-            <CardContent className="p-0">
-              <button onClick={handleLogout} className="w-full p-6 flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 text-red-600 dark:text-red-400">
-                <LogOut className="h-5 w-5" />
-                <span className="font-medium font-geist">Sign Out</span>
-              </button>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* 3. SIGN OUT ROW */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <motion.button initial={{
+          opacity: 0,
+          y: 8
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.2,
+          delay: 0.5
+        }} whileHover={!isMobile ? rowHover : {}} whileTap={{
+          scale: 0.98
+        }} className="w-full flex items-center justify-center px-4 py-4 text-red-600 dark:text-red-400 cursor-pointer" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+            <span className="ml-2 font-medium">Sign Out</span>
+          </motion.button>
+        </div>
 
-        {/* App Info */}
+        {/* 4. FOOTER */}
         <motion.div initial={{
         opacity: 0
       }} animate={{
         opacity: 1
       }} transition={{
-        duration: 0.5,
-        delay: 0.7
-      }} className="text-center py-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-geist">Molecules v2.1.0</p>
+        duration: 0.2,
+        delay: 0.6
+      }} className="text-center py-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Molecules v2.1.0
+          </p>
         </motion.div>
       </div>
     </div>;

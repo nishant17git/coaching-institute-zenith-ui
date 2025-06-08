@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { TestRecordDb, TestRecord, HistoryStats, SubjectStat } from "@/types";
+import { isValid, parseISO } from "date-fns";
 
 export const testService = {
   // Get all test records from test_results table
@@ -41,15 +42,34 @@ export const testService = {
     return data || [];
   },
 
+  // Helper function to safely parse and validate dates
+  safeParseDate(dateValue: any): Date | null {
+    if (!dateValue) return null;
+    
+    try {
+      const parsed = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+      return isValid(parsed) ? parsed : null;
+    } catch (error) {
+      console.warn('Invalid date value:', dateValue);
+      return null;
+    }
+  },
+
   // Create a new test and test result
   async createTestRecord(testRecord: any): Promise<any> {
+    // Validate and format the test date
+    const testDate = this.safeParseDate(testRecord.test_date);
+    if (!testDate) {
+      throw new Error('Invalid test date provided');
+    }
+
     // First create the test
     const { data: testData, error: testError } = await supabase
       .from("tests")
       .insert([{
         test_name: testRecord.test_name,
         subject: testRecord.subject,
-        test_date: testRecord.test_date,
+        test_date: testDate.toISOString(),
         class: testRecord.class || 10,
         total_marks: testRecord.total_marks,
         test_type: testRecord.test_type
@@ -179,13 +199,16 @@ export const testService = {
       return grades;
     }, [] as { name: string; count: number; color: string }[]);
 
-    // Calculate progress data
-    const progressData = testRecords.map(record => ({
-      date: record.tests?.test_date || new Date().toISOString(),
-      score: Math.round((record.marks_obtained / record.total_marks) * 100),
-      subject: typeof record.tests?.subject === 'string' ? record.tests.subject : 'Unknown',
-      test: typeof record.tests?.test_name === 'string' ? record.tests.test_name : 'Unknown Test'
-    }));
+    // Calculate progress data with safe date handling
+    const progressData = testRecords.map(record => {
+      const testDate = this.safeParseDate(record.tests?.test_date);
+      return {
+        date: testDate ? testDate.toISOString() : new Date().toISOString(),
+        score: Math.round((record.marks_obtained / record.total_marks) * 100),
+        subject: typeof record.tests?.subject === 'string' ? record.tests.subject : 'Unknown',
+        test: typeof record.tests?.test_name === 'string' ? record.tests.test_name : 'Unknown Test'
+      };
+    });
 
     // Calculate subject performance with proper type checking
     const subjectPerformance: SubjectStat[] = subjects.map((subject: string) => {
@@ -242,12 +265,14 @@ export const testService = {
 
   // Map test result to TestRecord format
   mapToTestRecord(dbRecord: any, studentName: string): TestRecord {
+    const testDate = this.safeParseDate(dbRecord.tests?.test_date);
+    
     return {
       id: dbRecord.id,
       studentId: dbRecord.student_id,
       name: studentName,
       subject: dbRecord.tests?.subject || 'Unknown',
-      date: dbRecord.tests?.test_date || new Date().toISOString(),
+      date: testDate ? testDate.toISOString() : new Date().toISOString(),
       score: dbRecord.marks_obtained,
       maxScore: dbRecord.total_marks
     };

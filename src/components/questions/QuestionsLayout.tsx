@@ -1,12 +1,9 @@
-
 import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { EnhancedPageHeader } from "@/components/enhanced-page-header";
-
 export function QuestionsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-
   const getHeaderConfig = () => {
     const path = location.pathname;
     if (path === "/questions") {
@@ -56,21 +53,13 @@ export function QuestionsLayout() {
       onBack: () => navigate("/")
     };
   };
-
   const headerConfig = getHeaderConfig();
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="md:px-8 pt-6 py-0 px-0 my-0">
-        <EnhancedPageHeader 
-          title={headerConfig.title} 
-          showBackButton={headerConfig.showBackButton} 
-          onBack={headerConfig.onBack} 
-        />
+  return <div className="min-h-screen bg-background">
+      <div className="pt-6 px-0 my-0 md:px-0 py-0">
+        <EnhancedPageHeader title={headerConfig.title} showBackButton={headerConfig.showBackButton} onBack={headerConfig.onBack} />
       </div>
       <div className="container mx-auto py-6 px-0">
         <Outlet />
       </div>
-    </div>
-  );
+    </div>;
 }

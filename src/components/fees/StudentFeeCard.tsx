@@ -71,7 +71,7 @@ export function StudentFeeCard({ student, onAddPayment, className }: StudentFeeC
         id: latestTransaction.id,
         studentId: latestTransaction.student_id,
         amount: latestTransaction.amount,
-        date: latestTransaction.payment_date, // Use payment_date instead of date
+        date: latestTransaction.payment_date,
         paymentMode: paymentMode,
         receiptNumber: latestTransaction.receipt_number || 'N/A',
         purpose: latestTransaction.purpose || 'School Fees'

@@ -1,459 +1,638 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { testService } from "@/services/testService";
-import { studentService } from "@/services/studentService";
-import { TestRecordDb } from "@/types";
+import { useNavigate } from "react-router-dom";
+import { exportTestToPDF } from "@/services/pdfService";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TestAddForm } from "@/components/tests/TestAddForm";
+import { TestResults } from "@/components/tests/TestResults";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { StudentRecord, TestRecordDb } from "@/types";
+import { GradeDistributionChart } from "@/components/charts/GradeDistributionChart";
+import { SubjectPerformanceChart } from "@/components/charts/SubjectPerformanceChart";
 
-// Components
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { LoadingState } from "@/components/ui/loading-state";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-
-// Icons
-import { Search, Plus, FileText, Edit, Trash2 } from "lucide-react";
+// Helper function to safely format dates
+const formatSafeDate = (dateValue: string | null | undefined, formatString: string = 'dd MMM yyyy'): string => {
+  if (!dateValue) return 'N/A';
+  
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'N/A';
+    return format(date, formatString);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'N/A';
+  }
+};
 
 export default function TestRecord() {
   const [searchQuery, setSearchQuery] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
-  const [isAddTestDialogOpen, setIsAddTestDialogOpen] = useState(false);
-  const [selectedTest, setSelectedTest] = useState<TestRecordDb | null>(null);
+  const [sortField, setSortField] = useState<"date" | "marks">("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [isAddTestOpen, setIsAddTestOpen] = useState(false);
+  const [isEditTestOpen, setIsEditTestOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [editingTest, setEditingTest] = useState<TestRecordDb | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  // Form state
-  const [formData, setFormData] = useState({
-    student_id: "",
-    subject: "",
-    test_date: "",
-    test_name: "",
-    marks: "",
-    total_marks: "100",
-    test_type: "Chapter-wise Test"
+  
+  // Fetch test records from Supabase using correct table name
+  const { data: testRecords = [], isLoading: testsLoading, refetch: refetchTests } = useQuery({
+    queryKey: ['test_results'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('test_results')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching test results:', error);
+        throw error;
+      }
+      
+      return data || [];
+    }
   });
-
-  // Fetch test records
-  const {
-    data: testRecords = [],
-    isLoading: isLoadingTests
-  } = useQuery({
-    queryKey: ['testRecords'],
-    queryFn: testService.getTestRecords
-  });
-
-  // Fetch students
-  const {
-    data: students = [],
-    isLoading: isLoadingStudents
-  } = useQuery({
+  
+  // Fetch students from Supabase  
+  const { data: students = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
-    queryFn: studentService.getStudents
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('full_name', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+      
+      return data || [];
+    }
   });
 
-  // Add test mutation
+  // Mutation for adding test records
   const addTestMutation = useMutation({
-    mutationFn: async (data: Omit<TestRecordDb, 'id'>) => {
-      return testService.createTestRecord(data);
+    mutationFn: async (testData: any) => {
+      console.log('Adding test with data:', testData);
+      
+      // First, create the test in the tests table
+      const { data: testRecord, error: testError } = await supabase
+        .from('tests')
+        .insert([{
+          test_name: testData.test_name,
+          subject: testData.subject,
+          test_date: testData.test_date,
+          test_type: testData.test_type,
+          total_marks: testData.total_marks,
+          class: testData.class
+        }])
+        .select()
+        .single();
+
+      if (testError) {
+        console.error('Error creating test:', testError);
+        throw testError;
+      }
+
+      // Then, create the test result in the test_results table
+      const { data: resultRecord, error: resultError } = await supabase
+        .from('test_results')
+        .insert([{
+          student_id: testData.student_id,
+          test_id: testRecord.id,
+          marks_obtained: testData.marks_obtained,
+          total_marks: testData.total_marks,
+          percentage: testData.marks_obtained && testData.total_marks ? 
+            Math.round((testData.marks_obtained / testData.total_marks) * 100) : null,
+          grade: null,
+          rank: null,
+          absent: false,
+          remarks: null
+        }])
+        .select()
+        .single();
+
+      if (resultError) {
+        console.error('Error adding test result:', resultError);
+        throw resultError;
+      }
+
+      return resultRecord;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
-      setIsAddTestDialogOpen(false);
-      resetForm();
-      toast.success("Test record added successfully");
+      queryClient.invalidateQueries({ queryKey: ['test_results'] });
+      setIsAddTestOpen(false);
+      toast.success("Test result added successfully");
     },
-    onError: (error: any) => {
-      toast.error(`Failed to add test record: ${error.message}`);
+    onError: (error) => {
+      console.error('Error adding test:', error);
+      toast.error("Failed to add test result");
     }
   });
 
-  // Update test mutation
+  // Mutation for updating test records
   const updateTestMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<TestRecordDb> }) => {
-      return testService.updateTestRecord(id, data);
+    mutationFn: async ({ id, ...testData }: any) => {
+      console.log('Updating test with data:', testData);
+      
+      const { data, error } = await supabase
+        .from('test_results')
+        .update({
+          marks_obtained: testData.marks_obtained,
+          total_marks: testData.total_marks,
+          percentage: testData.marks_obtained && testData.total_marks ? 
+            Math.round((testData.marks_obtained / testData.total_marks) * 100) : null,
+          remarks: testData.remarks || null
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating test result:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
-      setIsAddTestDialogOpen(false);
-      setSelectedTest(null);
-      resetForm();
-      toast.success("Test record updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['test_results'] });
+      setIsEditTestOpen(false);
+      setEditingTest(null);
+      toast.success("Test result updated successfully");
     },
-    onError: (error: any) => {
-      toast.error(`Failed to update test record: ${error.message}`);
+    onError: (error) => {
+      console.error('Error updating test:', error);
+      toast.error("Failed to update test result");
     }
   });
 
-  // Delete test mutation
+  // Mutation for deleting test records
   const deleteTestMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return testService.deleteTestRecord(id);
+    mutationFn: async (testId: string) => {
+      const { error } = await supabase
+        .from('test_results')
+        .delete()
+        .eq('id', testId);
+
+      if (error) {
+        console.error('Error deleting test result:', error);
+        throw error;
+      }
+
+      return testId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
-      toast.success("Test record deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ['test_results'] });
+      toast.success("Test result deleted successfully");
     },
-    onError: (error: any) => {
-      toast.error(`Failed to delete test record: ${error.message}`);
+    onError: (error) => {
+      console.error('Error deleting test:', error);
+      toast.error("Failed to delete test result");
     }
   });
+  
+  // Generate statistics
+  const subjects = ['Mathematics', 'Science', 'Social Science', 'Hindi', 'English'];
+  const totalTests = testRecords.length;
+  const averageScore = testRecords.length > 0 
+    ? Math.round(testRecords.reduce((acc: number, record: TestRecordDb) => acc + (record.percentage || 0), 0) / testRecords.length) 
+    : 0;
 
-  const resetForm = () => {
-    setFormData({
-      student_id: "",
-      subject: "",
-      test_date: "",
-      test_name: "",
-      marks: "",
-      total_marks: "100",
-      test_type: "Chapter-wise Test"
-    });
-  };
+  // Grade distribution with vibrant colors
+  const gradeDistribution = [
+    { name: 'A (90-100%)', value: 0, color: '#22c55e' },
+    { name: 'B (75-89%)', value: 0, color: '#0EA5E9' },
+    { name: 'C (60-74%)', value: 0, color: '#EAB308' },
+    { name: 'D (40-59%)', value: 0, color: '#F97316' },
+    { name: 'F (0-39%)', value: 0, color: '#EF4444' }
+  ];
+  
+  testRecords.forEach((record: TestRecordDb) => {
+    const percent = record.percentage || 0;
+    if (percent >= 90) gradeDistribution[0].value++;
+    else if (percent >= 75) gradeDistribution[1].value++;
+    else if (percent >= 60) gradeDistribution[2].value++;
+    else if (percent >= 40) gradeDistribution[3].value++;
+    else gradeDistribution[4].value++;
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Subject performance with vibrant colors
+  const subjectPerformance = subjects.map((subject, index) => {
+    const subjectTests = testRecords; // For now, showing all tests since we don't have subject filtering
+    const averagePercent = subjectTests.length > 0 
+      ? Math.round(
+          subjectTests.reduce((acc: number, record: TestRecordDb) => 
+            acc + (record.percentage || 0), 0) / subjectTests.length
+        ) 
+      : 0;
+      
+    const vibrantColors = [
+      '#0EA5E9', '#8B5CF6', '#F97316', '#22C55E', '#F43F5E'
+    ];
     
-    const testData = {
-      student_id: formData.student_id,
-      subject: formData.subject,
-      test_date: formData.test_date,
-      test_name: formData.test_name,
-      marks: parseInt(formData.marks),
-      total_marks: parseInt(formData.total_marks),
-      test_type: formData.test_type as any
+    return {
+      name: subject,
+      score: averagePercent,
+      fill: vibrantColors[index % vibrantColors.length]
     };
-
-    if (selectedTest) {
-      updateTestMutation.mutate({ id: selectedTest.id, data: testData });
-    } else {
-      addTestMutation.mutate(testData);
-    }
-  };
-
-  const handleEdit = (test: TestRecordDb) => {
-    setSelectedTest(test);
-    setFormData({
-      student_id: test.student_id,
-      subject: test.subject,
-      test_date: test.test_date,
-      test_name: test.test_name,
-      marks: test.marks.toString(),
-      total_marks: test.total_marks.toString(),
-      test_type: test.test_type || "Chapter-wise Test"
-    });
-    setIsAddTestDialogOpen(true);
-  };
-
-  const handleDelete = (testId: string) => {
-    if (confirm("Are you sure you want to delete this test record?")) {
-      deleteTestMutation.mutate(testId);
-    }
-  };
-
-  // Filter test records
-  const filteredTests = testRecords.filter(test => {
-    const student = students.find(s => s.id === test.student_id);
-    const studentMatches = student?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const testMatches = test.test_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const subjectMatches = subjectFilter === "all" || test.subject === subjectFilter;
-    const classMatches = classFilter === "all" || student?.class.toString() === classFilter;
-    
-    return (studentMatches || testMatches) && subjectMatches && classMatches;
   });
-
-  // Get unique subjects and classes for filters
-  const subjects = [...new Set(testRecords.map(test => test.subject))];
-  const classes = [...new Set(students.map(student => student.class.toString()))];
-
-  const getGradeColor = (percentage: number) => {
-    if (percentage >= 90) return "bg-green-500";
-    if (percentage >= 80) return "bg-blue-500";
-    if (percentage >= 70) return "bg-purple-500";
-    if (percentage >= 60) return "bg-yellow-500";
-    return "bg-red-500";
+  
+  // Handle new test creation
+  const handleAddTest = (testData: any) => {
+    console.log('Handling add test:', testData);
+    addTestMutation.mutate(testData);
+  };
+  
+  // Handle test update
+  const handleUpdateTest = (testData: any) => {
+    if (!editingTest) return;
+    console.log('Handling update test:', testData);
+    updateTestMutation.mutate({ id: editingTest.id, ...testData });
+  };
+  
+  // Handle test deletion
+  const handleDeleteTest = (testId: string) => {
+    deleteTestMutation.mutate(testId);
+  };
+  
+  // Handle editing a test
+  const handleEditTest = (test: TestRecordDb) => {
+    setEditingTest(test);
+    setIsEditTestOpen(true);
+  };
+  
+  // Filter and sort test records with safe date handling
+  const filteredTests = testRecords
+    .filter((test: TestRecordDb) => {
+      const student = students.find(s => s.id === test.student_id);
+      
+      const searchLower = searchQuery.toLowerCase();
+      const studentName = student && student.full_name && typeof student.full_name === 'string' 
+        ? student.full_name.toLowerCase() 
+        : '';
+        
+      const studentMatches = studentName.includes(searchLower);
+      const subjectMatches = true; // Since we don't have subject in test_results
+      const classMatches = classFilter === "all" || 
+        (student && student.class !== undefined && student.class.toString() === classFilter);
+      
+      return studentMatches && subjectMatches && classMatches;
+    })
+    .sort((a: TestRecordDb, b: TestRecordDb) => {
+      if (sortField === "date") {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      } else {
+        const percentA = a.percentage || 0;
+        const percentB = b.percentage || 0;
+        return sortDirection === "asc" ? percentA - percentB : percentB - percentA;
+      }
+    });
+    
+  // Toggle sort direction
+  const handleSort = (field: "date" | "marks") => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
   };
 
-  const getGrade = (percentage: number) => {
-    if (percentage >= 90) return "A+";
-    if (percentage >= 80) return "A";
-    if (percentage >= 70) return "B";
-    if (percentage >= 60) return "C";
-    return "D";
+  // Functions to get grade and color based on marks
+  const getGrade = (marks: number, totalMarks: number) => {
+    const percent = (marks / totalMarks) * 100;
+    if (percent >= 90) return { grade: 'A', color: 'bg-emerald-500' };
+    if (percent >= 75) return { grade: 'B', color: 'bg-blue-500' };
+    if (percent >= 60) return { grade: 'C', color: 'bg-yellow-500' };
+    if (percent >= 40) return { grade: 'D', color: 'bg-orange-500' };
+    return { grade: 'F', color: 'bg-red-500' };
   };
-
+  
+  // Handle PDF export for a single test
+  const handleExportPDF = (test: TestRecordDb) => {
+    const student = students.find(s => s.id === test.student_id);
+    
+    if (student) {
+      exportTestToPDF({
+        test,
+        student,
+        title: "Test Result Report",
+        subtitle: `Test Result - ${formatSafeDate(test.created_at)}`
+      });
+      
+      toast.success("PDF generated successfully");
+    } else {
+      toast.error("Could not find student information");
+    }
+  };
+  
+  // Get test history for a student
+  const getStudentTestHistory = (studentId: string) => {
+    return testRecords.filter((test: TestRecordDb) => test.student_id === studentId);
+  };
+  
+  // Handle exporting all test results for a student
+  const handleExportStudentHistory = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    const studentTests = getStudentTestHistory(studentId);
+    
+    if (student && studentTests.length > 0) {
+      exportTestToPDF({
+        test: studentTests[0],
+        student,
+        title: "Test History Report",
+        subtitle: `Complete Test History for ${student.full_name}`,
+        allTests: studentTests
+      });
+      
+      toast.success("Test history PDF generated successfully");
+    } else {
+      toast.error("Could not find student information or test records");
+    }
+  };
+  
+  // Handle view history - redirect to test history page
+  const handleViewHistory = (studentId: string) => {
+    navigate(`/tests/history/${studentId}`);
+  };
+  
+  // Handle back navigation
+  const handleBack = () => {
+    navigate(-1);
+  };
+  
+  // Convert test record for form
+  const convertTestToFormValues = (test: TestRecordDb) => {
+    return {
+      student_id: test.student_id,
+      subject: 'Mathematics', // Default since we don't have subject in test_results
+      test_name: 'Test',
+      test_date: test.created_at ? new Date(test.created_at) : new Date(),
+      test_type: "MCQs Test (Standard)",
+      marks_obtained: test.marks_obtained,
+      total_marks: test.total_marks
+    };
+  };
+  
+  // Loading state
+  if (testsLoading || studentsLoading) {
+    return <TestLoadingState />;
+  }
+  
   return (
-    <div className="space-y-6 animate-fade-in">
-      <EnhancedPageHeader 
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <PageHeader 
         title="Test Records" 
+        showBackButton={true} 
+        onBack={() => navigate(-1)}
         action={
-          <Button 
-            onClick={() => {
-              setSelectedTest(null);
-              resetForm();
-              setIsAddTestDialogOpen(true);
-            }}
-            className="bg-black hover:bg-black/80"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Test Record
-          </Button>
-        } 
+          <Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-black hover:bg-black/80 text-white">
+                <Plus className="h-4 w-4" /> Add Test
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>Add New Test Record</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the new test record below.
+                </DialogDescription>
+              </DialogHeader>
+              <TestAddForm onSubmit={handleAddTest} students={students} />
+            </DialogContent>
+          </Dialog>
+        }
       />
-
-      {/* Filters */}
-      <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search students or tests..." 
-              value={searchQuery} 
-              onChange={e => setSearchQuery(e.target.value)} 
-              className="pl-10 h-11 text-base" 
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by subject" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Subjects</SelectItem>
-                {subjects.map(subject => (
-                  <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {classes.map(cls => (
-                  <SelectItem key={cls} value={cls}>Class {cls}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Test Records */}
-      {isLoadingTests || isLoadingStudents ? (
-        <LoadingState />
-      ) : filteredTests.length === 0 ? (
-        <EmptyState 
-          icon={<FileText className="h-10 w-10 text-muted-foreground" />} 
-          title="No test records found" 
-          description="No test records match your current filters." 
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTests.map(test => {
-            const student = students.find(s => s.id === test.student_id);
-            const percentage = Math.round((test.marks / test.total_marks) * 100);
-            const grade = getGrade(percentage);
-            
-            return (
-              <Card key={test.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between text-sm">
-                    <span>{student?.full_name || 'Unknown Student'}</span>
-                    <Badge className={`${getGradeColor(percentage)} text-white`}>
-                      {grade}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium text-base">{test.test_name}</p>
-                      <p className="text-sm text-muted-foreground">{test.subject}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Score</p>
-                        <p className="font-medium">{test.marks}/{test.total_marks}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Percentage</p>
-                        <p className="font-medium">{percentage}%</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Date</p>
-                        <p className="font-medium">{format(new Date(test.test_date), 'dd MMM yyyy')}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Class</p>
-                        <p className="font-medium">Class {student?.class}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleEdit(test)}
-                        className="flex-1"
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleDelete(test.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Add/Edit Test Dialog */}
-      <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      
+      {/* Edit Test Dialog */}
+      <Dialog open={isEditTestOpen} onOpenChange={(open) => {
+        setIsEditTestOpen(open);
+        if (!open) setEditingTest(null);
+      }}>
+        <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>{selectedTest ? "Edit Test Record" : "Add Test Record"}</DialogTitle>
+            <DialogTitle>Edit Test Record</DialogTitle>
             <DialogDescription>
-              {selectedTest ? "Update the test record details." : "Add a new test record for a student."}
+              Update the details of this test record.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTest && (
+            <TestAddForm 
+              onSubmit={handleUpdateTest} 
+              students={students} 
+              initialData={convertTestToFormValues(editingTest)}
+              isEditing={true}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Student History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>
+              Test History
+              {selectedStudentId && (
+                <span className="ml-2 text-muted-foreground font-normal">
+                  {students.find(s => s.id === selectedStudentId)?.full_name || "Unknown Student"}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              View all test records for this student
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="student">Student</Label>
-              <Select 
-                value={formData.student_id} 
-                onValueChange={(value) => setFormData({ ...formData, student_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a student" />
+          {selectedStudentId && (
+            <>
+              <div className="max-h-[400px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Grade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getStudentTestHistory(selectedStudentId).map((test: TestRecordDb) => {
+                      const { grade, color } = getGrade(test.marks_obtained, test.total_marks);
+                      const percent = test.percentage || Math.round((test.marks_obtained / test.total_marks) * 100);
+                      
+                      return (
+                        <TableRow key={test.id}>
+                          <TableCell>{test.test_id}</TableCell>
+                          <TableCell>{formatSafeDate(test.created_at)}</TableCell>
+                          <TableCell>
+                            {test.marks_obtained}/{test.total_marks} ({percent}%)
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={color}>{grade}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsHistoryDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                  onClick={() => handleExportStudentHistory(selectedStudentId)}
+                >
+                  <FileText className="h-4 w-4" /> Export All Tests
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          title="Total Tests"
+          value={totalTests}
+          description="Across all subjects and classes"
+          icon={<FileText className="h-5 w-5" />}
+        />
+        
+        <StatCard
+          title="Average Score"
+          value={`${averageScore}%`}
+          description="Overall student performance"
+          icon={<Trophy className="h-5 w-5" />}
+        />
+        
+        <StatCard
+          title="Subjects"
+          value={subjects.length}
+          description="Different subjects tested"
+          icon={<LibraryBig className="h-5 w-5" />}
+        />
+      </div>
+      
+      <Tabs defaultValue="tests" className="space-y-4">
+        <TabsList className="grid w-full sm:w-[400px] grid-cols-2 rounded-lg bg-muted/80 backdrop-blur-sm">
+          <TabsTrigger value="tests" className="font-medium">Test Records</TabsTrigger>
+          <TabsTrigger value="analytics" className="font-medium">Performance Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="tests" className="space-y-4 animate-fade-in">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search student name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background/50 backdrop-blur-sm transition-all focus:bg-background"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px] bg-background/50 backdrop-blur-sm hover:bg-background/70 transition-all">
+                  <SelectValue placeholder="Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map(student => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.full_name} - Class {student.class}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="9">Class 9</SelectItem>
+                  <SelectItem value="10">Class 10</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <TestResults 
+            tests={filteredTests}
+            students={students}
+            getGrade={getGrade}
+            handleSort={handleSort}
+            isMobile={isMobile}
+            onExportPDF={handleExportPDF}
+            onViewHistory={handleViewHistory}
+            onEditTest={handleEditTest}
+            onDeleteTest={handleDeleteTest}
+          />
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-6 animate-fade-in">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GradeDistributionChart data={gradeDistribution} />
+            <SubjectPerformanceChart data={subjectPerformance} />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </motion.div>
+  );
+}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="e.g., Mathematics"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="test_date">Test Date</Label>
-                <Input
-                  id="test_date"
-                  type="date"
-                  value={formData.test_date}
-                  onChange={(e) => setFormData({ ...formData, test_date: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="test_name">Test Name</Label>
-              <Input
-                id="test_name"
-                value={formData.test_name}
-                onChange={(e) => setFormData({ ...formData, test_name: e.target.value })}
-                placeholder="e.g., Unit Test 1"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="marks">Marks Obtained</Label>
-                <Input
-                  id="marks"
-                  type="number"
-                  value={formData.marks}
-                  onChange={(e) => setFormData({ ...formData, marks: e.target.value })}
-                  placeholder="80"
-                  min="0"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="total_marks">Total Marks</Label>
-                <Input
-                  id="total_marks"
-                  type="number"
-                  value={formData.total_marks}
-                  onChange={(e) => setFormData({ ...formData, total_marks: e.target.value })}
-                  placeholder="100"
-                  min="1"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="test_type">Test Type</Label>
-                <Select 
-                  value={formData.test_type} 
-                  onValueChange={(value) => setFormData({ ...formData, test_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MCQs Test (Standard)">MCQs Test (Standard)</SelectItem>
-                    <SelectItem value="MCQs Test (Normal)">MCQs Test (Normal)</SelectItem>
-                    <SelectItem value="Chapter-wise Test">Chapter-wise Test</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsAddTestDialogOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1"
-                disabled={addTestMutation.isPending || updateTestMutation.isPending}
-              >
-                {selectedTest ? "Update" : "Add"} Test Record
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+// Loading state component
+function TestLoadingState() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+      
+      <Skeleton className="h-10 w-64" />
+      
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <Skeleton className="h-10 flex-1" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-[150px]" />
+            <Skeleton className="h-10 w-[130px]" />
+          </div>
+        </div>
+        
+        <Skeleton className="h-[400px]" />
+      </div>
     </div>
   );
 }

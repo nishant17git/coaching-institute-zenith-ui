@@ -1,5 +1,6 @@
 
 import React from "react";
+import ReactDOM from "react-dom/client";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -51,60 +52,62 @@ function ScrollWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <DataProvider>
-            <Routes>
-              <Route path="/login" element={
-                <ScrollWrapper>
-                  <Login />
-                </ScrollWrapper>
-              } />
-              <Route path="/reset-password" element={
-                <ScrollWrapper>
-                  <ResetPassword />
-                </ScrollWrapper>
-              } />
-              
-              <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/students" element={<Students />} />
-                <Route path="/students/:id" element={<StudentDetail />} />
-                <Route path="/students/:id/attendance" element={<StudentAttendanceDetails />} />
-                <Route path="/fees" element={<Fees />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/tests" element={<TestRecord />} />
-                <Route path="/tests/history/:studentId" element={<TestHistory />} />
-                <Route path="/questions/*" element={<Questions />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/settings/profile" element={<AuthLayout><ProfileSettings /></AuthLayout>} />
-                <Route path="/settings/institute" element={<AuthLayout><InstituteSettings /></AuthLayout>} />
-                <Route path="/settings/notifications" element={<AuthLayout><NotificationSettings /></AuthLayout>} />
-                <Route path="/settings/appearance" element={<AuthLayout><AppearanceSettings /></AuthLayout>} />
-                <Route path="/settings/security" element={<AuthLayout><PrivacySecuritySettings /></AuthLayout>} />
-                <Route path="/settings/data" element={<AuthLayout><DataStorageSettings /></AuthLayout>} />
-                <Route path="/settings/help" element={<AuthLayout><HelpSupportSettings /></AuthLayout>} />
-                <Route path="/settings/about" element={<AuthLayout><AboutSettings /></AuthLayout>} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/more" element={<More />} />
-              </Route>
-              
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={
-                <ScrollWrapper>
-                  <NotFound />
-                </ScrollWrapper>
-              } />
-            </Routes>
-            <Toaster />
-          </DataProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+function App() {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <DataProvider>
+              <Routes>
+                <Route path="/login" element={
+                  <ScrollWrapper>
+                    <Login />
+                  </ScrollWrapper>
+                } />
+                <Route path="/reset-password" element={
+                  <ScrollWrapper>
+                    <ResetPassword />
+                  </ScrollWrapper>
+                } />
+                
+                <Route element={<AuthLayout><AppLayout /></AuthLayout>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/students/:id" element={<StudentDetail />} />
+                  <Route path="/students/:id/attendance" element={<StudentAttendanceDetails />} />
+                  <Route path="/fees" element={<Fees />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/tests" element={<TestRecord />} />
+                  <Route path="/tests/history/:studentId" element={<TestHistory />} />
+                  <Route path="/questions/*" element={<Questions />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings/profile" element={<AuthLayout><ProfileSettings /></AuthLayout>} />
+                  <Route path="/settings/institute" element={<AuthLayout><InstituteSettings /></AuthLayout>} />
+                  <Route path="/settings/notifications" element={<AuthLayout><NotificationSettings /></AuthLayout>} />
+                  <Route path="/settings/appearance" element={<AuthLayout><AppearanceSettings /></AuthLayout>} />
+                  <Route path="/settings/security" element={<AuthLayout><PrivacySecuritySettings /></AuthLayout>} />
+                  <Route path="/settings/data" element={<AuthLayout><DataStorageSettings /></AuthLayout>} />
+                  <Route path="/settings/help" element={<AuthLayout><HelpSupportSettings /></AuthLayout>} />
+                  <Route path="/settings/about" element={<AuthLayout><AboutSettings /></AuthLayout>} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/more" element={<More />} />
+                </Route>
+                
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={
+                  <ScrollWrapper>
+                    <NotFound />
+                  </ScrollWrapper>
+                } />
+              </Routes>
+              <Toaster />
+            </DataProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+}
 
 export default App;

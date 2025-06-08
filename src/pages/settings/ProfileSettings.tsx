@@ -6,13 +6,10 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { User, Camera, Save, Eye, EyeOff, Shield, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { User, Camera, ChevronRight, Save, Mail, Phone, Key, Smartphone, Bell, Trash2, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -27,231 +24,239 @@ export default function ProfileSettings() {
     user
   } = useAuth();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      phone: ""
+      phone: user?.phone || ""
     }
   });
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     toast.success("Profile updated successfully!");
-    console.log(values);
+    setIsEditing(false);
   };
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      toast.success("Profile photo updated!");
-    }
+    if (e.target.files?.[0]) toast.success("Profile photo updated!");
   };
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl mx-auto space-y-8 px-0 bg-white py-0">
+      <div className="w-full max-w-full mx-auto px-0 py-0 bg-white">
+        {/* Header */}
         <EnhancedPageHeader title="Profile & Account" description="Manage your personal information" showBackButton onBack={() => navigate("/settings")} />
 
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="space-y-8">
-          {/* Profile Photo Section */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Profile Photo</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Update your profile picture</p>
-                </div>
-              </div>
+        <div className="space-y-4 mt-6">
+          {/* Profile Card */}
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 flex flex-col items-center space-y-4">
+            <div className="relative">
+              <Avatar className="h-20 w-20">
+                <AvatarFallback className="text-2xl font-bold bg-blue-500 text-white">
+                  {user?.name?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 hover:bg-blue-500 transition">
+                <Camera className="h-4 w-4 text-white" />
+              </label>
+              <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
+                {user?.name || "User Name"}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {user?.email}
+              </p>
+              <p className="text-xs text-green-500 mt-1">Online</p>
+            </div>
+            <Button variant="outline" className="w-full py-2" onClick={() => setIsEditing(!isEditing)}>
+              {isEditing ? "Cancel" : "Edit Profile"}
+            </Button>
+          </motion.div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-8">
-                <div className="relative group">
-                  <Avatar className="h-28 w-28 shadow-lg">
-                    <AvatarFallback className="text-3xl font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                      {user?.name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <label htmlFor="avatar-upload" className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full flex items-center justify-center">
-                    <Camera className="h-6 w-6 text-white" />
-                  </label>
-                  <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-                </div>
-                <div className="text-center sm:text-left">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                    {user?.name || "User Name"}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">{user?.email}</p>
-                  <Button variant="outline" className="rounded-full px-6">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Change Photo
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Personal Information */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                  <User className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Personal Information</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Update your personal details</p>
-                </div>
-              </div>
-
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="name" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel className="text-gray-700 dark:text-gray-300">Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your full name" className="rounded-2xl border-gray-200 dark:border-gray-700 h-12" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-
-                    <FormField control={form.control} name="email" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel className="text-gray-700 dark:text-gray-300">Email Address</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="Enter your email" className="rounded-2xl border-gray-200 dark:border-gray-700 h-12" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-
-                    <FormField control={form.control} name="phone" render={({
-                    field
-                  }) => <FormItem className="md:col-span-2">
-                          <FormLabel className="text-gray-700 dark:text-gray-300">Phone Number</FormLabel>
-                          <FormControl>
-                            <Input type="tel" placeholder="Enter your phone number" className="rounded-2xl border-gray-200 dark:border-gray-700 h-12" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-                  </div>
-
-                  <Button type="submit" className="w-full rounded-2xl h-12 text-base">
-                    <Save className="h-5 w-5 mr-2" />
-                    Save Changes
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          {/* Security Settings */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Security & Privacy</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Manage your security settings</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                {/* Password Change */}
-                <div className="space-y-4">
-                  <Label className="text-gray-700 dark:text-gray-300 text-base font-medium">Change Password</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} placeholder="Current password" className="rounded-2xl border-gray-200 dark:border-gray-700 h-12 pr-12" />
-                      <Button type="button" variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    <Input type={showPassword ? "text" : "password"} placeholder="New password" className="rounded-2xl border-gray-200 dark:border-gray-700 h-12" />
-                  </div>
-                  <Button variant="outline" className="w-full rounded-2xl h-12">
-                    Update Password
-                  </Button>
-                </div>
-
-                <Separator />
-
-                {/* Security Options */}
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Two-Factor Authentication</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Add extra security to your account</p>
-                    </div>
-                    <Switch checked={twoFactorEnabled} onCheckedChange={setTwoFactorEnabled} />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Security Alerts</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Get notified of security events</p>
-                    </div>
-                    <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Danger Zone */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl border-l-4 border-l-red-500">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                  <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Irreversible actions</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Once you delete your account, there is no going back. Please be certain.
-                </p>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full rounded-2xl h-12">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Account
+          {/* Account Info */}
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.1
+        }} className="bg-white dark:bg-gray-800 rounded-2xl shadow">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-0">
+                Account Information
+              </h3>
+            </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+                {[{
+                name: "name",
+                label: "Name",
+                icon: User,
+                type: "text"
+              }, {
+                name: "email",
+                label: "Email",
+                icon: Mail,
+                type: "email"
+              }, {
+                name: "phone",
+                label: "Phone",
+                icon: Phone,
+                type: "tel"
+              }].map(({
+                name,
+                label,
+                icon: Icon,
+                type
+              }) => <FormField key={name} control={form.control} name={name as any} render={({
+                field
+              }) => <FormItem>
+                        <div className="flex items-center justify-between px-4 py-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                              <Icon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                            </div>
+                            <div className="flex-1">
+                              <FormLabel className="text-sm text-gray-900 dark:text-white">
+                                {label}
+                              </FormLabel>
+                              {isEditing ? <FormControl>
+                                  <Input {...field} type={type} className="mt-1 w-full p-3 bg-transparent border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-0" placeholder={label} />
+                                </FormControl> : <p className="text-sm text-gray-600 dark:text-gray-300">{field.value || "Not set"}</p>}
+                            </div>
+                          </div>
+                          {!isEditing && <ChevronRight className="h-5 w-5 text-gray-400" />}
+                        </div>
+                        <FormMessage className="px-4 text-xs text-red-500" />
+                      </FormItem>} />)}
+                {isEditing && <div className="px-4 py-3">
+                    <Button type="submit" className="w-full py-3 flex items-center justify-center space-x-2">
+                      <Save className="h-5 w-5" />
+                      <span>Save Changes</span>
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="rounded-3xl">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        account and remove all your data from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl">
-                        Yes, delete my account
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  </div>}
+              </form>
+            </Form>
+          </motion.div>
+
+          {/* Security & Privacy */}
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.2
+        }} className="bg-white dark:bg-gray-800 rounded-2xl shadow">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-0">
+                Security & Privacy
+              </h3>
+            </div>
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {/* Change Password */}
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <Key className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900 dark:text-white">Password</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Last changed 3 months ago</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              {/* Two-Factor Authentication */}
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <Smartphone className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900 dark:text-white">Two-Factor Authentication</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{twoFactorEnabled ? "Enabled" : "Disabled"}</p>
+                  </div>
+                </div>
+                <Switch checked={twoFactorEnabled} onCheckedChange={setTwoFactorEnabled} />
+              </div>
+              {/* Security Notifications */}
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900 dark:text-white">Security Notifications</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Get alerts for suspicious activity</p>
+                  </div>
+                </div>
+                <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Dangerous Zone */}
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.3
+        }} className="bg-white dark:bg-gray-800 rounded-2xl shadow">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xs font-semibold text-red-500 dark:text-red-500 uppercase px-0">Account Actions</h3>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-red-600">Delete Account</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Permanently remove your account</p>
+                </div>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="p-2">
+                    <ChevronRight className="h-5 w-5 text-red-600" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-2xl max-w-xs mx-auto">
+                  <AlertDialogHeader>
+                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <AlertDialogTitle className="text-center text-base font-semibold">Delete Account?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center text-sm text-gray-600">
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex flex-col space-y-2">
+                    <AlertDialogAction className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
+                      Yes, Delete
+                    </AlertDialogAction>
+                    <AlertDialogCancel className="w-full py-2 rounded-md">Cancel</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>;
 }

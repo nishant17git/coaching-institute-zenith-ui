@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/contexts/DataContext";
@@ -15,6 +14,7 @@ import {
   Users, 
   GraduationCap, 
   AlertTriangle,
+  AlertCircle,
   CreditCard,
   CalendarClock,
   ChevronRight,
@@ -99,27 +99,17 @@ export default function Index() {
     .slice(0, 5);
   
   return (
-    <div className="space-y-8 animate-slide-up">
-      {/* Enhanced Header with Geist Font */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-bold tracking-tight font-geist bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Infinity Classes
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1 font-geist">
-              Welcome back! Here's your institute overview
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground font-geist">
-            <CalendarClock className="h-4 w-4" />
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
-        </div>
+    <div className="space-y-6 sm:space-y-8 animate-slide-up">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Home</h1>
+        <p className="text-muted-foreground">
+          Welcome back, Sir! Here's what's happening at your school today.
+        </p>
       </div>
       
       {/* Enhanced Summary Cards using the new design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <DashboardStatCard 
           type="students"
           label="Total Students"
@@ -158,15 +148,15 @@ export default function Index() {
       {/* Performance Overview */}
       <PerformanceOverview />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Class Distribution Chart */}
         <Card className="glass-card lg:col-span-2 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="font-geist">Class Distribution</CardTitle>
-            <CardDescription className="font-geist">Number of students in each class</CardDescription>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="font-geist text-lg sm:text-xl">Class Distribution</CardTitle>
+            <CardDescription className="font-geist text-sm">Number of students in each class</CardDescription>
           </CardHeader>
-          <CardContent className="px-0 sm:pl-2 overflow-x-auto">
-            <div className="h-[280px] min-w-[300px]">
+          <CardContent className="px-2 sm:px-6 overflow-x-auto">
+            <div className="h-[250px] sm:h-[280px] min-w-[300px]">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <p className="font-geist">Loading chart data...</p>
@@ -218,20 +208,20 @@ export default function Index() {
         
         {/* Recent Admissions */}
         <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="font-geist">Recent Admissions</CardTitle>
-            <CardDescription className="font-geist">Newly joined students</CardDescription>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="font-geist text-lg sm:text-xl">Recent Admissions</CardTitle>
+            <CardDescription className="font-geist text-sm">Newly joined students</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="px-3 sm:px-6">
+            <div className="space-y-3 sm:space-y-4">
               {recentJoins.map(student => (
                 <div key={student.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium font-geist">{student.name}</p>
-                    <p className="text-sm text-muted-foreground font-geist">{student.class}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium font-geist text-sm sm:text-base truncate">{student.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground font-geist">{student.class}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground hidden sm:flex items-center font-geist">
+                  <div className="flex items-center gap-2 ml-2">
+                    <span className="text-xs sm:text-sm text-muted-foreground hidden sm:flex items-center font-geist">
                       <CalendarClock className="h-3 w-3 mr-1" />
                       {new Date(student.joinDate).toLocaleDateString()}
                     </span>
@@ -246,7 +236,7 @@ export default function Index() {
                   </div>
                 </div>
               ))}
-              <Button variant="ghost" className="w-full mt-2 font-geist" onClick={() => navigate('/students')}>
+              <Button variant="ghost" className="w-full mt-2 font-geist text-sm sm:text-base" onClick={() => navigate('/students')}>
                 View All Students <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -254,120 +244,202 @@ export default function Index() {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Fees Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Pending Fees Table - Optimized for Mobile */}
         <Card className="glass-card overflow-hidden">
-          <CardHeader>
-            <CardTitle className="font-geist">Pending Fees</CardTitle>
-            <CardDescription className="font-geist">Students with outstanding payments</CardDescription>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="font-geist flex items-center gap-2 text-lg sm:text-xl">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+              Pending Fees
+            </CardTitle>
+            <CardDescription className="font-geist text-sm">Students with outstanding payments</CardDescription>
           </CardHeader>
-          <CardContent className="px-0 sm:px-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-geist">Name</TableHead>
-                    <TableHead className="hidden sm:table-cell font-geist">Class</TableHead>
-                    <TableHead className="text-right font-geist">Amount Due</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingFees.slice(0, 5).map((student: any) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium font-geist">{student.name}</TableCell>
-                      <TableCell className="hidden sm:table-cell font-geist">{student.class}</TableCell>
-                      <TableCell className="text-right font-geist">₹{student.outstandingAmount.toLocaleString()}</TableCell>
-                      <TableCell className="w-10 p-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => navigate(`/students/${student.id}`)}
-                          className="p-1.5 h-auto"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {pendingFees.length === 0 && (
+          <CardContent className="p-0">
+            {isMobile ? (
+              <div className="space-y-3 px-3 pb-3">
+                {pendingFees.slice(0, 5).map((student: any) => (
+                  <div key={student.id} className="bg-secondary/20 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium font-geist text-sm truncate">{student.name}</p>
+                        <p className="text-xs text-muted-foreground font-geist">{student.class}</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => navigate(`/students/${student.id}`)}
+                        className="p-1.5 h-auto ml-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground font-geist">Amount Due:</span>
+                      <span className="font-semibold text-sm font-geist text-orange-600">
+                        ₹{student.outstandingAmount?.toLocaleString() || (student.totalFees - student.paidFees).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {pendingFees.length === 0 && (
+                  <div className="text-center py-6 px-3">
+                    <p className="text-muted-foreground font-geist text-sm">No pending fees</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 font-geist">
-                        No pending fees
-                      </TableCell>
+                      <TableHead className="font-geist">Name</TableHead>
+                      <TableHead className="font-geist">Class</TableHead>
+                      <TableHead className="text-right font-geist">Amount Due</TableHead>
+                      <TableHead className="w-10"></TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingFees.slice(0, 5).map((student: any) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium font-geist">{student.name}</TableCell>
+                        <TableCell className="font-geist">{student.class}</TableCell>
+                        <TableCell className="text-right font-geist">₹{student.outstandingAmount?.toLocaleString() || (student.totalFees - student.paidFees).toLocaleString()}</TableCell>
+                        <TableCell className="w-10 p-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => navigate(`/students/${student.id}`)}
+                            className="p-1.5 h-auto"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {pendingFees.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 font-geist">
+                          No pending fees
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <div className="p-3 sm:p-6 pt-0">
+              <Button variant="ghost" className="w-full font-geist text-sm sm:text-base" onClick={() => navigate('/fees')}>
+                View All Fees <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" className="w-full mt-4 font-geist" onClick={() => navigate('/fees')}>
-              View All Fees <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
           </CardContent>
         </Card>
         
-        {/* Low Attendance Table */}
+        {/* Low Attendance Table - Optimized for Mobile */}
         <Card className="glass-card overflow-hidden">
-          <CardHeader>
-            <CardTitle className="font-geist">Low Attendance</CardTitle>
-            <CardDescription className="font-geist">Students with less than 75% attendance</CardDescription>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="font-geist flex items-center gap-2 text-lg sm:text-xl">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+              Low Attendance
+            </CardTitle>
+            <CardDescription className="font-geist text-sm">Students with less than 75% attendance</CardDescription>
           </CardHeader>
-          <CardContent className="px-0 sm:px-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-geist">Name</TableHead>
-                    <TableHead className="hidden sm:table-cell font-geist">Class</TableHead>
-                    <TableHead className="text-right font-geist">Attendance</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lowAttendance.map(student => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium font-geist">{student.name}</TableCell>
-                      <TableCell className="hidden sm:table-cell font-geist">{student.class}</TableCell>
-                      <TableCell className="text-right">
-                        <span className={
-                          student.attendancePercentage < 60 
-                            ? "text-apple-red font-medium font-geist" 
-                            : "text-apple-orange font-medium font-geist"
-                        }>
-                          {student.attendancePercentage}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="w-10 p-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => navigate(`/students/${student.id}`)}
-                          className="p-1.5 h-auto"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {lowAttendance.length === 0 && (
+          <CardContent className="p-0">
+            {isMobile ? (
+              <div className="space-y-3 px-3 pb-3">
+                {lowAttendance.map(student => (
+                  <div key={student.id} className="bg-secondary/20 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium font-geist text-sm truncate">{student.name}</p>
+                        <p className="text-xs text-muted-foreground font-geist">{student.class}</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => navigate(`/students/${student.id}`)}
+                        className="p-1.5 h-auto ml-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground font-geist">Attendance:</span>
+                      <span className={
+                        student.attendancePercentage < 60 
+                          ? "text-red-600 font-semibold text-sm font-geist" 
+                          : "text-orange-600 font-semibold text-sm font-geist"
+                      }>
+                        {student.attendancePercentage}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {lowAttendance.length === 0 && (
+                  <div className="text-center py-6 px-3">
+                    <p className="text-muted-foreground font-geist text-sm">All students have good attendance</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 font-geist">
-                        All students have good attendance
-                      </TableCell>
+                      <TableHead className="font-geist">Name</TableHead>
+                      <TableHead className="font-geist">Class</TableHead>
+                      <TableHead className="text-right font-geist">Attendance</TableHead>
+                      <TableHead className="w-10"></TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {lowAttendance.map(student => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium font-geist">{student.name}</TableCell>
+                        <TableCell className="font-geist">{student.class}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={
+                            student.attendancePercentage < 60 
+                              ? "text-red-600 font-medium font-geist" 
+                              : "text-orange-600 font-medium font-geist"
+                          }>
+                            {student.attendancePercentage}%
+                          </span>
+                        </TableCell>
+                        <TableCell className="w-10 p-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => navigate(`/students/${student.id}`)}
+                            className="p-1.5 h-auto"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {lowAttendance.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 font-geist">
+                          All students have good attendance
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <div className="p-3 sm:p-6 pt-0">
+              <Button variant="ghost" className="w-full font-geist text-sm sm:text-base" onClick={() => navigate('/attendance')}>
+                View Attendance <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" className="w-full mt-4 font-geist" onClick={() => navigate('/attendance')}>
-              View Attendance <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
           </CardContent>
         </Card>
       </div>
 
       {/* Additional functional components */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <RecentActivity />
         <UpcomingEvents />
       </div>

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Users, CreditCard, CalendarDays, BarChart2, Settings, LogOut, FileText, HelpCircle, MoreHorizontal } from "lucide-react";
+import { Home, Users, BadgeIndianRupee, CalendarDays, BarChart2, Settings, LogOut, FileText, BookOpenText, Search, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 const mainNavItems = [
   {
-    name: "Dashboard",
+    name: "Home",
     path: "/dashboard",
     icon: Home
   },
@@ -23,16 +23,16 @@ const mainNavItems = [
   {
     name: "Fees",
     path: "/fees",
-    icon: CreditCard
-  }
-];
-
-const moreNavItems = [
+    icon: BadgeIndianRupee
+  },
   {
     name: "Attendance",
     path: "/attendance",
     icon: CalendarDays
-  },
+  }
+];
+
+const moreNavItems = [
   {
     name: "Tests",
     path: "/tests",
@@ -41,17 +41,12 @@ const moreNavItems = [
   {
     name: "Questions",
     path: "/questions",
-    icon: HelpCircle
+    icon: BookOpenText
   },
   {
     name: "Reports",
     path: "/reports",
     icon: BarChart2
-  },
-  {
-    name: "More",
-    path: "/more",
-    icon: MoreHorizontal
   },
   {
     name: "Settings",
@@ -67,12 +62,19 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const [isMoreOpen, setIsMoreOpen] = useState(true);
 
+  const handleSpotlightSearch = () => {
+    // Dispatch custom event to trigger spotlight search
+    const event = new CustomEvent('openSpotlightSearch');
+    window.dispatchEvent(event);
+  };
+
   const renderNavItem = (item: typeof mainNavItems[0]) => {
     const isActive = currentPath === item.path || 
       (item.path === "/students" && currentPath.startsWith("/students")) ||
       (item.path === "/questions" && currentPath.startsWith("/questions")) ||
       (item.path === "/tests" && currentPath.startsWith("/tests")) ||
-      (item.path === "/settings" && currentPath.startsWith("/settings"));
+      (item.path === "/settings" && currentPath.startsWith("/settings")) ||
+      (item.path === "/attendance" && currentPath.startsWith("/attendance"));
 
     return (
       <SidebarMenuItem key={item.name}>
@@ -152,6 +154,24 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map(renderNavItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-geist">Search</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleSpotlightSearch}
+                  className="flex items-center gap-3 font-medium transition-all duration-300 ease-in-out font-geist text-base hover:bg-primary/10"
+                >
+                  <Search className="h-5 w-5" />
+                  <span className="text-left font-geist text-base">Spotlight Search</span>
+                  <kbd className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

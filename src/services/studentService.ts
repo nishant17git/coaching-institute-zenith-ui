@@ -105,7 +105,7 @@ export const studentService = {
       .from("fee_transactions")
       .select("*")
       .eq("student_id", studentId)
-      .order("date", { ascending: false });
+      .order("payment_date", { ascending: false });
       
     if (error) {
       console.error(`Error fetching fees for student ${studentId}:`, error);
@@ -116,7 +116,7 @@ export const studentService = {
       id: fee.id,
       studentId: fee.student_id,
       amount: fee.amount,
-      date: fee.date,
+      date: fee.payment_date,
       paymentMode: fee.payment_mode,
       receiptNumber: fee.receipt_number,
       purpose: fee.purpose
@@ -128,10 +128,11 @@ export const studentService = {
     const dbTransaction = {
       student_id: transaction.studentId,
       amount: transaction.amount,
-      date: transaction.date,
+      payment_date: transaction.date,
       payment_mode: transaction.paymentMode,
       receipt_number: transaction.receiptNumber,
-      purpose: transaction.purpose
+      purpose: transaction.purpose,
+      academic_year: new Date().getFullYear().toString() // Add required field
     };
     
     const { data, error } = await supabaseClient
@@ -152,7 +153,7 @@ export const studentService = {
       id: data.id,
       studentId: data.student_id,
       amount: data.amount,
-      date: data.date,
+      date: data.payment_date,
       paymentMode: data.payment_mode,
       receiptNumber: data.receipt_number,
       purpose: data.purpose
@@ -266,27 +267,28 @@ export const studentService = {
   
   // Map Supabase StudentRecord to frontend Student type
   mapToStudentModel(record: StudentRecord): Student {
-    // Split guardian_name into father and mother
-    const guardianParts = record.guardian_name.split(' ');
+    // Split guardian_name into father and mother - handle null values safely
+    const guardianName = record.guardian_name || "";
+    const guardianParts = guardianName ? guardianName.split(' ') : [];
     const father = guardianParts.length > 0 ? guardianParts[0] : "";
     const mother = guardianParts.length > 1 ? guardianParts.slice(1).join(' ') : "";
     
     return {
       id: record.id,
-      name: record.full_name,
+      name: record.full_name || "",
       class: `Class ${record.class}`,
-      father: father, // Add required father field
-      mother: mother, // Add required mother field
-      fatherName: father,
-      motherName: mother,
-      phoneNumber: record.contact_number,
-      whatsappNumber: record.whatsapp_number || record.contact_number,
+      father: record.father_name || father, // Use father_name field first
+      mother: record.mother_name || mother, // Use mother_name field first
+      fatherName: record.father_name || father,
+      motherName: record.mother_name || mother,
+      phoneNumber: record.contact_number || "",
+      whatsappNumber: record.whatsapp_number || record.contact_number || "",
       address: record.address || "",
       feeStatus: record.fee_status as "Paid" | "Pending" | "Partial",
-      totalFees: record.total_fees,
-      paidFees: record.paid_fees,
-      attendancePercentage: record.attendance_percentage,
-      joinDate: new Date(record.join_date || record.created_at).toISOString().split('T')[0],
+      totalFees: record.total_fees || 0,
+      paidFees: record.paid_fees || 0,
+      attendancePercentage: record.attendance_percentage || 0,
+      joinDate: new Date(record.admission_date || record.created_at || new Date()).toISOString().split('T')[0], // Use admission_date
       gender: record.gender as "Male" | "Female" | "Other" || undefined,
       aadhaarNumber: record.aadhaar_number ? String(record.aadhaar_number) : undefined,
       dateOfBirth: record.date_of_birth ? new Date(record.date_of_birth).toISOString().split('T')[0] : undefined,
@@ -301,17 +303,22 @@ export const studentService = {
       class: parseInt(student.class.replace("Class ", "")),
       roll_number: student.rollNumber || 0,
       date_of_birth: student.dateOfBirth || new Date().toISOString().split('T')[0],
+      father_name: student.fatherName,
+      mother_name: student.motherName,
       guardian_name: `${student.fatherName} ${student.motherName}`.trim(),
       contact_number: student.phoneNumber,
       whatsapp_number: student.whatsappNumber || student.phoneNumber,
+      email: null,
       address: student.address || "Address not provided",
       fee_status: student.feeStatus,
       total_fees: student.totalFees,
       paid_fees: student.paidFees,
       attendance_percentage: student.attendancePercentage,
-      join_date: student.joinDate,
+      admission_date: student.joinDate, // Map to admission_date
       gender: student.gender,
-      aadhaar_number: student.aadhaarNumber
+      aadhaar_number: student.aadhaarNumber,
+      blood_group: null,
+      status: "Active"
     };
   }
 };

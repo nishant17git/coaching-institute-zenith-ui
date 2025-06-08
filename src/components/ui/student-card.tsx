@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Student, StudentPhone } from "@/types";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Phone, User, MessageCircle, Mail, ChevronDown, ChevronUp, Heart, Calendar, 
-  Bookmark, Share2, Check, Copy } from "lucide-react";
+  Bookmark, Share2, Check, Copy, Edit, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,9 +23,11 @@ interface StudentCardProps {
   index: number;
   onCallClick: (name: string, phone: string) => void;
   isFavorite: boolean;
+  onEdit?: (student: any) => void;
+  onDelete?: (studentId: string) => Promise<void>;
 }
 
-const StudentCard = ({ student, index, onCallClick, isFavorite: initialIsFavorite }: StudentCardProps) => {
+const StudentCard = ({ student, index, onCallClick, isFavorite: initialIsFavorite, onEdit, onDelete }: StudentCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
@@ -61,8 +62,6 @@ const StudentCard = ({ student, index, onCallClick, isFavorite: initialIsFavorit
       description: "Email functionality will be available in the next update."
     });
   };
-
-  // Remove the handleCardClick function that was navigating to the student detail page
 
   const handleContactDetailsClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
@@ -141,15 +140,53 @@ END:VCARD`;
       .substring(0, 2);
   };
 
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(student);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      await onDelete(student.id);
+    }
+  };
+
   return (
     <div ref={cardRef}>
       <Card 
         className="overflow-hidden border-slate-100 rounded-xl card-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
       >
         <CardHeader className="pb-3 relative">
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex gap-1">
+            {onEdit && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit();
+                }}
+              >
+                <Edit className="h-4 w-4 text-slate-600" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            )}
             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
-              Class {student.class}
+              {student.class}
             </Badge>
           </div>
           

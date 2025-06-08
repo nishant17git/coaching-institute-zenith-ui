@@ -1,6 +1,6 @@
 
 import React from "react";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { Edit, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,20 @@ interface FeeTransactionCardProps {
   onEdit: (transaction: any) => void;
   className?: string;
 }
+
+// Helper function to safely format dates
+const safeFormatDate = (dateValue: string | null | undefined, formatString: string = 'dd MMM yyyy'): string => {
+  if (!dateValue) return 'Invalid Date';
+  
+  try {
+    const date = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+    if (!isValid(date)) return 'Invalid Date';
+    return format(date, formatString);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'Invalid Date';
+  }
+};
 
 export function FeeTransactionCard({ transaction, student, onEdit, className }: FeeTransactionCardProps) {
   // Determine the gradient and icon color based on payment mode
@@ -45,7 +59,7 @@ export function FeeTransactionCard({ transaction, student, onEdit, className }: 
         id: transaction.id,
         studentId: transaction.student_id,
         amount: transaction.amount,
-        date: transaction.date,
+        date: transaction.payment_date,
         paymentMode: paymentMode,
         receiptNumber: transaction.receipt_number || 'N/A',
         purpose: transaction.purpose || 'School Fees'
@@ -126,7 +140,7 @@ export function FeeTransactionCard({ transaction, student, onEdit, className }: 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1 rounded-lg p-2.5 bg-secondary/20">
               <p className="text-xs text-muted-foreground font-medium">Date</p>
-              <p className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</p>
+              <p className="font-medium">{safeFormatDate(transaction.payment_date)}</p>
             </div>
             
             <div className="space-y-1 rounded-lg p-2.5 bg-secondary/20">

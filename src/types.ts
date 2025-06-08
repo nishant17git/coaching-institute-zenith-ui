@@ -51,29 +51,34 @@ export interface Class {
   totalStudents: number;
 }
 
-// Updated to be consistent with Supabase schema
+// Updated to match the actual Supabase schema
 export interface StudentRecord {
   id: string;
   full_name: string;
-  class: number; // Changed to number for consistency
+  class: number;
   roll_number: number;
   date_of_birth: string;
-  address: string;
-  guardian_name: string;
+  address: string | null;
+  father_name: string;
+  mother_name: string | null;
+  guardian_name: string | null;
   contact_number: string;
-  whatsapp_number?: string;
-  fee_status: "Paid" | "Pending" | "Partial";
-  total_fees: number;
-  paid_fees: number;
-  attendance_percentage: number;
-  join_date: string;
-  created_at: string;
-  updated_at: string;
-  gender?: string;
-  aadhaar_number?: string | number; // Updated to accept both string and number types
+  whatsapp_number: string | null;
+  email: string | null;
+  fee_status: string | null;
+  total_fees: number | null;
+  paid_fees: number | null;
+  attendance_percentage: number | null;
+  admission_date: string | null; // Changed from join_date to admission_date
+  created_at: string | null;
+  updated_at: string | null;
+  gender: string | null;
+  aadhaar_number: string | null;
+  blood_group: string | null;
+  status: string | null;
 }
 
-// New interfaces for test data
+// New interfaces for test data - using actual Supabase schema
 export interface TestRecord {
   id: string;
   studentId: string;
@@ -94,16 +99,36 @@ export interface TestRecord {
   };
 }
 
-// New interface for Test API endpoints
+// Interface matching the actual test_results table in Supabase
 export interface TestRecordDb {
   id: string;
   student_id: string;
-  subject: string;
-  test_date: string;
-  test_name: string;
-  marks: number;
+  test_id: string;
+  marks_obtained: number;
   total_marks: number;
-  test_type?: "MCQs Test (Standard)" | "MCQs Test (Normal)" | "Chapter-wise Test";
+  percentage: number | null;
+  grade: string | null;
+  rank: number | null;
+  absent: boolean | null;
+  remarks: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+// Interface for the tests table
+export interface TestDb {
+  id: string;
+  test_name: string;
+  subject: string;
+  class: number;
+  test_date: string;
+  total_marks: number;
+  test_type: string | null;
+  duration_minutes: number | null;
+  instructions: string | null;
+  syllabus_covered: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 // New interface for subject statistics
