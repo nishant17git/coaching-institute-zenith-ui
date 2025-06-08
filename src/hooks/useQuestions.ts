@@ -47,7 +47,7 @@ export interface Question {
   difficulty: "Easy" | "Medium" | "Hard";
   type: "MCQ" | "Short Answer" | "Long Answer" | "Numerical";
   marks: number;
-  estimated_time: string;
+  estimatedTime: string;
   source: string;
   is_favorite: boolean;
 }
@@ -171,10 +171,16 @@ export function useQuestions(topicId: string) {
       if (error) throw error;
       
       return questions.map((question) => ({
-        ...question,
+        id: question.id,
+        topic_id: question.topic_id,
+        question: question.question,
+        options: question.options,
+        answer: question.answer,
+        explanation: question.explanation,
         difficulty: (question.difficulty || "Medium") as "Easy" | "Medium" | "Hard",
         type: (question.type || "MCQ") as "MCQ" | "Short Answer" | "Long Answer" | "Numerical",
-        estimated_time: question.estimated_time || "5 min",
+        marks: question.marks,
+        estimatedTime: question.estimated_time || "5 min",
         source: question.source || "Unknown",
         is_favorite: question.is_favorite || false
       }));
