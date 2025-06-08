@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy, BarChart3, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
@@ -24,6 +24,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StudentRecord, TestRecordDb } from "@/types";
 import { GradeDistributionChart } from "@/components/charts/GradeDistributionChart";
 import { SubjectPerformanceChart } from "@/components/charts/SubjectPerformanceChart";
+import { TestDetailsView } from "@/components/tests/TestDetailsView";
+import { PerformanceInsights } from "@/components/tests/PerformanceInsights";
 
 // Helper function to safely format dates
 const formatSafeDate = (dateValue: string | null | undefined, formatString: string = 'dd MMM yyyy'): string => {
@@ -410,13 +412,13 @@ export default function TestRecord() {
       className="space-y-6"
     >
       <PageHeader 
-        title="Test Records" 
+        title="Test Management" 
         showBackButton={true} 
         onBack={() => navigate(-1)}
         action={
           <Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-black hover:bg-black/80 text-white">
+              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
                 <Plus className="h-4 w-4" /> Add Test
               </Button>
             </DialogTrigger>
@@ -526,7 +528,7 @@ export default function TestRecord() {
         </DialogContent>
       </Dialog>
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <StatCard
           title="Total Tests"
           value={totalTests}
@@ -547,15 +549,24 @@ export default function TestRecord() {
           description="Different subjects tested"
           icon={<LibraryBig className="h-5 w-5" />}
         />
+
+        <StatCard
+          title="Pass Rate"
+          value={`${Math.round((testRecords.filter(test => (test.percentage || 0) >= 40).length / Math.max(testRecords.length, 1)) * 100)}%`}
+          description="Students scoring 40% or above"
+          icon={<BarChart3 className="h-5 w-5" />}
+        />
       </div>
       
-      <Tabs defaultValue="tests" className="space-y-4">
-        <TabsList className="grid w-full sm:w-[400px] grid-cols-2 rounded-lg bg-muted/80 backdrop-blur-sm">
-          <TabsTrigger value="tests" className="font-medium">Test Records</TabsTrigger>
-          <TabsTrigger value="analytics" className="font-medium">Performance Analytics</TabsTrigger>
+      <Tabs defaultValue="records" className="space-y-6">
+        <TabsList className="grid w-full sm:w-[600px] grid-cols-4 rounded-xl bg-muted/80 backdrop-blur-sm p-1">
+          <TabsTrigger value="records" className="font-medium rounded-lg">Test Records</TabsTrigger>
+          <TabsTrigger value="details" className="font-medium rounded-lg">Test Details</TabsTrigger>
+          <TabsTrigger value="performance" className="font-medium rounded-lg">Performance</TabsTrigger>
+          <TabsTrigger value="analytics" className="font-medium rounded-lg">Analytics</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="tests" className="space-y-4 animate-fade-in">
+        <TabsContent value="records" className="space-y-4 animate-fade-in">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -591,6 +602,21 @@ export default function TestRecord() {
             onViewHistory={handleViewHistory}
             onEditTest={handleEditTest}
             onDeleteTest={handleDeleteTest}
+          />
+        </TabsContent>
+
+        <TabsContent value="details" className="animate-fade-in">
+          <TestDetailsView 
+            testRecords={testRecords}
+            students={students}
+            onExportPDF={handleExportPDF}
+          />
+        </TabsContent>
+
+        <TabsContent value="performance" className="animate-fade-in">
+          <PerformanceInsights 
+            testRecords={testRecords}
+            students={students}
           />
         </TabsContent>
         
