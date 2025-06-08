@@ -117,6 +117,7 @@ export function useChapters(subjectId: string) {
 
       return chapters.map((chapter) => ({
         ...chapter,
+        difficulty: (chapter.difficulty || "Medium") as "Easy" | "Medium" | "Hard",
         topics: chapter.topics?.length || 0,
         questions: chapter.topics?.reduce(
           (total, topic) => total + (topic.questions?.length || 0), 0
@@ -148,6 +149,8 @@ export function useTopics(chapterId: string) {
 
       return topics.map((topic) => ({
         ...topic,
+        difficulty: (topic.difficulty || "Medium") as "Easy" | "Medium" | "Hard",
+        type: (topic.type || "Conceptual") as "Conceptual" | "Application" | "Problem Solving" | "Computational" | "Proof-based",
         questions: topic.questions?.length || 0,
         last_used: new Date(topic.last_used).toLocaleDateString()
       }));
@@ -166,7 +169,15 @@ export function useQuestions(topicId: string) {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return questions;
+      
+      return questions.map((question) => ({
+        ...question,
+        difficulty: (question.difficulty || "Medium") as "Easy" | "Medium" | "Hard",
+        type: (question.type || "MCQ") as "MCQ" | "Short Answer" | "Long Answer" | "Numerical",
+        estimated_time: question.estimated_time || "5 min",
+        source: question.source || "Unknown",
+        is_favorite: question.is_favorite || false
+      }));
     },
   });
 }
