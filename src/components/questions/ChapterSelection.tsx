@@ -2,62 +2,24 @@
 import React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Book, FileText, Clock, CheckCircle } from "lucide-react";
+import { Book, FileText, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useChapters, useSubjects } from "@/hooks/useQuestions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ChapterSelection() {
   const { subjectId } = useParams();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get("class");
   const navigate = useNavigate();
-
-  const getSubjectName = (id: string) => {
-    const subjects = {
-      mathematics: "Mathematics",
-      science: "Science", 
-      english: "English",
-      "social-science": "Social Science",
-      hindi: "Hindi"
-    };
-    return subjects[id as keyof typeof subjects] || id;
-  };
-
-  const getChapters = (subject: string, classNum: string) => {
-    const mathChapters = [
-      { id: "algebra", name: "Algebra", topics: 15, questions: 240, difficulty: "Medium", estimatedTime: "45 min", progress: 85 },
-      { id: "geometry", name: "Geometry", topics: 12, questions: 180, difficulty: "Hard", estimatedTime: "60 min", progress: 92 },
-      { id: "trigonometry", name: "Trigonometry", topics: 10, questions: 150, difficulty: "Hard", estimatedTime: "50 min", progress: 78 },
-      { id: "statistics", name: "Statistics", topics: 8, questions: 120, difficulty: "Easy", estimatedTime: "30 min", progress: 100 },
-      { id: "probability", name: "Probability", topics: 6, questions: 90, difficulty: "Medium", estimatedTime: "35 min", progress: 65 }
-    ];
-
-    const scienceChapters = [
-      { id: "physics", name: "Physics - Motion", topics: 18, questions: 280, difficulty: "Hard", estimatedTime: "55 min", progress: 88 },
-      { id: "chemistry", name: "Chemistry - Atoms", topics: 14, questions: 210, difficulty: "Medium", estimatedTime: "40 min", progress: 95 },
-      { id: "biology", name: "Biology - Life Processes", topics: 16, questions: 240, difficulty: "Medium", estimatedTime: "45 min", progress: 72 },
-      { id: "light", name: "Light - Reflection", topics: 12, questions: 180, difficulty: "Easy", estimatedTime: "35 min", progress: 100 },
-      { id: "heredity", name: "Heredity & Evolution", topics: 10, questions: 150, difficulty: "Hard", estimatedTime: "50 min", progress: 58 }
-    ];
-
-    const englishChapters = [
-      { id: "grammar", name: "Grammar Fundamentals", topics: 20, questions: 300, difficulty: "Easy", estimatedTime: "40 min", progress: 90 },
-      { id: "literature", name: "Literature Analysis", topics: 15, questions: 225, difficulty: "Medium", estimatedTime: "60 min", progress: 75 },
-      { id: "writing", name: "Creative Writing", topics: 12, questions: 180, difficulty: "Medium", estimatedTime: "45 min", progress: 82 },
-      { id: "comprehension", name: "Reading Comprehension", topics: 18, questions: 270, difficulty: "Easy", estimatedTime: "35 min", progress: 95 }
-    ];
-
-    if (subject === "mathematics") return mathChapters;
-    if (subject === "science") return scienceChapters;
-    if (subject === "english") return englishChapters;
-    
-    return [
-      { id: "chapter1", name: "Chapter 1", topics: 10, questions: 150, difficulty: "Medium", estimatedTime: "40 min", progress: 80 },
-      { id: "chapter2", name: "Chapter 2", topics: 12, questions: 180, difficulty: "Easy", estimatedTime: "35 min", progress: 65 }
-    ];
-  };
+  
+  const { data: chapters, isLoading, error } = useChapters(subjectId || "");
+  const { data: subjects } = useSubjects(classId || "");
+  
+  const subjectName = subjects?.find(s => s.id === subjectId)?.name || "Subject";
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -68,8 +30,35 @@ export function ChapterSelection() {
     }
   };
 
-  const chapters = getChapters(subjectId || "", classId || "");
-  const subjectName = getSubjectName(subjectId || "");
+  if (isLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="text-lg sm:text-xl font-semibold">
+              {subjectName} - Class {classId}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Select a chapter to explore topics and questions
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Error loading chapters: {error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -83,12 +72,12 @@ export function ChapterSelection() {
           </p>
         </div>
         <Badge variant="secondary" className="self-start sm:self-center">
-          {chapters.reduce((acc, chapter) => acc + chapter.questions, 0)} total questions
+          {chapters?.reduce((acc, chapter) => acc + chapter.questions, 0)} total questions
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {chapters.map((chapter, index) => (
+        {chapters?.map((chapter, index) => (
           <motion.div
             key={chapter.id}
             initial={{ opacity: 0, y: 20 }}
@@ -113,7 +102,7 @@ export function ChapterSelection() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    <span>{chapter.estimatedTime}</span>
+                    <span>{chapter.estimated_time}</span>
                   </div>
                 </div>
               </CardHeader>

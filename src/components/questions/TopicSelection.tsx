@@ -2,11 +2,13 @@
 import React, { useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Target, BookOpen, Users, BarChart3, Filter } from "lucide-react";
+import { Target, BookOpen, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTopics, useChapters } from "@/hooks/useQuestions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function TopicSelection() {
   const { chapterId } = useParams();
@@ -15,46 +17,11 @@ export function TopicSelection() {
   const subjectId = searchParams.get("subject");
   const navigate = useNavigate();
   const [filterType, setFilterType] = useState("all");
-
-  const getChapterName = (id: string) => {
-    const chapters = {
-      algebra: "Algebra",
-      geometry: "Geometry",
-      trigonometry: "Trigonometry",
-      statistics: "Statistics",
-      probability: "Probability",
-      physics: "Physics - Motion",
-      chemistry: "Chemistry - Atoms",
-      biology: "Biology - Life Processes"
-    };
-    return chapters[id as keyof typeof chapters] || id;
-  };
-
-  const getTopics = (chapterId: string) => {
-    const algebraTopics = [
-      { id: "linear-equations", name: "Linear Equations", questions: 45, difficulty: "Easy", type: "Conceptual", lastUsed: "2 days ago" },
-      { id: "quadratic-equations", name: "Quadratic Equations", questions: 38, difficulty: "Medium", type: "Problem Solving", lastUsed: "1 week ago" },
-      { id: "polynomials", name: "Polynomials", questions: 42, difficulty: "Medium", type: "Application", lastUsed: "3 days ago" },
-      { id: "factorization", name: "Factorization", questions: 35, difficulty: "Easy", type: "Conceptual", lastUsed: "Today" },
-      { id: "algebraic-expressions", name: "Algebraic Expressions", questions: 40, difficulty: "Easy", type: "Computational", lastUsed: "5 days ago" }
-    ];
-
-    const geometryTopics = [
-      { id: "triangles", name: "Properties of Triangles", questions: 50, difficulty: "Medium", type: "Proof-based", lastUsed: "1 day ago" },
-      { id: "circles", name: "Circle Theorems", questions: 45, difficulty: "Hard", type: "Application", lastUsed: "4 days ago" },
-      { id: "coordinate-geometry", name: "Coordinate Geometry", questions: 40, difficulty: "Medium", type: "Problem Solving", lastUsed: "2 days ago" },
-      { id: "area-perimeter", name: "Area and Perimeter", questions: 35, difficulty: "Easy", type: "Computational", lastUsed: "6 days ago" }
-    ];
-
-    if (chapterId === "algebra") return algebraTopics;
-    if (chapterId === "geometry") return geometryTopics;
-    
-    return [
-      { id: "topic1", name: "Topic 1", questions: 30, difficulty: "Medium", type: "Conceptual", lastUsed: "3 days ago" },
-      { id: "topic2", name: "Topic 2", questions: 25, difficulty: "Easy", type: "Application", lastUsed: "1 week ago" },
-      { id: "topic3", name: "Topic 3", questions: 35, difficulty: "Hard", type: "Problem Solving", lastUsed: "2 days ago" }
-    ];
-  };
+  
+  const { data: topics, isLoading, error } = useTopics(chapterId || "");
+  const { data: chapters } = useChapters(subjectId || "");
+  
+  const chapterName = chapters?.find(c => c.id === chapterId)?.name || "Chapter";
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -76,12 +43,41 @@ export function TopicSelection() {
     }
   };
 
-  const topics = getTopics(chapterId || "");
-  const chapterName = getChapterName(chapterId || "");
-
   const filteredTopics = filterType === "all" 
     ? topics 
-    : topics.filter(topic => topic.type.toLowerCase().replace(" ", "-") === filterType);
+    : topics?.filter(topic => topic.type.toLowerCase().replace(" ", "-") === filterType);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg sm:text-xl font-semibold">
+                {chapterName} Topics - Class {classId}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Choose a topic to access the comprehensive question bank
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Error loading topics: {error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -96,7 +92,7 @@ export function TopicSelection() {
             </p>
           </div>
           <Badge variant="secondary" className="self-start sm:self-center">
-            {filteredTopics.reduce((acc, topic) => acc + topic.questions, 0)} questions
+            {filteredTopics?.reduce((acc, topic) => acc + topic.questions, 0)} questions
           </Badge>
         </div>
         
@@ -118,7 +114,7 @@ export function TopicSelection() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredTopics.map((topic, index) => (
+        {filteredTopics?.map((topic, index) => (
           <motion.div
             key={topic.id}
             initial={{ opacity: 0, y: 20 }}
@@ -154,7 +150,7 @@ export function TopicSelection() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <BarChart3 className="h-4 w-4" />
-                    <span>Last used: {topic.lastUsed}</span>
+                    <span>Last used: {topic.last_used}</span>
                   </div>
                 </div>
                 <Button 
@@ -169,7 +165,7 @@ export function TopicSelection() {
         ))}
       </div>
 
-      {filteredTopics.length === 0 && (
+      {filteredTopics && filteredTopics.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground mb-4">No topics found for the selected filter.</p>

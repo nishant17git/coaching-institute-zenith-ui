@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Filter, Download, BookOpen, Clock, BarChart3, Eye, Copy, Star, ChevronDown, ChevronUp, FileText, Printer } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Copy, Star, Clock, BookOpen, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,86 +12,28 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { LaTeXRenderer } from "./LaTeXRenderer";
 import { exportQuestionsToPDF } from "@/services/questionsPdfService";
-interface Question {
-  id: string;
-  question: string;
-  options?: string[];
-  answer: string;
-  explanation: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  type: "MCQ" | "Short Answer" | "Long Answer" | "Numerical";
-  marks: number;
-  estimatedTime: string;
-  source: string;
-  isFavorite?: boolean;
-}
+import { useQuestions, useTopics, useUpdateQuestionFavorite, Question } from "@/hooks/useQuestions";
+import { Skeleton } from "@/components/ui/skeleton";
+
 export function QuestionBank() {
-  const {
-    topicId
-  } = useParams();
+  const { topicId } = useParams();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get("class");
   const subjectId = searchParams.get("subject");
   const chapterId = searchParams.get("chapter");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
-  const [favoriteQuestions, setFavoriteQuestions] = useState<Set<string>>(new Set(["q1"]));
-  const getTopicName = (id: string) => {
-    const topics = {
-      "linear-equations": "Linear Equations",
-      "quadratic-equations": "Quadratic Equations",
-      "polynomials": "Polynomials",
-      "triangles": "Properties of Triangles",
-      "circles": "Circle Theorems",
-      "topic3": "Advanced Topics"
-    };
-    return topics[id as keyof typeof topics] || id;
-  };
-  const sampleQuestions: Question[] = [{
-    id: "q1",
-    question: "Solve for x: $2x + 5 = 13$",
-    options: ["$x = 4$", "$x = 3$", "$x = 5$", "$x = 6$"],
-    answer: "$x = 4$",
-    explanation: "Subtract 5 from both sides: $2x = 8$, then divide by 2: $x = 4$",
-    difficulty: "Easy",
-    type: "MCQ",
-    marks: 2,
-    estimatedTime: "2 min",
-    source: "NCERT Exercise 2.1",
-    isFavorite: true
-  }, {
-    id: "q2",
-    question: "Find the roots of the quadratic equation $x² - 5x + 6 = 0$",
-    answer: "$x = 2, x = 3$",
-    explanation: "Using factorization: $(x-2)(x-3) = 0$, so $x = 2$ or $x = 3$",
-    difficulty: "Medium",
-    type: "Short Answer",
-    marks: 3,
-    estimatedTime: "4 min",
-    source: "Previous Year Board"
-  }, {
-    id: "q3",
-    question: "Prove that the sum of the angles in a triangle is $180°$",
-    answer: "Complete proof required using parallel line properties",
-    explanation: "Draw a line parallel to one side through the opposite vertex and use properties of parallel lines to show that alternate interior angles and co-interior angles sum to $180°$",
-    difficulty: "Hard",
-    type: "Long Answer",
-    marks: 5,
-    estimatedTime: "8 min",
-    source: "NCERT Exemplar"
-  }, {
-    id: "q4",
-    question: "Calculate the area of a circle with radius 7 cm (use $\\pi = \\frac{22}{7}$)",
-    answer: "$154 \\text{ cm}^2$",
-    explanation: "Area = $\\pi r^2 = \\frac{22}{7} \\times 7^2 = \\frac{22}{7} \\times 49 = 154 \\text{ cm}^2$",
-    difficulty: "Easy",
-    type: "Numerical",
-    marks: 2,
-    estimatedTime: "3 min",
-    source: "NCERT Exercise 13.2"
-  }];
+  const [favoriteQuestions, setFavoriteQuestions] = useState<Set<string>>(new Set());
+  
+  const { data: questions, isLoading, error } = useQuestions(topicId || "");
+  const { data: topics } = useTopics(chapterId || "");
+  const updateQuestionFavorite = useUpdateQuestionFavorite();
+  
+  const topicName = topics?.find(t => t.id === topicId)?.name || "Topic";
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
@@ -103,6 +46,7 @@ export function QuestionBank() {
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case "MCQ":
@@ -117,12 +61,14 @@ export function QuestionBank() {
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
-  const filteredQuestions = sampleQuestions.filter(question => {
+
+  const filteredQuestions = questions?.filter(question => {
     const matchesSearch = question.question.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDifficulty = selectedDifficulty === "all" || question.difficulty.toLowerCase() === selectedDifficulty;
     const matchesType = selectedType === "all" || question.type.toLowerCase().replace(" ", "-") === selectedType;
     return matchesSearch && matchesDifficulty && matchesType;
-  });
+  }) || [];
+
   const toggleExpanded = (questionId: string) => {
     const newExpanded = new Set(expandedQuestions);
     if (newExpanded.has(questionId)) {
@@ -132,30 +78,36 @@ export function QuestionBank() {
     }
     setExpandedQuestions(newExpanded);
   };
-  const toggleFavorite = (questionId: string) => {
+
+  const toggleFavorite = async (question: Question) => {
     const newFavorites = new Set(favoriteQuestions);
-    if (newFavorites.has(questionId)) {
-      newFavorites.delete(questionId);
-      toast.success("Question removed from favorites");
-    } else {
-      newFavorites.add(questionId);
-      toast.success("Question added to favorites");
+    const isFavorite = !question.is_favorite;
+    
+    try {
+      await updateQuestionFavorite(question.id, isFavorite);
+      
+      if (isFavorite) {
+        newFavorites.add(question.id);
+        toast.success("Question added to favorites");
+      } else {
+        newFavorites.delete(question.id);
+        toast.success("Question removed from favorites");
+      }
+      setFavoriteQuestions(newFavorites);
+    } catch (error) {
+      toast.error("Failed to update favorite status");
     }
-    setFavoriteQuestions(newFavorites);
   };
+
   const handleExport = () => {
-    const exportData = {
-      topic: getTopicName(topicId || ""),
-      class: classId,
-      subject: subjectId,
-      chapter: chapterId,
-      questions: filteredQuestions,
-      exportDate: new Date().toISOString(),
-      totalQuestions: filteredQuestions.length
-    };
+    if (!filteredQuestions.length) {
+      toast.error("No questions to export");
+      return;
+    }
+
     exportQuestionsToPDF({
       questions: filteredQuestions,
-      topicName: getTopicName(topicId || ""),
+      topicName: topicName,
       className: `Class ${classId}`,
       subjectName: subjectId || "Unknown Subject",
       chapterName: chapterId || "Unknown Chapter",
@@ -164,13 +116,39 @@ export function QuestionBank() {
     });
     toast.success(`Exported ${filteredQuestions.length} questions to PDF successfully!`);
   };
+
   const handleCopyQuestion = (question: Question) => {
     const questionText = `Question: ${question.question}\nAnswer: ${question.answer}\nExplanation: ${question.explanation}`;
     navigator.clipboard.writeText(questionText);
     toast.success("Question copied to clipboard!");
   };
-  const topicName = getTopicName(topicId || "");
-  return <div className="space-y-4 sm:space-y-6">
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Error loading questions: {error.message}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -187,8 +165,9 @@ export function QuestionBank() {
               {filteredQuestions.length} questions
             </Badge>
             <div className="flex gap-2">
-              
-              
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                Export PDF
+              </Button>
             </div>
           </div>
         </div>
@@ -199,7 +178,12 @@ export function QuestionBank() {
             <div className="flex flex-col gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search questions..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
+                <Input
+                  placeholder="Search questions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
@@ -237,29 +221,86 @@ export function QuestionBank() {
 
       {/* Questions List */}
       <div className="space-y-4">
-        {filteredQuestions.map((question, index) => <motion.div key={question.id} initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: index * 0.1
-      }}>
+        {filteredQuestions.map((question, index) => (
+          <motion.div
+            key={question.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
             <Card className="hover:shadow-md transition-all duration-200">
-              
-              {expandedQuestions.has(question.id) && <CardContent className="pt-0">
-                  {question.options && <div className="mb-4">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <Badge className={getDifficultyColor(question.difficulty)} variant="secondary">
+                        {question.difficulty}
+                      </Badge>
+                      <Badge className={getTypeColor(question.type)} variant="outline">
+                        {question.type}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {question.marks} marks
+                      </Badge>
+                    </div>
+                    <div className="text-sm sm:text-base">
+                      <LaTeXRenderer content={question.question} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(question)}
+                      className="text-muted-foreground hover:text-yellow-600"
+                    >
+                      <Star
+                        className={`h-4 w-4 ${
+                          question.is_favorite ? "fill-yellow-400 text-yellow-400" : ""
+                        }`}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyQuestion(question)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleExpanded(question.id)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      {expandedQuestions.has(question.id) ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+
+              {expandedQuestions.has(question.id) && (
+                <CardContent className="pt-0">
+                  {question.options && (
+                    <div className="mb-4">
                       <p className="text-sm font-medium mb-2">Options:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {question.options.map((option, i) => <div key={i} className="text-sm p-2 bg-muted/50 rounded">
+                        {question.options.map((option, i) => (
+                          <div key={i} className="text-sm p-2 bg-muted/50 rounded">
                             {String.fromCharCode(65 + i)}. <LaTeXRenderer content={option} inline />
-                          </div>)}
+                          </div>
+                        ))}
                       </div>
-                    </div>}
-                  
+                    </div>
+                  )}
+
                   <Separator className="my-4" />
-                  
+
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm font-medium text-green-700 mb-1">Answer:</p>
@@ -267,44 +308,56 @@ export function QuestionBank() {
                         <LaTeXRenderer content={question.answer} />
                       </div>
                     </div>
-                    
-                    <div>
-                      <p className="text-sm font-medium text-blue-700 mb-1">Explanation:</p>
-                      <div className="text-sm bg-blue-50 p-3 rounded">
-                        <LaTeXRenderer content={question.explanation} />
+
+                    {question.explanation && (
+                      <div>
+                        <p className="text-sm font-medium text-blue-700 mb-1">Explanation:</p>
+                        <div className="text-sm bg-blue-50 p-3 rounded">
+                          <LaTeXRenderer content={question.explanation} />
+                        </div>
                       </div>
-                    </div>
-                    
+                    )}
+
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground gap-2">
                       <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          <span>{question.estimatedTime}</span>
+                          <span>{question.estimated_time}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{question.source}</span>
-                        </div>
+                        {question.source && (
+                          <div className="flex items-center gap-1">
+                            <BookOpen className="h-4 w-4" />
+                            <span>{question.source}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </CardContent>}
+                </CardContent>
+              )}
             </Card>
-          </motion.div>)}
+          </motion.div>
+        ))}
       </div>
 
-      {filteredQuestions.length === 0 && <Card>
+      {filteredQuestions.length === 0 && (
+        <Card>
           <CardContent className="p-8 text-center">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground mb-4">No questions found matching your criteria.</p>
-            <Button variant="outline" onClick={() => {
-          setSearchQuery("");
-          setSelectedDifficulty("all");
-          setSelectedType("all");
-        }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedDifficulty("all");
+                setSelectedType("all");
+              }}
+            >
               Clear Filters
             </Button>
           </CardContent>
-        </Card>}
-    </div>;
+        </Card>
+      )}
+    </div>
+  );
 }

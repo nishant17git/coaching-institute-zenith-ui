@@ -62,6 +62,50 @@ export type Database = {
           },
         ]
       }
+      chapters: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          estimated_time: string | null
+          id: string
+          name: string
+          progress: number | null
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          estimated_time?: string | null
+          id?: string
+          name: string
+          progress?: number | null
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          estimated_time?: string | null
+          id?: string
+          name?: string
+          progress?: number | null
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_structure: {
         Row: {
           academic_year: string
@@ -163,6 +207,65 @@ export type Database = {
           },
         ]
       }
+      questions: {
+        Row: {
+          answer: string
+          created_at: string
+          difficulty: string
+          estimated_time: string | null
+          explanation: string | null
+          id: string
+          is_favorite: boolean | null
+          marks: number
+          options: string[] | null
+          question: string
+          source: string | null
+          topic_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          difficulty: string
+          estimated_time?: string | null
+          explanation?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          marks?: number
+          options?: string[] | null
+          question: string
+          source?: string | null
+          topic_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          difficulty?: string
+          estimated_time?: string | null
+          explanation?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          marks?: number
+          options?: string[] | null
+          question?: string
+          source?: string | null
+          topic_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           aadhaar_number: string | null
@@ -238,6 +341,39 @@ export type Database = {
           total_fees?: number | null
           updated_at?: string | null
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          class: number
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          class: number
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          class?: number
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -345,6 +481,50 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      topics: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          id: string
+          last_used: string | null
+          name: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          last_used?: string | null
+          name: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          last_used?: string | null
+          name?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
