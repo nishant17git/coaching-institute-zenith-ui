@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -407,56 +408,72 @@ export default function StudentDetail() {
     toast.success("Fee invoice exported successfully!");
   };
 
-  const handleEditStudent = (data: any) => {
+  const handleEditStudent = async (data: any): Promise<void> => {
     if (!student) return;
     
-    // Transform the form data to match the expected format
-    const transformedData = {
-      name: data.name,
-      class: data.class, // Keep as string, don't convert to number
-      rollNumber: data.rollNumber,
-      fatherName: data.fatherName,
-      motherName: data.motherName,
-      phoneNumber: data.phoneNumber,
-      whatsappNumber: data.whatsappNumber,
-      address: data.address,
-      totalFees: data.totalFees,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
-      aadhaarNumber: data.aadhaarNumber,
-    };
-    
-    updateStudent(student.id, transformedData);
-    setIsEditDialogOpen(false);
-    toast.success("Student information updated successfully!");
-  };
-
-  const handleFeeSubmit = (data: any) => {
-    if (!student) return;
-    if (feeToEdit) {
-      updateFeeTransaction(feeToEdit, {
-        ...data,
-        amount: Number(data.amount)
-      });
-      toast.success("Fee transaction updated successfully!");
-    } else {
-      addFeeTransaction({
-        studentId: student.id,
-        ...data,
-        amount: Number(data.amount)
-      });
-      toast.success("Fee transaction added successfully!");
+    try {
+      // Transform the form data to match the expected format
+      const transformedData = {
+        name: data.name,
+        class: data.class, // Keep as string, don't convert to number
+        rollNumber: data.rollNumber,
+        fatherName: data.fatherName,
+        motherName: data.motherName,
+        phoneNumber: data.phoneNumber,
+        whatsappNumber: data.whatsappNumber,
+        address: data.address,
+        totalFees: data.totalFees,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        aadhaarNumber: data.aadhaarNumber,
+      };
+      
+      updateStudent(student.id, transformedData);
+      setIsEditDialogOpen(false);
+      toast.success("Student information updated successfully!");
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast.error("Failed to update student information");
     }
-    setIsAddFeeDialogOpen(false);
-    setFeeToEdit(null);
   };
 
-  const handleDeleteFee = () => {
-    if (feeToEdit) {
-      deleteFeeTransaction(feeToEdit);
+  const handleFeeSubmit = async (data: any): Promise<void> => {
+    if (!student) return;
+    
+    try {
+      if (feeToEdit) {
+        updateFeeTransaction(feeToEdit, {
+          ...data,
+          amount: Number(data.amount)
+        });
+        toast.success("Fee transaction updated successfully!");
+      } else {
+        addFeeTransaction({
+          studentId: student.id,
+          ...data,
+          amount: Number(data.amount)
+        });
+        toast.success("Fee transaction added successfully!");
+      }
       setIsAddFeeDialogOpen(false);
       setFeeToEdit(null);
-      toast.success("Fee transaction deleted successfully!");
+    } catch (error) {
+      console.error('Error with fee transaction:', error);
+      toast.error("Failed to process fee transaction");
+    }
+  };
+
+  const handleDeleteFee = async (): Promise<void> => {
+    if (feeToEdit) {
+      try {
+        deleteFeeTransaction(feeToEdit);
+        setIsAddFeeDialogOpen(false);
+        setFeeToEdit(null);
+        toast.success("Fee transaction deleted successfully!");
+      } catch (error) {
+        console.error('Error deleting fee transaction:', error);
+        toast.error("Failed to delete fee transaction");
+      }
     }
   };
 
@@ -621,7 +638,11 @@ export default function StudentDetail() {
                       {feeToEdit ? 'Make changes to the fee transaction.' : 'Add a new fee transaction for this student.'}
                     </DialogDescription>
                   </DialogHeader>
-                  <FeeTransactionForm transaction={feeToEdit ? feeTransactions.find(fee => fee.id === feeToEdit) : undefined} onSubmit={handleFeeSubmit} onDelete={feeToEdit ? handleDeleteFee : undefined} />
+                  <FeeTransactionForm 
+                    transaction={feeToEdit ? feeTransactions.find(fee => fee.id === feeToEdit) : undefined} 
+                    onSubmit={handleFeeSubmit} 
+                    onDelete={feeToEdit ? handleDeleteFee : undefined} 
+                  />
                 </DialogContent>
               </Dialog>
             </div>
