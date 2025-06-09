@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useData } from "@/contexts/DataContext";
-import { StudentForm } from "@/components/students/StudentForm";
+import { OptimizedStudentForm } from "@/components/students/OptimizedStudentForm";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -19,8 +19,11 @@ export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentForm
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (values: any) => {
+    if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
+      console.log('Adding student with data:', values);
       
       // Format the data before submission
       const newStudentData = {
@@ -37,14 +40,14 @@ export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentForm
 
       await addStudent(newStudentData);
       onOpenChange(false);
-      toast.success("Student added successfully");
+      toast.success("Student added successfully!");
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      toast.error("Failed to add student");
-      console.error(error);
+      console.error('Add student error:', error);
+      toast.error("Failed to add student. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -61,10 +64,9 @@ export function AddStudentForm({ open, onOpenChange, onSuccess }: AddStudentForm
         </DialogHeader>
         <ScrollArea className="flex-1 px-4 sm:px-6 pb-4 sm:pb-6">
           <div className="pr-2 sm:pr-0">
-            <StudentForm 
+            <OptimizedStudentForm 
               classes={classes || []}
-              onSubmit={handleSubmit} 
-              submitLabel={isSubmitting ? "Adding..." : "Add Student"}
+              onSubmit={handleSubmit}
             />
           </div>
         </ScrollArea>
