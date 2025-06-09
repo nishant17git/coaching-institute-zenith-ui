@@ -266,16 +266,16 @@ export default function TestRecord() {
   });
 
   // Handle new test creation
-  const handleAddTest = async (testData: any) => {
+  const handleAddTest = async (testData: any): Promise<void> => {
     console.log('Handling add test:', testData);
-    return addTestMutation.mutateAsync(testData);
+    await addTestMutation.mutateAsync(testData);
   };
 
   // Handle test update
-  const handleUpdateTest = async (testData: any) => {
+  const handleUpdateTest = async (testData: any): Promise<void> => {
     if (!editingTest) return;
     console.log('Handling update test:', testData);
-    return updateTestMutation.mutateAsync({
+    await updateTestMutation.mutateAsync({
       id: editingTest.id,
       ...testData
     });

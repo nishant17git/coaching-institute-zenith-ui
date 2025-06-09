@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -140,9 +141,11 @@ export default function Fees() {
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
       setSelectedStudentId(null);
+      toast.success("Payment added successfully");
     },
     onError: (error: any) => {
       console.error('Payment mutation error:', error);
+      toast.error("Failed to add payment");
     }
   });
 
@@ -210,9 +213,11 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
+      toast.success("Payment updated successfully");
     },
     onError: (error: any) => {
       console.error('Payment update mutation error:', error);
+      toast.error("Failed to update payment");
     }
   });
 
@@ -266,9 +271,11 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
+      toast.success("Payment deleted successfully");
     },
     onError: (error: any) => {
       console.error('Delete mutation error:', error);
+      toast.error("Failed to delete payment");
     }
   });
 
@@ -388,18 +395,18 @@ export default function Fees() {
   };
 
   // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: any): Promise<void> => {
     console.log('Form submit data:', data);
     
     if (selectedTransaction) {
-      return updatePaymentMutation.mutateAsync(data);
+      await updatePaymentMutation.mutateAsync(data);
     } else {
-      return addPaymentMutation.mutateAsync(data);
+      await addPaymentMutation.mutateAsync(data);
     }
   };
 
-  const handleDeleteTransaction = async () => {
-    return deletePaymentMutation.mutateAsync();
+  const handleDeleteTransaction = async (): Promise<void> => {
+    await deletePaymentMutation.mutateAsync();
   };
 
   // Filtered students for the Student Fee Status section
@@ -473,17 +480,15 @@ export default function Fees() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-b-4 border-purple-500">
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-b-4 border-purple-500">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
-              <Users className="h-4 w-4" /> Students
+              <Users className="h-4 w-4" /> Total Students
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{students.length}</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">
-              {students.filter(s => s.fee_status === "Paid").length} paid in full
-            </div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Enrolled</div>
           </CardContent>
         </Card>
       </div>
@@ -602,29 +607,29 @@ export default function Fees() {
       {/* Add/Edit Payment Dialog */}
       <Dialog 
         open={isAddPaymentDialogOpen} 
-        onOpenChange={open => {
-          if (!isPending) {
-            setIsAddPaymentDialogOpen(open);
-            if (!open) {
-              setSelectedStudentId(null);
-              setSelectedTransaction(null);
-            }
+        onOpenChange={(open) => {
+          setIsAddPaymentDialogOpen(open);
+          if (!open) {
+            setSelectedTransaction(null);
+            setSelectedStudentId(null);
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedTransaction ? "Edit Fee Payment" : "Add Fee Payment"}</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
+              {selectedTransaction ? "Edit Payment" : "Add New Payment"}
+            </DialogTitle>
             <DialogDescription>
-              {selectedTransaction ? "Update an existing fee payment record." : "Record a new fee payment for a student."}
+              {selectedTransaction ? "Update the payment details below." : "Enter the details for the new payment below."}
             </DialogDescription>
           </DialogHeader>
           <FeeTransactionForm 
+            onSubmit={handleFormSubmit}
+            onDelete={selectedTransaction ? handleDeleteTransaction : undefined}
             students={students}
-            transaction={selectedTransaction} 
-            onSubmit={handleFormSubmit} 
-            onDelete={selectedTransaction ? handleDeleteTransaction : undefined} 
-            preSelectedStudentId={selectedStudentId} 
+            transaction={selectedTransaction}
+            preSelectedStudentId={selectedStudentId}
           />
         </DialogContent>
       </Dialog>

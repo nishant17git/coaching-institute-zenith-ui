@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -178,7 +177,8 @@ export default function Students() {
     });
   };
 
-  const handleFormSubmit = async (data: any) => {
+  // Handle form submission based on whether it's an add or edit operation
+  const handleFormSubmit = async (data: any): Promise<void> => {
     console.log('Form submit data:', data);
     
     // Transform the form data to match database schema
@@ -202,9 +202,9 @@ export default function Students() {
     };
 
     if (selectedStudent) {
-      return updateStudentMutation.mutateAsync({ id: selectedStudent.id, data: transformedData });
+      await updateStudentMutation.mutateAsync({ id: selectedStudent.id, data: transformedData });
     } else {
-      return addStudentMutation.mutateAsync(transformedData);
+      await addStudentMutation.mutateAsync(transformedData);
     }
   };
 
