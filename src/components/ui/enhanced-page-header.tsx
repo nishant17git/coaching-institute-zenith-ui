@@ -49,9 +49,7 @@ export function EnhancedPageHeader({
       
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          {showBackButton && <Button onClick={handleBack} variant="ghost" size="icon" className="h-8 w-8 rounded-full shrink-0" aria-label="Back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>}
+          {showBackButton}
           <h1 className="font-semibold tracking-tight py-0 my-0 mx-0 text-2xl">{title}</h1>
         </div>
         

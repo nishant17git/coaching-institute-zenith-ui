@@ -77,8 +77,8 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-                'spotify': ['Spotify Mix', 'SF Pro Display', 'system-ui', 'sans-serif'],
-                'spotify-ultra': ['Spotify Mix Ultra', 'Spotify Mix', 'SF Pro Display', 'system-ui', 'sans-serif'],
+                'sf-pro': ['SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
+                'sf-pro-ultra': ['SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
             },
 			keyframes: {
 				'accordion-down': {

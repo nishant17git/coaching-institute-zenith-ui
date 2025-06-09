@@ -9,10 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, User, BookOpen, ClipboardList, Award, Target } from "lucide-react";
+import { User, BookOpen, ClipboardList, Award, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TestAddFormProps {
@@ -187,32 +186,17 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs sm:text-sm font-medium">Test Date *</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "h-9 sm:h-11 w-full justify-start text-left font-normal border-slate-200 text-xs sm:text-sm",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                                {field.value ? format(field.value, "PPP") : "Select test date"}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => date > new Date()}
-                              initialFocus
-                              className="p-3"
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                          <DatePicker
+                            date={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Select test date"
+                            disabled={(date) => date > new Date()}
+                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm"
+                            fromYear={2020}
+                            toYear={new Date().getFullYear()}
+                          />
+                        </FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}

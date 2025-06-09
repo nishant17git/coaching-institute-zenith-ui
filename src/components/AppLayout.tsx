@@ -15,7 +15,7 @@ export function AppLayout() {
         <SidebarInset className="flex flex-col">
           {!isMobile}
           <main className="flex-1 flex flex-col pb-[100px] md:pb-0">
-            <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden w-full max-w-full bg-white py-0">
+            <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden w-full max-w-full bg-white py-[16px]">
               <Outlet />
             </div>
             {isMobile && <BottomNavigation />}

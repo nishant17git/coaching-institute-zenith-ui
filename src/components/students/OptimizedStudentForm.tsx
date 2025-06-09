@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { User, Phone, MapPin, CreditCard, Calendar as CalendarIcon, Hash, CalendarIcon as CalendarIconLucide } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { User, Phone, MapPin, CreditCard, Calendar as CalendarIcon, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const studentSchema = z.object({
@@ -150,30 +151,15 @@ export function OptimizedStudentForm({ student, classes, onSubmit }: OptimizedSt
 
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="text-sm font-medium">Date of Birth</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-slate-200",
-                      !selectedDateOfBirth && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIconLucide className="mr-2 h-4 w-4" />
-                    {selectedDateOfBirth ? format(selectedDateOfBirth, "PPP") : "Select date of birth"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDateOfBirth}
-                    onSelect={(date) => setValue("dateOfBirth", date)}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                date={selectedDateOfBirth}
+                onSelect={(date) => setValue("dateOfBirth", date)}
+                placeholder="Select date of birth"
+                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                className="border-slate-200"
+                fromYear={1900}
+                toYear={new Date().getFullYear()}
+              />
             </div>
 
             <div className="space-y-2">

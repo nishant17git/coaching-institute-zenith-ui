@@ -1,10 +1,14 @@
 
+"use client"
+
+import * as React from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Calendar } from "@/components/ui/calendar";
 
 interface CalendarDataItem {
   date: Date;
@@ -32,10 +36,36 @@ export function AttendanceCalendar({
   selectedMonth,
   onMonthChange,
 }: AttendanceCalendarProps) {
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Create a map for easy lookup of attendance data
+  const attendanceMap = React.useMemo(() => {
+    const map = new Map();
+    calendarData.forEach((day) => {
+      const dateKey = format(day.date, 'yyyy-MM-dd');
+      const totalStudents = day.stats.present + day.stats.absent + day.stats.leave;
+      const attendancePercentage = totalStudents > 0 
+        ? Math.round((day.stats.present / totalStudents) * 100) 
+        : 0;
+      
+      map.set(dateKey, {
+        ...day.stats,
+        percentage: attendancePercentage,
+        hasData: totalStudents > 0
+      });
+    });
+    return map;
+  }, [calendarData]);
 
-  const isSelectedDay = (date: Date) => {
-    return format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+  // Function to get attendance status color
+  const getAttendanceStatus = (date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    const data = attendanceMap.get(dateKey);
+    
+    if (!data || !data.hasData) return null;
+    
+    if (data.percentage >= 90) return 'excellent';
+    if (data.percentage >= 75) return 'good'; 
+    if (data.percentage >= 50) return 'average';
+    return 'poor';
   };
 
   return (
@@ -69,100 +99,130 @@ export function AttendanceCalendar({
         </Button>
       </div>
 
-      {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-1">
-        {weekDays.map((day) => (
-          <div
-            key={day}
-            className="text-xs font-medium text-muted-foreground text-center py-2"
-          >
-            {day}
-          </div>
-        ))}
-
-        {/* Empty cells for days before the first of the month */}
-        {Array.from({ length: new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1).getDay() }).map(
-          (_, index) => (
-            <div key={`empty-${index}`} className="aspect-square" />
-          )
-        )}
-
-        {/* Calendar days */}
-        {calendarData.map((day) => {
-          const isSelected = isSelectedDay(day.date);
-          const totalStudents = day.stats.present + day.stats.absent + day.stats.leave;
-          const attendancePercentage =
-            totalStudents > 0
-              ? Math.round((day.stats.present / totalStudents) * 100)
-              : 0;
-
-          return (
-            <Button
-              key={day.dayOfMonth}
-              variant="ghost"
-              className={cn(
-                "aspect-square p-0 relative",
-                day.isToday && "ring-2 ring-apple-blue ring-offset-1",
-                isSelected && "bg-apple-blue/10"
-              )}
-              onClick={() => onSelectDate(day.date)}
-            >
-              <motion.div 
-                className="flex flex-col items-center w-full h-full"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-              >
-                <span
-                  className={cn(
-                    "text-sm font-medium mt-1",
-                    isSelected && "text-apple-blue",
-                    day.isToday && !isSelected && "text-apple-blue font-semibold"
-                  )}
-                >
-                  {day.dayOfMonth}
-                </span>
-                
-                {/* Attendance indicator */}
-                {totalStudents > 0 && (
-                  <div className="flex gap-[2px] mt-1">
-                    <div
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full",
-                        attendancePercentage >= 90 ? "bg-green-500" :
-                        attendancePercentage >= 75 ? "bg-apple-blue" :
-                        attendancePercentage >= 50 ? "bg-amber-500" :
-                        "bg-red-500"
-                      )}
-                    />
-                  </div>
-                )}
-              </motion.div>
-            </Button>
-          );
-        })}
+      {/* Enhanced Calendar with Variable Size */}
+      <div className="w-full">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => date && onSelectDate(date)}
+          month={selectedMonth}
+          onMonthChange={onMonthChange}
+          className={cn(
+            "rounded-lg border w-full",
+            "[--cell-size:--spacing(11)] md:[--cell-size:--spacing(12)]"
+          )}
+          modifiers={{
+            excellent: (date) => getAttendanceStatus(date) === 'excellent',
+            good: (date) => getAttendanceStatus(date) === 'good',
+            average: (date) => getAttendanceStatus(date) === 'average',
+            poor: (date) => getAttendanceStatus(date) === 'poor',
+            hasAttendance: (date) => {
+              const dateKey = format(date, 'yyyy-MM-dd');
+              const data = attendanceMap.get(dateKey);
+              return data?.hasData || false;
+            }
+          }}
+          modifiersClassNames={{
+            excellent: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-semibold relative",
+            good: "bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold relative", 
+            average: "bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold relative",
+            poor: "bg-red-100 text-red-800 hover:bg-red-200 font-semibold relative",
+            hasAttendance: "relative"
+          }}
+          components={{
+            Day: ({ date, ...props }) => {
+              const dateKey = format(date, 'yyyy-MM-dd');
+              const data = attendanceMap.get(dateKey);
+              const status = getAttendanceStatus(date);
+              
+              return (
+                <div className="relative w-full h-full">
+                  <button
+                    {...props}
+                    className={cn(
+                      "w-full h-full relative flex flex-col items-center justify-center p-1 text-sm transition-all",
+                      "hover:scale-105 focus:scale-105"
+                    )}
+                  >
+                    <span className="relative z-10">{format(date, 'd')}</span>
+                    
+                    {/* Attendance Indicator */}
+                    {data?.hasData && (
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          status === 'excellent' && "bg-emerald-600",
+                          status === 'good' && "bg-blue-600", 
+                          status === 'average' && "bg-amber-600",
+                          status === 'poor' && "bg-red-600"
+                        )} />
+                      </div>
+                    )}
+                    
+                    {/* Percentage Badge for Selected Date */}
+                    {format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') && data?.hasData && (
+                      <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {data.percentage}
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            }
+          }}
+        />
       </div>
 
-      {/* Legend */}
-      <div className="grid grid-cols-2 gap-2 pt-4 border-t">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex gap-1">
-            <span className="h-2 w-2 rounded-full bg-green-500 mt-1" />
-            <span>&gt;90%</span>
-          </div>
-          <div className="flex gap-1">
-            <span className="h-2 w-2 rounded-full bg-apple-blue mt-1" />
-            <span>&gt;75%</span>
+      {/* Enhanced Legend */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t">
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">Attendance Levels</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 text-xs">
+              <div className="h-3 w-3 rounded-full bg-emerald-600" />
+              <span>Excellent (90%+)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <div className="h-3 w-3 rounded-full bg-blue-600" />
+              <span>Good (75-89%)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <div className="h-3 w-3 rounded-full bg-amber-600" />
+              <span>Average (50-74%)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <div className="h-3 w-3 rounded-full bg-red-600" />
+              <span>Poor (&lt;50%)</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-500 mt-1" />
-            <span>&gt;50%</span>
-          </div>
-          <div className="flex gap-1">
-            <span className="h-2 w-2 rounded-full bg-red-500 mt-1" />
-            <span>&lt;50%</span>
+        
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">Selected Date</h4>
+          <div className="text-sm">
+            {(() => {
+              const dateKey = format(selectedDate, 'yyyy-MM-dd');
+              const data = attendanceMap.get(dateKey);
+              if (data?.hasData) {
+                return (
+                  <div className="space-y-1">
+                    <div className="font-medium">{format(selectedDate, 'MMMM d, yyyy')}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Present: {data.present} | Absent: {data.absent} | Leave: {data.leave}
+                    </div>
+                    <div className="text-xs font-medium">
+                      Attendance: {data.percentage}%
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  <div className="font-medium">{format(selectedDate, 'MMMM d, yyyy')}</div>
+                  <div className="text-xs text-muted-foreground">No attendance data</div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

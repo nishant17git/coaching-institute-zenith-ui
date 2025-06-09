@@ -8,9 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Loader2, CalendarIcon, User, Phone, MapPin, GraduationCap, CreditCard } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Loader2, User, Phone, MapPin, GraduationCap, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Student, Class } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +27,7 @@ const studentFormSchema = z.object({
   address: z.string().min(1, "Address is required"),
   totalFees: z.coerce.number().nonnegative("Total fees must be non-negative"),
   gender: z.enum(["Male", "Female", "Other"]).optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.date().optional(),
   aadhaarNumber: z.string().optional(),
 });
 
@@ -68,7 +67,7 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
         address: student.address,
         totalFees: student.totalFees,
         gender: student.gender,
-        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split("T")[0] : undefined,
+        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth) : undefined,
         aadhaarNumber: student.aadhaarNumber,
       }
     : {
@@ -82,7 +81,7 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
         address: "",
         totalFees: 0,
         gender: undefined,
-        dateOfBirth: "",
+        dateOfBirth: undefined,
         aadhaarNumber: "",
       };
 
@@ -110,53 +109,6 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
     cls.id && cls.id.trim() !== "" && 
     cls.name && cls.name.trim() !== ""
   );
-
-  const selectedDate = form.watch("dateOfBirth") ? new Date(form.watch("dateOfBirth")) : undefined;
-
-  // Helper function to parse DD/MM/YYYY format
-  const parseDateInput = (input: string) => {
-    // Remove any extra characters and split by common separators
-    const cleanInput = input.replace(/[^\d\/\-\.]/g, '');
-    const parts = cleanInput.split(/[\/\-\.]/);
-    
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-      const year = parseInt(parts[2], 10);
-      
-      // Handle 2-digit years
-      const fullYear = year < 100 ? (year > 50 ? 1900 + year : 2000 + year) : year;
-      
-      if (!isNaN(day) && !isNaN(month) && !isNaN(fullYear)) {
-        const date = new Date(fullYear, month, day);
-        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === fullYear) {
-          return date;
-        }
-      }
-    }
-    return null;
-  };
-
-  // Helper function to format date as DD/MM/YYYY
-  const formatDateForDisplay = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  // Helper function to handle date input changes
-  const handleDateInputChange = (value: string, onChange: (value: string) => void) => {
-    if (value === "") {
-      onChange("");
-      return;
-    }
-
-    const parsedDate = parseDateInput(value);
-    if (parsedDate && parsedDate <= new Date() && parsedDate >= new Date("1900-01-01")) {
-      onChange(format(parsedDate, "yyyy-MM-dd"));
-    }
-  };
 
   return (
     <div className="w-full h-full flex flex-col font-geist">
@@ -223,41 +175,17 @@ export function StudentForm({ student, classes, onSubmit, submitLabel = "Submit"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium font-geist">Date of Birth</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl>
-                            <Input
-                              placeholder="DD/MM/YYYY"
-                              className="h-10 sm:h-11 font-geist flex-1"
-                              value={selectedDate ? formatDateForDisplay(selectedDate) : ""}
-                              onChange={(e) => handleDateInputChange(e.target.value, field.onChange)}
-                            />
-                          </FormControl>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-10 sm:h-11 w-10 sm:w-11 shrink-0"
-                                type="button"
-                              >
-                                <CalendarIcon className="h-4 w-4" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                initialFocus
-                                captionLayout="dropdown-buttons"
-                                fromYear={1900}
-                                toYear={new Date().getFullYear()}
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                        <FormControl>
+                          <DatePicker
+                            date={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Select date of birth"
+                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                            className="h-10 sm:h-11 font-geist"
+                            fromYear={1900}
+                            toYear={new Date().getFullYear()}
+                          />
+                        </FormControl>
                         <FormMessage className="font-geist" />
                       </FormItem>
                     )}

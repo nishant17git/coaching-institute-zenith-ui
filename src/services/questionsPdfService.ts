@@ -27,77 +27,113 @@ interface QuestionsPDFOptions {
   logo?: string;
 }
 
-export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
-  const { questions, topicName, className, subjectName, chapterName, instituteName, teacherName, logo } = options;
-  const doc = new jsPDF();
+// Institute details
+const INSTITUTE_DETAILS = {
+  name: "INFINITY CLASSES",
+  address: "Kandri, Mandar, Ranchi",
+  phone: "+91 9905880697",
+  email: "theinfinityclasses1208@gmail.com"
+};
+
+// Modern color palette
+const COLORS = {
+  primary: [79, 70, 229], // Indigo
+  secondary: [99, 102, 241], // Light indigo
+  accent: [34, 197, 94], // Green
+  warning: [251, 191, 36], // Amber
+  danger: [239, 68, 68], // Red
+  success: [34, 197, 94], // Green
+  text: [31, 41, 55], // Gray-800
+  muted: [107, 114, 128], // Gray-500
+  light: [249, 250, 251], // Gray-50
+  white: [255, 255, 255]
+};
+
+// Add modern header for questions PDF
+const addQuestionsHeader = (doc: jsPDF, options: QuestionsPDFOptions) => {
+  // Header background with gradient effect
+  doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+  doc.rect(0, 0, 210, 55, 'F');
   
-  // Colors for professional design
-  const primaryColor = [79, 70, 229]; // Indigo
-  const secondaryColor = [99, 102, 241]; // Light indigo
-  const accentColor = [236, 254, 255]; // Very light cyan
+  // Logo placeholder
+  doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+  doc.roundedRect(15, 10, 30, 30, 5, 5, 'F');
+  doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+  doc.setFontSize(12);
+  doc.text('LOGO', 30, 28, { align: 'center' });
   
-  // Header section
-  let yPosition = 20;
-  
-  // Add logo if provided
-  if (logo) {
-    doc.addImage(logo, 'PNG', 15, 15, 25, 25);
-  }
-  
-  // Institute name and title
+  // Institute name (using regular font since custom fonts are complex in jsPDF)
+  doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text(instituteName, logo ? 50 : 15, 25);
+  doc.text(INSTITUTE_DETAILS.name, 55, 20);
+  
+  // Contact details
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(INSTITUTE_DETAILS.address, 55, 28);
+  doc.text(`${INSTITUTE_DETAILS.phone} | ${INSTITUTE_DETAILS.email}`, 55, 35);
   
   // Document title
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Question Bank Collection', logo ? 50 : 15, 35);
+  doc.text('QUESTION BANK COLLECTION', 55, 45);
   
-  // Topic and class information
-  doc.setFont('helvetica', 'normal');
+  // Subject and topic information cards
+  let yPos = 70;
+  
+  // Subject card
+  doc.setFillColor(COLORS.accent[0], COLORS.accent[1], COLORS.accent[2]);
+  doc.roundedRect(15, yPos, 85, 25, 5, 5, 'F');
+  doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Topic: ${topicName}`, 15, 50);
-  doc.text(`Class: ${className}`, 15, 58);
-  doc.text(`Subject: ${subjectName}`, 100, 50);
-  doc.text(`Chapter: ${chapterName}`, 100, 58);
+  doc.text(options.subjectName, 57.5, yPos + 10, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Class ${options.className}`, 57.5, yPos + 18, { align: 'center' });
   
-  // Date and teacher info
-  doc.text(`Date: ${format(new Date(), 'dd/MM/yyyy')}`, 15, 66);
-  doc.text(`Prepared by: ${teacherName}`, 100, 66);
+  // Topic card
+  doc.setFillColor(COLORS.secondary[0], COLORS.secondary[1], COLORS.secondary[2]);
+  doc.roundedRect(110, yPos, 85, 25, 5, 5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(options.topicName, 152.5, yPos + 10, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(options.chapterName, 152.5, yPos + 18, { align: 'center' });
   
-  // Add decorative line
-  doc.setLineWidth(0.8);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.line(15, 75, 195, 75);
+  // Metadata
+  yPos += 35;
+  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Prepared by: ${options.teacherName}`, 15, yPos);
+  doc.text(`Date: ${format(new Date(), 'dd MMM yyyy')}`, 15, yPos + 8);
+  doc.text(`Total Questions: ${options.questions.length}`, 120, yPos);
   
-  // Summary section
-  yPosition = 85;
+  return yPos + 20;
+};
+
+export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
+  const { questions, topicName, className, subjectName, chapterName, teacherName } = options;
+  const doc = new jsPDF();
+  
+  let yPosition = addQuestionsHeader(doc, options);
+  
+  // Summary section with modern cards
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Summary', 15, yPosition);
+  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+  doc.text('Question Summary', 15, yPosition);
   
   yPosition += 10;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.text(`Total Questions: ${questions.length}`, 15, yPosition);
   
-  // Count questions by type
+  // Question types distribution
   const questionTypes = questions.reduce((acc, q) => {
     acc[q.type] = (acc[q.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  
-  yPosition += 8;
-  doc.text('Question Types:', 15, yPosition);
-  let xOffset = 15;
-  Object.entries(questionTypes).forEach(([type, count]) => {
-    yPosition += 6;
-    doc.text(`• ${type}: ${count}`, 20, yPosition);
-  });
   
   // Difficulty distribution
   const difficultyCount = questions.reduce((acc, q) => {
@@ -105,20 +141,66 @@ export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
     return acc;
   }, {} as Record<string, number>);
   
-  yPosition += 10;
-  doc.text('Difficulty Distribution:', 15, yPosition);
-  Object.entries(difficultyCount).forEach(([difficulty, count]) => {
-    yPosition += 6;
-    doc.text(`• ${difficulty}: ${count}`, 20, yPosition);
+  // Create summary cards
+  let cardX = 15;
+  let cardY = yPosition;
+  const cardWidth = 55;
+  const cardHeight = 20;
+  
+  // Question types cards
+  Object.entries(questionTypes).forEach(([type, count], index) => {
+    if (index > 0 && index % 3 === 0) {
+      cardY += cardHeight + 5;
+      cardX = 15;
+    }
+    
+    doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
+    doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 3, 3, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    doc.text(type, cardX + 5, cardY + 8);
+    doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+    doc.setFontSize(12);
+    doc.text(`${count}`, cardX + 5, cardY + 15);
+    
+    cardX += cardWidth + 5;
   });
   
-  // Start questions section
-  yPosition += 20;
+  yPosition = cardY + cardHeight + 15;
   
-  // Questions header
+  // Difficulty distribution
+  cardX = 15;
+  cardY = yPosition;
+  
+  Object.entries(difficultyCount).forEach(([difficulty, count], index) => {
+    const difficultyColors = {
+      'Easy': COLORS.success,
+      'Medium': COLORS.warning,
+      'Hard': COLORS.danger
+    };
+    const color = difficultyColors[difficulty as keyof typeof difficultyColors] || COLORS.muted;
+    
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 3, 3, 'F');
+    
+    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(difficulty, cardX + 5, cardY + 8);
+    doc.setFontSize(12);
+    doc.text(`${count}`, cardX + 5, cardY + 15);
+    
+    cardX += cardWidth + 5;
+  });
+  
+  yPosition = cardY + cardHeight + 25;
+  
+  // Questions section header
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
   doc.text('Questions', 15, yPosition);
   
   yPosition += 15;
@@ -126,63 +208,63 @@ export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
   // Process each question
   questions.forEach((question, index) => {
     // Check if we need a new page
-    if (yPosition > 250) {
+    if (yPosition > 240) {
       doc.addPage();
       yPosition = 20;
     }
     
-    // Question number and difficulty badge
+    // Question header with modern styling
+    doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
+    doc.roundedRect(15, yPosition - 5, 180, 25, 5, 5, 'F');
+    
+    // Question number
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Q${index + 1}.`, 15, yPosition);
+    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    doc.text(`Q${index + 1}.`, 20, yPosition + 5);
     
-    // Difficulty and type badges
-    doc.setFontSize(9);
+    // Badges for difficulty, type, and marks
+    const badges = [
+      { text: question.difficulty, color: question.difficulty === 'Easy' ? COLORS.success : question.difficulty === 'Medium' ? COLORS.warning : COLORS.danger },
+      { text: question.type, color: COLORS.secondary },
+      { text: `${question.marks}m`, color: COLORS.primary }
+    ];
+    
+    let badgeX = 40;
+    badges.forEach(badge => {
+      doc.setFillColor(badge.color[0], badge.color[1], badge.color[2]);
+      doc.roundedRect(badgeX, yPosition - 2, 25, 10, 2, 2, 'F');
+      doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text(badge.text, badgeX + 12.5, yPosition + 3, { align: 'center' });
+      badgeX += 30;
+    });
+    
+    // Time estimate
+    doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Time: ${question.estimatedTime}`, 160, yPosition + 3);
     
-    // Difficulty badge
-    const difficultyColors = {
-      'Easy': [34, 197, 94],
-      'Medium': [251, 191, 36],
-      'Hard': [239, 68, 68]
-    };
-    const diffColor = difficultyColors[question.difficulty] || [100, 100, 100];
+    yPosition += 20;
     
-    doc.setFillColor(diffColor[0], diffColor[1], diffColor[2]);
-    doc.setTextColor(255, 255, 255);
-    doc.roundedRect(35, yPosition - 8, 20, 8, 2, 2, 'F');
-    doc.text(question.difficulty, 37, yPosition - 3);
-    
-    // Type badge
-    doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-    doc.roundedRect(58, yPosition - 8, 25, 8, 2, 2, 'F');
-    doc.text(question.type, 60, yPosition - 3);
-    
-    // Marks badge
-    doc.setFillColor(100, 100, 100);
-    doc.roundedRect(86, yPosition - 8, 18, 8, 2, 2, 'F');
-    doc.text(`${question.marks}m`, 88, yPosition - 3);
-    
-    yPosition += 5;
-    
-    // Question text
+    // Question text with better formatting
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
     
-    // Handle long questions with text wrapping
     const questionLines = doc.splitTextToSize(question.question, 170);
     questionLines.forEach((line: string) => {
       if (yPosition > 270) {
         doc.addPage();
         yPosition = 20;
       }
-      doc.text(line, 25, yPosition);
+      doc.text(line, 20, yPosition);
       yPosition += 5;
     });
     
-    // Options for MCQ
+    // Options for MCQ with improved styling
     if (question.options && question.options.length > 0) {
       yPosition += 3;
       question.options.forEach((option, optIndex) => {
@@ -191,102 +273,131 @@ export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
           yPosition = 20;
         }
         const optionLabel = String.fromCharCode(65 + optIndex);
-        doc.text(`${optionLabel}. ${option}`, 30, yPosition);
-        yPosition += 5;
+        
+        // Option background
+        doc.setFillColor(250, 250, 250);
+        doc.roundedRect(25, yPosition - 3, 165, 8, 2, 2, 'F');
+        
+        doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(`${optionLabel}.`, 28, yPosition + 1);
+        doc.setFont('helvetica', 'normal');
+        doc.text(option, 35, yPosition + 1);
+        yPosition += 10;
       });
     }
     
     yPosition += 8;
     
-    // Answer section
-    if (yPosition > 260) {
+    // Answer section with modern styling
+    if (yPosition > 250) {
       doc.addPage();
       yPosition = 20;
     }
     
+    // Answer card
+    doc.setFillColor(COLORS.success[0], COLORS.success[1], COLORS.success[2]);
+    doc.roundedRect(20, yPosition, 8, 8, 2, 2, 'F');
+    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('A', 24, yPosition + 5, { align: 'center' });
+    
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(22, 163, 74); // Green color
-    doc.text('Answer:', 25, yPosition);
+    doc.setTextColor(COLORS.success[0], COLORS.success[1], COLORS.success[2]);
+    doc.text('Answer:', 32, yPosition + 5);
     
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    const answerLines = doc.splitTextToSize(question.answer, 150);
-    let answerX = 45;
+    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    const answerLines = doc.splitTextToSize(question.answer, 145);
+    let answerX = 55;
     answerLines.forEach((line: string, lineIndex: number) => {
       if (lineIndex > 0) {
         yPosition += 4;
-        answerX = 25;
+        answerX = 20;
       }
       if (yPosition > 270) {
         doc.addPage();
         yPosition = 20;
-        answerX = 25;
+        answerX = 20;
       }
-      doc.text(line, answerX, yPosition);
+      doc.text(line, answerX, yPosition + 5);
     });
     
-    yPosition += 8;
+    yPosition += 10;
     
-    // Explanation section
-    if (yPosition > 260) {
+    // Explanation section with modern styling
+    if (yPosition > 250) {
       doc.addPage();
       yPosition = 20;
     }
     
+    // Explanation card
+    doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+    doc.roundedRect(20, yPosition, 8, 8, 2, 2, 'F');
+    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('E', 24, yPosition + 5, { align: 'center' });
+    
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(59, 130, 246); // Blue color
-    doc.text('Explanation:', 25, yPosition);
+    doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+    doc.text('Explanation:', 32, yPosition + 5);
     
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    const explanationLines = doc.splitTextToSize(question.explanation, 150);
-    let explanationX = 55;
+    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    const explanationLines = doc.splitTextToSize(question.explanation, 145);
+    let explanationX = 70;
     explanationLines.forEach((line: string, lineIndex: number) => {
       if (lineIndex > 0) {
         yPosition += 4;
-        explanationX = 25;
+        explanationX = 20;
       }
       if (yPosition > 270) {
         doc.addPage();
         yPosition = 20;
-        explanationX = 25;
+        explanationX = 20;
       }
-      doc.text(line, explanationX, yPosition);
+      doc.text(line, explanationX, yPosition + 5);
     });
     
-    // Additional info
-    yPosition += 6;
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Time: ${question.estimatedTime} | Source: ${question.source}`, 25, yPosition);
+    // Source information
+    yPosition += 8;
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
+    doc.text(`Source: ${question.source}`, 20, yPosition);
     
-    // Separator line
+    // Separator with modern design
     yPosition += 5;
-    doc.setLineWidth(0.3);
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, yPosition, 195, yPosition);
+    doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
+    doc.rect(15, yPosition, 180, 1, 'F');
     
-    yPosition += 10;
+    yPosition += 15;
   });
   
-  // Footer on each page
+  // Add modern footer to all pages
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     
-    // Footer line
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.line(15, 285, 195, 285);
+    const pageHeight = doc.internal.pageSize.height;
     
-    // Footer text
+    // Footer background
+    doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
+    doc.rect(0, pageHeight - 20, 210, 20, 'F');
+    
+    // Footer content
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${instituteName} | Generated on ${format(new Date(), 'dd/MM/yyyy')}`, 15, 290);
-    doc.text(`Page ${i} of ${pageCount}`, 180, 290);
+    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    doc.text(`${INSTITUTE_DETAILS.name} | Generated on ${format(new Date(), 'dd MMM yyyy')}`, 15, pageHeight - 12);
+    doc.text(`Page ${i} of ${pageCount}`, 180, pageHeight - 12);
+    
+    // Subject info in footer
+    doc.text(`${subjectName} - ${topicName}`, 15, pageHeight - 6);
   }
   
   // Save the PDF

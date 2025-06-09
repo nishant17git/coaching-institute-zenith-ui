@@ -8,16 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Loader2, CalendarIcon, CreditCard } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Loader2, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Fee transaction form schema
 const feeTransactionSchema = z.object({
   amount: z.coerce.number().positive("Amount must be positive"),
-  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentDate: z.date({ required_error: "Payment date is required" }),
   paymentMode: z.enum(["Cash", "Online", "Cheque", "UPI"]),
   purpose: z.enum(["Tuition Fee", "Admission Fee", "Test Series Fee"]),
   receiptNumber: z.string().optional(),
@@ -47,14 +46,14 @@ export function FeeTransactionForm({
 
   const defaultValues = transaction ? {
     amount: transaction.amount || 0,
-    paymentDate: transaction.paymentDate || transaction.date || format(new Date(), "yyyy-MM-dd"),
+    paymentDate: transaction.paymentDate ? new Date(transaction.paymentDate) : transaction.date ? new Date(transaction.date) : new Date(),
     paymentMode: transaction.paymentMode || "Cash" as const,
     purpose: transaction.purpose || "Tuition Fee" as const,
     receiptNumber: transaction.receiptNumber || "",
     notes: transaction.notes || "",
   } : {
     amount: 0,
-    paymentDate: format(new Date(), "yyyy-MM-dd"),
+    paymentDate: new Date(),
     paymentMode: "Cash" as const,
     purpose: "Tuition Fee" as const,
     receiptNumber: "",
@@ -81,8 +80,6 @@ export function FeeTransactionForm({
       setIsSubmitting(false);
     }
   };
-
-  const selectedDate = form.watch("paymentDate") ? new Date(form.watch("paymentDate")) : undefined;
 
   return (
     <div className="w-full">
@@ -123,35 +120,17 @@ export function FeeTransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium font-geist">Payment Date *</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "h-11 w-full justify-start text-left font-normal font-geist",
-                                !selectedDate && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                            initialFocus
-                            captionLayout="dropdown-buttons"
-                            fromYear={2020}
-                            toYear={new Date().getFullYear()}
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <DatePicker
+                          date={field.value}
+                          onSelect={field.onChange}
+                          placeholder="Select payment date"
+                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                          className="h-11 font-geist"
+                          fromYear={2020}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </FormControl>
                       <FormMessage className="font-geist" />
                     </FormItem>
                   )}

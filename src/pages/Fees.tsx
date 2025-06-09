@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -23,7 +22,7 @@ import { FeeTransactionCard } from "@/components/fees/FeeTransactionCard";
 import { StudentFeeCard } from "@/components/fees/StudentFeeCard";
 
 // Icons
-import { Search, Download, Plus, HandCoins, ReceiptIndianRupee, School, Users, Receipt } from "lucide-react";
+import { Search, Download, Plus, HandCoins, ReceiptIndianRupee, School, Users } from "lucide-react";
 
 export default function Fees() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +49,7 @@ export default function Fees() {
         .select('*')
         .order('class', { ascending: true })
         .order('full_name', { ascending: true });
-      
+
       if (error) throw error;
       return data || [];
     }
@@ -67,7 +66,7 @@ export default function Fees() {
         .from('fee_transactions')
         .select('*')
         .order('payment_date', { ascending: false });
-      
+
       if (error) throw error;
       return data || [];
     }
@@ -104,7 +103,7 @@ export default function Fees() {
         .insert(formattedData)
         .select()
         .single();
-      
+
       if (transactionError) throw transactionError;
 
       // Update the student's paid fees
@@ -113,7 +112,7 @@ export default function Fees() {
         const newPaidFees = (student.paid_fees || 0) + paymentData.amount;
         const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
                             newPaidFees > 0 ? 'Partial' : 'Pending';
-        
+
         const { error: updateError } = await supabase
           .from('students')
           .update({
@@ -121,10 +120,10 @@ export default function Fees() {
             fee_status: newFeeStatus
           })
           .eq('id', student.id);
-        
+
         if (updateError) throw updateError;
       }
-      
+
       return transactionData;
     },
     onSuccess: () => {
@@ -170,7 +169,7 @@ export default function Fees() {
         .eq('id', selectedTransaction.id)
         .select()
         .single();
-      
+
       if (transactionError) throw transactionError;
 
       // Update the student's paid fees if amount changed
@@ -180,7 +179,7 @@ export default function Fees() {
           const newPaidFees = (student.paid_fees || 0) + amountDifference;
           const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
                               newPaidFees > 0 ? 'Partial' : 'Pending';
-          
+
           const { error: updateError } = await supabase
             .from('students')
             .update({
@@ -188,11 +187,11 @@ export default function Fees() {
               fee_status: newFeeStatus
             })
             .eq('id', student.id);
-          
+
           if (updateError) throw updateError;
         }
       }
-      
+
       return transactionData;
     },
     onSuccess: () => {
@@ -227,7 +226,7 @@ export default function Fees() {
         .from('fee_transactions')
         .delete()
         .eq('id', transaction.id);
-      
+
       if (deleteError) throw deleteError;
 
       // Update the student's paid fees
@@ -236,7 +235,7 @@ export default function Fees() {
         const newPaidFees = Math.max(0, (student.paid_fees || 0) - transaction.amount);
         const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
                             newPaidFees > 0 ? 'Partial' : 'Pending';
-        
+
         const { error: updateError } = await supabase
           .from('students')
           .update({
@@ -244,10 +243,10 @@ export default function Fees() {
             fee_status: newFeeStatus
           })
           .eq('id', student.id);
-        
+
         if (updateError) throw updateError;
       }
-      
+
       return transaction;
     },
     onSuccess: () => {
@@ -282,7 +281,7 @@ export default function Fees() {
     if (periodFilter !== "all") {
       const today = new Date();
       const transactionDate = new Date(transaction.payment_date);
-      
+
       if (periodFilter === "thisMonth") {
         periodMatches = transactionDate.getMonth() === today.getMonth() && 
                        transactionDate.getFullYear() === today.getFullYear();
@@ -295,7 +294,7 @@ export default function Fees() {
         periodMatches = transactionDate.getFullYear() === today.getFullYear();
       }
     }
-    
+
     return (studentMatches || receiptMatches || purposeMatches) && statusMatches && periodMatches;
   }).sort((a, b) => {
     // Handle sorting
@@ -525,7 +524,7 @@ export default function Fees() {
           <TabsTrigger value="transactions">Fee Transactions</TabsTrigger>
           <TabsTrigger value="students">Student Fee Status</TabsTrigger>
         </TabsList>
-        
+
         {/* Transactions Tab */}
         <TabsContent value="transactions" className="mt-4">
           <Card className="shadow-sm border-muted">
@@ -534,7 +533,7 @@ export default function Fees() {
                 <LoadingState />
               ) : filteredTransactions.length === 0 ? (
                 <EmptyState 
-                  icon={<Receipt className="h-10 w-10 text-muted-foreground" />} 
+                  icon={<ReceiptIndianRupee className="h-10 w-10 text-muted-foreground" />} 
                   title="No transactions found" 
                   description="No fee transactions match your current filters." 
                 />
@@ -550,7 +549,7 @@ export default function Fees() {
                   ))}
                 </div>
               )}
-              
+
               {filteredTransactions.length > 0 && (
                 <div className="flex justify-end mt-4">
                   <Button variant="outline" onClick={exportFeeData} className="gap-2">
@@ -561,7 +560,7 @@ export default function Fees() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Student Fee Status Tab */}
         <TabsContent value="students" className="mt-4">
           <Card className="shadow-sm border-muted">
