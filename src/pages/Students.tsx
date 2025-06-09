@@ -165,7 +165,7 @@ export default function Students() {
     });
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = (data: any) => {
     // Transform the form data to match database schema
     const transformedData = {
       full_name: data.name,
@@ -187,9 +187,9 @@ export default function Students() {
     };
 
     if (selectedStudent) {
-      return updateStudentMutation.mutateAsync({ id: selectedStudent.id, data: transformedData });
+      updateStudentMutation.mutate({ id: selectedStudent.id, data: transformedData });
     } else {
-      return addStudentMutation.mutateAsync(transformedData);
+      addStudentMutation.mutate(transformedData);
     }
   };
 

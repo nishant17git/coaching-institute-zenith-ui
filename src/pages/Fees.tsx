@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -377,19 +378,19 @@ export default function Fees() {
   };
 
   // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = (data: any) => {
     if (selectedTransaction) {
-      return updatePaymentMutation.mutateAsync({
+      return updatePaymentMutation.mutate({
         ...data,
         id: selectedTransaction.id
       });
     } else {
-      return addPaymentMutation.mutateAsync(data);
+      return addPaymentMutation.mutate(data);
     }
   };
 
-  const handleDeleteTransaction = async () => {
-    return deletePaymentMutation.mutateAsync();
+  const handleDeleteTransaction = () => {
+    return deletePaymentMutation.mutate();
   };
 
   // Filtered students for the Student Fee Status section
