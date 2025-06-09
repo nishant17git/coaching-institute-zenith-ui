@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -104,10 +103,7 @@ export function FeeTransactionForm({
       setIsSubmitting(true);
       console.log('Submitting form data:', data);
       
-      await onSubmit({
-        ...data,
-        date: data.paymentDate, // Map paymentDate to date for compatibility
-      });
+      await onSubmit(data);
       
       if (!transaction) {
         form.reset(defaultValues);
