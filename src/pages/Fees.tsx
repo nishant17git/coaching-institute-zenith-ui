@@ -81,20 +81,22 @@ export default function Fees() {
   // Add payment mutation
   const addPaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
+      console.log('Adding payment:', paymentData);
+      
       // Format the data for submission with required fields
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: paymentData.date,
+        payment_date: format(paymentData.paymentDate, 'yyyy-MM-dd'),
         payment_mode: paymentData.paymentMode,
-        receipt_number: paymentData.receiptNumber,
+        receipt_number: paymentData.receiptNumber || `RCP-${Date.now()}`,
         purpose: paymentData.purpose,
         academic_year: new Date().getFullYear().toString(),
-        term: 'General',
+        term: paymentData.months?.join(', ') || 'General',
         discount: 0,
         late_fee: 0,
-        notes: '',
-        due_date: paymentData.date
+        notes: paymentData.notes || '',
+        due_date: format(paymentData.paymentDate, 'yyyy-MM-dd')
       };
 
       // Insert the fee transaction
@@ -104,7 +106,10 @@ export default function Fees() {
         .select()
         .single();
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Transaction error:', transactionError);
+        throw transactionError;
+      }
 
       // Update the student's paid fees
       const student = students.find(s => s.id === paymentData.student_id);
@@ -121,7 +126,10 @@ export default function Fees() {
           })
           .eq('id', student.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Student update error:', updateError);
+          throw updateError;
+        }
       }
 
       return transactionData;
@@ -132,30 +140,27 @@ export default function Fees() {
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
       setSelectedStudentId(null);
-      toast.success("Payment added successfully", {
-        description: "The fee transaction has been recorded",
-        action: {
-          label: "View",
-          onClick: () => setActiveTab("transactions")
-        }
-      });
     },
     onError: (error: any) => {
-      toast.error(`Failed to add payment: ${error.message}`);
+      console.error('Payment mutation error:', error);
     }
   });
 
   // Update payment mutation
   const updatePaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
+      console.log('Updating payment:', paymentData);
+      
       // Format the data for submission
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: paymentData.date,
+        payment_date: format(paymentData.paymentDate, 'yyyy-MM-dd'),
         payment_mode: paymentData.paymentMode,
         receipt_number: paymentData.receiptNumber,
-        purpose: paymentData.purpose
+        purpose: paymentData.purpose,
+        term: paymentData.months?.join(', ') || 'General',
+        notes: paymentData.notes || ''
       };
 
       // Calculate amount difference for student fee update
@@ -170,7 +175,10 @@ export default function Fees() {
         .select()
         .single();
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Transaction update error:', transactionError);
+        throw transactionError;
+      }
 
       // Update the student's paid fees if amount changed
       if (amountDifference !== 0) {
@@ -188,7 +196,10 @@ export default function Fees() {
             })
             .eq('id', student.id);
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('Student update error:', updateError);
+            throw updateError;
+          }
         }
       }
 
@@ -199,16 +210,9 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
-      toast.success("Payment updated successfully", {
-        description: "The fee transaction has been updated",
-        action: {
-          label: "View",
-          onClick: () => setActiveTab("transactions")
-        }
-      });
     },
     onError: (error: any) => {
-      toast.error(`Failed to update payment: ${error.message}`);
+      console.error('Payment update mutation error:', error);
     }
   });
 
@@ -216,6 +220,8 @@ export default function Fees() {
   const deletePaymentMutation = useMutation({
     mutationFn: async () => {
       if (!selectedTransaction) throw new Error("No transaction selected");
+
+      console.log('Deleting payment:', selectedTransaction.id);
 
       // Get the transaction to be deleted
       const transaction = feeTransactions.find(t => t.id === selectedTransaction.id);
@@ -227,7 +233,10 @@ export default function Fees() {
         .delete()
         .eq('id', transaction.id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
 
       // Update the student's paid fees
       const student = students.find(s => s.id === transaction.student_id);
@@ -244,7 +253,10 @@ export default function Fees() {
           })
           .eq('id', student.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Student update error:', updateError);
+          throw updateError;
+        }
       }
 
       return transaction;
@@ -254,12 +266,9 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
-      toast.success("Payment deleted successfully", {
-        description: "The fee transaction has been removed"
-      });
     },
     onError: (error: any) => {
-      toast.error(`Failed to delete payment: ${error.message}`);
+      console.error('Delete mutation error:', error);
     }
   });
 
@@ -370,26 +379,27 @@ export default function Fees() {
     // Format transaction data for the form
     setSelectedTransaction({
       ...transaction,
-      paymentMode: transaction.payment_mode
+      paymentMode: transaction.payment_mode,
+      paymentDate: transaction.payment_date,
+      receiptNumber: transaction.receipt_number
     });
     setSelectedStudentId(transaction.student_id);
     setIsAddPaymentDialogOpen(true);
   };
 
   // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
+    console.log('Form submit data:', data);
+    
     if (selectedTransaction) {
-      return updatePaymentMutation.mutate({
-        ...data,
-        id: selectedTransaction.id
-      });
+      return updatePaymentMutation.mutateAsync(data);
     } else {
-      return addPaymentMutation.mutate(data);
+      return addPaymentMutation.mutateAsync(data);
     }
   };
 
-  const handleDeleteTransaction = () => {
-    return deletePaymentMutation.mutate();
+  const handleDeleteTransaction = async () => {
+    return deletePaymentMutation.mutateAsync();
   };
 
   // Filtered students for the Student Fee Status section
@@ -478,7 +488,7 @@ export default function Fees() {
         </Card>
       </div>
 
-      {/* Filters and Search - Updated for better prominence and horizontal layout */}
+      {/* Filters and Search */}
       <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
@@ -602,7 +612,7 @@ export default function Fees() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedTransaction ? "Edit Fee Payment" : "Add Fee Payment"}</DialogTitle>
             <DialogDescription>
@@ -610,6 +620,7 @@ export default function Fees() {
             </DialogDescription>
           </DialogHeader>
           <FeeTransactionForm 
+            students={students}
             transaction={selectedTransaction} 
             onSubmit={handleFormSubmit} 
             onDelete={selectedTransaction ? handleDeleteTransaction : undefined} 

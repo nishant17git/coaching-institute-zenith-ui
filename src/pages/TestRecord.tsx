@@ -266,24 +266,24 @@ export default function TestRecord() {
   });
 
   // Handle new test creation
-  const handleAddTest = (testData: any) => {
+  const handleAddTest = async (testData: any) => {
     console.log('Handling add test:', testData);
-    addTestMutation.mutate(testData);
+    return addTestMutation.mutateAsync(testData);
   };
 
   // Handle test update
-  const handleUpdateTest = (testData: any) => {
+  const handleUpdateTest = async (testData: any) => {
     if (!editingTest) return;
     console.log('Handling update test:', testData);
-    updateTestMutation.mutate({
+    return updateTestMutation.mutateAsync({
       id: editingTest.id,
       ...testData
     });
   };
 
   // Handle test deletion
-  const handleDeleteTest = (testId: string) => {
-    deleteTestMutation.mutate(testId);
+  const handleDeleteTest = async (testId: string) => {
+    return deleteTestMutation.mutateAsync(testId);
   };
 
   // Handle editing a test

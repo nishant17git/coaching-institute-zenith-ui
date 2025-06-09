@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,63 +70,75 @@ export default function Students() {
   // Add student mutation
   const addStudentMutation = useMutation({
     mutationFn: async (studentData: any) => {
+      console.log('Adding student:', studentData);
+      
       const { data, error } = await supabase
         .from('students')
         .insert([studentData])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Add student error:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setIsAddStudentDialogOpen(false);
       setSelectedStudent(null);
-      toast.success("Student added successfully");
     },
     onError: (error: any) => {
-      toast.error(`Failed to add student: ${error.message}`);
+      console.error('Add student mutation error:', error);
     }
   });
 
   // Update student mutation
   const updateStudentMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      console.log('Updating student:', id, data);
+      
       const { error } = await supabase
         .from('students')
         .update(data)
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Update student error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setIsAddStudentDialogOpen(false);
       setSelectedStudent(null);
-      toast.success("Student updated successfully");
     },
     onError: (error: any) => {
-      toast.error(`Failed to update student: ${error.message}`);
+      console.error('Update student mutation error:', error);
     }
   });
 
   // Delete student mutation
   const deleteStudentMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting student:', id);
+      
       const { error } = await supabase
         .from('students')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Delete student error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success("Student deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(`Failed to delete student: ${error.message}`);
+      console.error('Delete student mutation error:', error);
     }
   });
 
@@ -165,7 +178,9 @@ export default function Students() {
     });
   };
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
+    console.log('Form submit data:', data);
+    
     // Transform the form data to match database schema
     const transformedData = {
       full_name: data.name,
@@ -187,9 +202,9 @@ export default function Students() {
     };
 
     if (selectedStudent) {
-      updateStudentMutation.mutate({ id: selectedStudent.id, data: transformedData });
+      return updateStudentMutation.mutateAsync({ id: selectedStudent.id, data: transformedData });
     } else {
-      addStudentMutation.mutate(transformedData);
+      return addStudentMutation.mutateAsync(transformedData);
     }
   };
 

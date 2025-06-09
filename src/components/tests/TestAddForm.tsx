@@ -1,304 +1,279 @@
 
-import React from "react";
-import { z } from "zod";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { cn } from "@/lib/utils";
-import { User, BookOpen, ClipboardList, Award, Target } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+
+// Test form schema
+const testSchema = z.object({
+  student_id: z.string().min(1, "Please select a student"),
+  test_name: z.string().min(1, "Test name is required"),
+  subject: z.string().min(1, "Subject is required"),
+  test_date: z.date({ required_error: "Test date is required" }),
+  test_type: z.string().min(1, "Test type is required"),
+  marks_obtained: z.coerce.number().min(0, "Marks obtained must be positive"),
+  total_marks: z.coerce.number().min(1, "Total marks must be positive"),
+});
+
+type TestFormValues = z.infer<typeof testSchema>;
 
 interface TestAddFormProps {
-  onSubmit: (data: any) => void;
-  students: { id: string; full_name?: string; class?: number | string }[];
+  onSubmit: (data: TestFormValues) => Promise<void>;
+  students: any[];
   initialData?: any;
   isEditing?: boolean;
 }
 
-const testFormSchema = z.object({
-  student_id: z.string().min(1, { message: "Please select a student" }),
-  subject: z.string().min(1, { message: "Subject is required" }),
-  test_name: z.string().min(1, { message: "Test name is required" }),
-  test_date: z.date({ required_error: "Test date is required" }),
-  test_type: z.string().min(1, { message: "Test type is required" }),
-  marks_obtained: z.coerce.number().min(0, { message: "Marks obtained must be non-negative" }),
-  total_marks: z.coerce.number().min(1, { message: "Total marks must be positive" }),
-}).refine((data) => data.marks_obtained <= data.total_marks, {
-  message: "Marks obtained cannot exceed total marks",
-  path: ["marks_obtained"],
-});
-
-type TestFormValues = z.infer<typeof testFormSchema>;
+const subjects = ["Mathematics", "Science", "Social Science", "Hindi", "English"];
+const testTypes = ["MCQs Test (Standard)", "Unit Test", "Monthly Test", "Half Yearly", "Final Exam"];
 
 export function TestAddForm({ onSubmit, students, initialData, isEditing = false }: TestAddFormProps) {
-  const form = useForm<TestFormValues>({
-    resolver: zodResolver(testFormSchema),
-    defaultValues: initialData || {
-      student_id: "",
-      subject: "",
-      test_name: "",
-      test_date: new Date(),
-      test_type: "MCQs Test (Standard)",
-      marks_obtained: 0,
-      total_marks: 100,
-    },
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (values: TestFormValues) => {
-    console.log('Form values before submission:', values);
-    
-    const selectedStudent = students.find(s => s.id === values.student_id);
-    
-    const formattedData = {
-      student_id: values.student_id,
-      subject: values.subject,
-      test_name: values.test_name,
-      test_date: format(values.test_date, "yyyy-MM-dd"),
-      test_type: values.test_type,
-      marks_obtained: Number(values.marks_obtained),
-      total_marks: Number(values.total_marks),
-      class: selectedStudent?.class || 1,
-    };
-    
-    console.log('Formatted data for submission:', formattedData);
-    onSubmit(formattedData);
+  const defaultValues = initialData ? {
+    student_id: initialData.student_id || "",
+    test_name: initialData.test_name || "",
+    subject: initialData.subject || "Mathematics",
+    test_date: initialData.test_date ? new Date(initialData.test_date) : new Date(),
+    test_type: initialData.test_type || "MCQs Test (Standard)",
+    marks_obtained: initialData.marks_obtained || 0,
+    total_marks: initialData.total_marks || 100,
+  } : {
+    student_id: "",
+    test_name: "",
+    subject: "Mathematics",
+    test_date: new Date(),
+    test_type: "MCQs Test (Standard)",
+    marks_obtained: 0,
+    total_marks: 100,
   };
 
-  const validStudents = students.filter(student => 
-    student.id && student.id.trim() !== "" && 
-    student.full_name && student.full_name.trim() !== ""
-  );
+  const form = useForm<TestFormValues>({
+    resolver: zodResolver(testSchema),
+    defaultValues,
+  });
+
+  const handleSubmit = async (data: TestFormValues) => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      
+      // Validate marks
+      if (data.marks_obtained > data.total_marks) {
+        toast.error("Marks obtained cannot be greater than total marks");
+        return;
+      }
+
+      // Add class information from student
+      const student = students.find(s => s.id === data.student_id);
+      const formData = {
+        ...data,
+        class: student?.class || 9
+      };
+
+      await onSubmit(formData);
+      toast.success(isEditing ? "Test updated successfully" : "Test added successfully", {
+        description: `Test for ${student?.full_name} has been ${isEditing ? 'updated' : 'recorded'}`
+      });
+      
+      if (!isEditing) {
+        form.reset(defaultValues);
+      }
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      toast.error("Failed to save test", {
+        description: error.message || "Please try again"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="w-full h-full flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-            {/* Student Selection Section */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <User className="h-4 w-4 text-blue-600" />
-                  Student Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+    <div className="w-full max-h-[70vh] overflow-y-auto">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5 text-primary" />
+                {isEditing ? "Edit Test Record" : "Add Test Record"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="student_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Student *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select student" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-[200px]">
+                        {students.filter(s => s.class === 9 || s.class === 10).map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.full_name} - Class {student.class}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="student_id"
+                  name="test_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs sm:text-sm font-medium">Student *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm">
-                            <SelectValue placeholder="Select a student" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-[200px]">
-                          <SelectGroup>
-                            <SelectLabel>Students</SelectLabel>
-                            {validStudents.map((student) => (
-                              <SelectItem key={student.id} value={student.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-xs sm:text-sm">{student.full_name}</span>
-                                  <span className="text-xs text-muted-foreground">Class {student.class}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-xs" />
+                      <FormLabel className="text-sm font-medium">Test Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter test name" className="h-10" {...field} />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
 
-            {/* Test Information Section */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <BookOpen className="h-4 w-4 text-green-600" />
-                  Test Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Subject *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm">
-                              <SelectValue placeholder="Select subject" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Subjects</SelectLabel>
-                              <SelectItem value="Mathematics">Mathematics</SelectItem>
-                              <SelectItem value="Science">Science</SelectItem>
-                              <SelectItem value="Social Science">Social Science</SelectItem>
-                              <SelectItem value="Hindi">Hindi</SelectItem>
-                              <SelectItem value="English">English</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="test_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Test Name *</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="subject"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Subject *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter test name" 
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                            {...field} 
-                          />
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select subject" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          {subjects.map((subject) => (
+                            <SelectItem key={subject} value={subject}>
+                              {subject}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="test_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Test Date *</FormLabel>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="test_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Test Date *</FormLabel>
+                      <FormControl>
+                        <DatePicker
+                          date={field.value}
+                          onSelect={field.onChange}
+                          placeholder="Select test date"
+                          className="h-10"
+                          fromYear={2020}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="test_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Test Type *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <DatePicker
-                            date={field.value}
-                            onSelect={field.onChange}
-                            placeholder="Select test date"
-                            disabled={(date) => date > new Date()}
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm"
-                            fromYear={2020}
-                            toYear={new Date().getFullYear()}
-                          />
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select test type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {testTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                  <FormField
-                    control={form.control}
-                    name="test_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Test Type *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm">
-                              <SelectValue placeholder="Select test type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Test Types</SelectLabel>
-                              <SelectItem value="MCQs Test (Standard)">MCQs Test (Standard)</SelectItem>
-                              <SelectItem value="MCQs Test (Normal)">MCQs Test (Normal)</SelectItem>
-                              <SelectItem value="Chapter-wise Test">Chapter-wise Test</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="marks_obtained"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Marks Obtained *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter marks obtained" className="h-10" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Marks Section */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <Target className="h-4 w-4 text-amber-600" />
-                  Marks Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="marks_obtained"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Marks Obtained *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            min="0"
-                            step="1"
-                            placeholder="Enter marks obtained" 
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="total_marks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Total Marks *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="Enter total marks" 
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </form>
-        </Form>
-      </div>
+                <FormField
+                  control={form.control}
+                  name="total_marks"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Total Marks *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter total marks" className="h-10" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-      <DialogFooter className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-4 flex-shrink-0 border-t bg-white">
-        <Button 
-          type="submit" 
-          onClick={form.handleSubmit(handleSubmit)}
-          disabled={form.formState.isSubmitting}
-          className="h-9 sm:h-11 px-4 sm:px-8 font-medium w-full sm:w-auto bg-black hover:bg-black/80 text-xs sm:text-sm"
-        >
-          <Award className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-          {form.formState.isSubmitting ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Test Record' : 'Add Test Record')}
-        </Button>
-      </DialogFooter>
+          <div className="flex justify-end pt-4">
+            <Button 
+              type="submit" 
+              className="h-10 px-6 font-medium" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditing ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                isEditing ? "Update Test" : "Add Test"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
