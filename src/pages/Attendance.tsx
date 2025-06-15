@@ -76,19 +76,33 @@ export default function Attendance() {
     }
   });
 
-  // Monthly attendance records
+  // Monthly attendance records - now filtered by class
   const {
     data: allAttendanceRecords = [],
     isLoading: allAttendanceLoading
   } = useQuery({
-    queryKey: ['attendance', format(selectedMonth, 'yyyy-MM')],
+    queryKey: ['attendance', format(selectedMonth, 'yyyy-MM'), selectedClass],
     queryFn: async () => {
       const monthStart = startOfMonth(selectedMonth);
       const monthEnd = endOfMonth(selectedMonth);
-      const {
-        data,
-        error
-      } = await supabase.from('attendance_records').select('*').gte('date', format(monthStart, 'yyyy-MM-dd')).lte('date', format(monthEnd, 'yyyy-MM-dd'));
+      
+      // Get students in the selected class
+      const { data: classStudents } = await supabase
+        .from('students')
+        .select('id')
+        .eq('class', selectedClass);
+      
+      if (!classStudents || classStudents.length === 0) return [];
+      
+      const studentIds = classStudents.map(s => s.id);
+      
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'))
+        .in('student_id', studentIds);
+      
       if (error) throw error;
       return data || [];
     }
@@ -288,24 +302,26 @@ export default function Attendance() {
     setDayAttendance(studentsWithStatus);
   }, [selectedDate, selectedClass, searchQuery, students, attendanceRecords]);
 
-  // Prepare calendar data
+  // Prepare calendar data - now class-specific
   useEffect(() => {
     if (!allAttendanceLoading && allAttendanceRecords) {
       const monthStart = startOfMonth(selectedMonth);
       const monthEnd = endOfMonth(selectedMonth);
       const daysInMonth = monthEnd.getDate();
       const calendarDays = [];
+      
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day);
         const dateString = format(date, 'yyyy-MM-dd');
 
-        // Get day's attendance
+        // Get day's attendance for selected class only
         const dayAttendance = allAttendanceRecords.filter(record => record.date === dateString);
         const presentCount = dayAttendance.filter(record => record.status === 'Present').length;
         const absentCount = dayAttendance.filter(record => record.status === 'Absent').length;
         const leaveCount = dayAttendance.filter(record => record.status === 'Leave').length;
         const totalStudents = presentCount + absentCount + leaveCount;
         const attendancePercentage = totalStudents > 0 ? Math.round(presentCount / totalStudents * 100) : 0;
+        
         calendarDays.push({
           date,
           dayOfMonth: day,
@@ -437,6 +453,51 @@ export default function Attendance() {
       description: `Attendance report for ${selectedStudent.full_name} has been downloaded`
     });
   };
+
+  // Handle export to PDF for calendar view
+  const handleCalendarExportPDF = (date: Date, stats: {
+    present: number;
+    absent: number;
+    leave: number;
+    total: number;
+  }) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    
+    // Get students for the selected class and date
+    const classStudents = students.filter(s => s.class === selectedClass);
+    const dayRecords = attendanceRecords.filter(r => r.date === dateString);
+    
+    // Create records with proper student names and classes
+    const records = classStudents.map(student => {
+      const record = dayRecords.find(r => r.student_id === student.id);
+      return {
+        id: student.id,
+        studentId: student.id,
+        date: dateString,
+        status: (record?.status || "Absent") as "Present" | "Absent" | "Leave" | "Holiday",
+        studentName: student.full_name,
+        studentClass: `Class ${student.class}`
+      };
+    });
+
+    // Export as PDF using the existing PDF service
+    exportAttendanceToPDF({
+      records,
+      studentData: {
+        id: `class-${selectedClass}`,
+        name: `Class ${selectedClass}`,
+        class: selectedClass,
+        attendancePercentage: stats.total > 0 ? Math.round(stats.present / stats.total * 100) : 0
+      },
+      title: "Daily Attendance Report",
+      subtitle: `Attendance Report for Class ${selectedClass} - ${format(date, 'MMMM d, yyyy')}`,
+      chartImage: null
+    });
+    
+    toast.success("PDF exported successfully", {
+      description: `Attendance report for ${format(date, 'MMMM d, yyyy')} has been downloaded`
+    });
+  };
   return <motion.div initial={{
     opacity: 0
   }} animate={{
@@ -444,7 +505,7 @@ export default function Attendance() {
   }} transition={{
     duration: 0.3
   }} className="space-y-6 container px-0 sm:px-4 mx-auto max-w-7xl">
-      <EnhancedPageHeader title="Attendance Management" showBackButton />
+      <EnhancedPageHeader title="Attendance" />
 
       {/* Stats Cards */}
       <AttendanceSummary stats={attendanceStats} />
@@ -483,28 +544,20 @@ export default function Attendance() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar 
-                          mode="single" 
-                          selected={selectedDate} 
-                          onSelect={date => {
-                            if (date) {
-                              setSelectedDate(date);
-                              setIsCalendarOpen(false);
-                            }
-                          }} 
-                          initialFocus 
-                          className="p-3 pointer-events-auto" 
-                        />
+                        <Calendar mode="single" selected={selectedDate} onSelect={date => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setIsCalendarOpen(false);
+                        }
+                      }} initialFocus className="p-3 pointer-events-auto" />
                       </PopoverContent>
                     </Popover>
                   </CardDescription>
                 </div>
-                {hasUnsavedChanges && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                {hasUnsavedChanges && <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     Unsaved changes
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -512,22 +565,10 @@ export default function Attendance() {
                 <div className="flex flex-1 w-full sm:w-auto items-center gap-3">
                   <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search student..." 
-                      value={searchQuery} 
-                      onChange={e => setSearchQuery(e.target.value)} 
-                      className="pl-10" 
-                    />
-                    {searchQuery && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" 
-                        onClick={() => setSearchQuery("")}
-                      >
+                    <Input placeholder="Search student..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
+                    {searchQuery && <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => setSearchQuery("")}>
                         <X className="h-3 w-3" />
-                      </Button>
-                    )}
+                      </Button>}
                   </div>
                   
                   <Select value={selectedClass.toString()} onValueChange={value => setSelectedClass(parseInt(value))}>
@@ -535,11 +576,11 @@ export default function Attendance() {
                       <SelectValue placeholder="Class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: 9 }, (_, i) => i + 2).map(cls => (
-                        <SelectItem key={cls} value={cls.toString()}>
+                      {Array.from({
+                      length: 9
+                    }, (_, i) => i + 2).map(cls => <SelectItem key={cls} value={cls.toString()}>
                           Class {cls}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -585,19 +626,50 @@ export default function Attendance() {
         <TabsContent value="calendar" className="focus-visible:outline-none">
           <Card className="shadow-sm">
             <CardHeader className="px-5 py-4 border-b">
-              <CardTitle className="font-semibold text-lg py-0">Attendance Calendar</CardTitle>
-              <CardDescription className="text-muted-foreground text-xs">
-                View and track attendance records across the month
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle className="font-semibold py-0 text-lg">Calendar</CardTitle>
+                  <CardDescription className="text-muted-foreground text-xs">
+                    View and track attendance records across the month
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={selectedClass.toString()} onValueChange={value => setSelectedClass(parseInt(value))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 9 }, (_, i) => i + 2).map(cls => (
+                        <SelectItem key={cls} value={cls.toString()}>
+                          Class {cls}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-4">
-              <AttendanceCalendarView calendarData={calendarData} selectedDate={selectedDate} onSelectDate={setSelectedDate} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} isLoading={allAttendanceLoading} />
+              <AttendanceCalendarView 
+                calendarData={calendarData} 
+                selectedDate={selectedDate} 
+                onSelectDate={setSelectedDate} 
+                selectedMonth={selectedMonth} 
+                onMonthChange={setSelectedMonth} 
+                isLoading={allAttendanceLoading} 
+                onExportPDF={handleCalendarExportPDF} 
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="students" className="focus-visible:outline-none">
-          <StudentAttendanceTab students={students.filter(s => s.class === selectedClass)} onStudentSelect={handleStudentSelect} selectedClass={selectedClass} onClassChange={value => setSelectedClass(parseInt(value))} />
+          <StudentAttendanceTab 
+            students={students.filter(s => s.class === selectedClass)} 
+            onStudentSelect={handleStudentSelect} 
+            selectedClass={selectedClass} 
+            onClassChange={value => setSelectedClass(parseInt(value))} 
+          />
         </TabsContent>
       </Tabs>
 

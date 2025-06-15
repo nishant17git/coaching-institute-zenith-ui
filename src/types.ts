@@ -1,4 +1,3 @@
-
 export interface Student {
   id: string;
   name: string;
@@ -43,6 +42,8 @@ export interface AttendanceRecord {
   studentId: string;
   date: string;
   status: "Present" | "Absent" | "Leave" | "Holiday";
+  studentName?: string; // Optional - for PDF exports
+  studentClass?: string; // Optional - for PDF exports
 }
 
 export interface Class {

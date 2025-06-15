@@ -3,13 +3,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
     <title>Infinity ATOM U-235 I</title>
     <meta name="description" content="Student Management System for Coaching Institutes" />
     <meta name="author" content="Infinity Classes" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent"/>
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
+
+    <!-- Preload critical fonts to prevent FOUT -->
+    <link rel="preload" href="/fonts/SF Pro Display/SF-Pro-Display-Regular.woff" as="font" type="font/woff" crossorigin>
+    <link rel="preload" href="/fonts/SF Pro Display/SF-Pro-Display-Medium.woff" as="font" type="font/woff" crossorigin>
+    <link rel="preload" href="/fonts/SF Pro Display/SF-Pro-Display-Semibold.woff" as="font" type="font/woff" crossorigin>
+    <link rel="preload" href="/fonts/SF Pro Display/SF-Pro-Display-Bold.woff" as="font" type="font/woff" crossorigin>
+    <link rel="preload" href="/fonts/INDIA2023bold.woff" as="font" type="font/woff" crossorigin>
 
     <meta property="og:title" content="Infinity Classes - Student Management System" />
     <meta property="og:description" content="Student Management System for Coaching Institutes" />

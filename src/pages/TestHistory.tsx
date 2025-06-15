@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -19,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { TestRecordDb, TestDb, StudentRecord, SubjectStat } from "@/types";
 import { FileText, Share2, Download, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { CartesianGrid, Line, LineChart, XAxis, Bar, BarChart, Rectangle, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, Bar, BarChart } from "recharts";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 // Define the motion component
@@ -37,34 +36,15 @@ interface EnhancedTestRecord extends TestRecordDb {
 const progressChartConfig = {
   score: {
     label: "Score",
-    color: "hsl(var(--chart-1))"
+    color: "#FF6B6B"
   }
 } satisfies ChartConfig;
 
 // Create subject performance chart data
 const subjectChartConfig = {
   score: {
-    label: "Score"
-  },
-  mathematics: {
-    label: "Mathematics",
-    color: "hsl(var(--chart-1))"
-  },
-  physics: {
-    label: "Physics",
-    color: "hsl(var(--chart-2))"
-  },
-  chemistry: {
-    label: "Chemistry",
-    color: "hsl(var(--chart-3))"
-  },
-  english: {
-    label: "English",
-    color: "hsl(var(--chart-4))"
-  },
-  biology: {
-    label: "Biology",
-    color: "hsl(var(--chart-5))"
+    label: "Score",
+    color: "#4ECDC4"
   }
 } satisfies ChartConfig;
 
@@ -85,18 +65,14 @@ export default function TestHistory() {
     queryKey: ['student', studentId],
     queryFn: async () => {
       if (!studentId) return null;
-      
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('id', studentId)
-        .single();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('students').select('*').eq('id', studentId).single();
       if (error) {
         console.error('Error fetching student:', error);
         throw error;
       }
-      
       return data;
     },
     enabled: !!studentId
@@ -110,21 +86,20 @@ export default function TestHistory() {
     queryKey: ['student_test_results', studentId],
     queryFn: async () => {
       if (!studentId) return [];
-      
-      const { data, error } = await supabase
-        .from('test_results')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('test_results').select(`
           *,
           test:tests(*)
-        `)
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
-      
+        `).eq('student_id', studentId).order('created_at', {
+        ascending: false
+      });
       if (error) {
         console.error('Error fetching test results:', error);
         throw error;
       }
-      
+
       // Transform the data to include test details
       return (data || []).map(result => ({
         ...result,
@@ -169,47 +144,27 @@ export default function TestHistory() {
         count: 0,
         color: '#EF4444'
       }];
-      
       testRecords.forEach(test => {
         const percent = test.percentage || 0;
-        if (percent >= 90) gradeDistribution[0].count++;
-        else if (percent >= 75) gradeDistribution[1].count++;
-        else if (percent >= 60) gradeDistribution[2].count++;
-        else if (percent >= 40) gradeDistribution[3].count++;
-        else gradeDistribution[4].count++;
+        if (percent >= 90) gradeDistribution[0].count++;else if (percent >= 75) gradeDistribution[1].count++;else if (percent >= 60) gradeDistribution[2].count++;else if (percent >= 40) gradeDistribution[3].count++;else gradeDistribution[4].count++;
       });
 
       // Progress over time chart data
-      const progressData = testRecords
-        .filter(test => test.test_date)
-        .sort((a, b) => new Date(a.test_date!).getTime() - new Date(b.test_date!).getTime())
-        .map(test => ({
-          date: format(new Date(test.test_date!), 'dd MMM'),
-          score: Math.round(test.percentage || 0),
-          subject: test.subject || 'Unknown',
-          test: test.test_name || 'Unknown Test'
-        }));
+      const progressData = testRecords.filter(test => test.test_date).sort((a, b) => new Date(a.test_date!).getTime() - new Date(b.test_date!).getTime()).map(test => ({
+        date: format(new Date(test.test_date!), 'dd MMM'),
+        score: Math.round(test.percentage || 0),
+        subject: test.subject || 'Unknown',
+        test: test.test_name || 'Unknown Test'
+      }));
 
       // Subject performance data
       const subjectPerformance: SubjectStat[] = subjects.map(subject => {
         const subjectTests = testRecords.filter(test => test.subject === subject);
         const averagePercent = subjectTests.length > 0 ? Math.round(subjectTests.reduce((acc, test) => acc + (test.percentage || 0), 0) / subjectTests.length) : 0;
-
-        // Colors for subjects
-        const subjectColors: Record<string, string> = {
-          Mathematics: '#D946EF',
-          English: '#0EA5E9',
-          Science: '#06B6D4',
-          Physics: '#3B82F6',
-          Chemistry: '#F97316',
-          Biology: '#22C55E',
-          History: '#8B5CF6',
-          Geography: '#EAB308'
-        };
         return {
           name: subject,
           score: averagePercent,
-          fill: subjectColors[subject] || '#8B5CF6'
+          fill: '#4ECDC4'
         };
       });
 
@@ -218,7 +173,6 @@ export default function TestHistory() {
 
       // Find latest test
       const latestTest = testRecords.length > 0 ? testRecords.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0] : null;
-      
       return {
         totalTests,
         averageScore,
@@ -232,7 +186,6 @@ export default function TestHistory() {
     },
     enabled: !testsLoading && testRecords.length >= 0
   });
-  
   const handleBack = () => {
     navigate(-1);
   };
@@ -267,7 +220,7 @@ export default function TestHistory() {
       toast.error("No test data available to export");
       return;
     }
-    
+
     // Convert to legacy format for PDF service
     const legacyFormat = {
       test_name: "Academic Records Report",
@@ -276,7 +229,6 @@ export default function TestHistory() {
       marks: 0,
       total_marks: 100
     };
-    
     exportTestToPDF({
       test: legacyFormat,
       student,
@@ -300,7 +252,7 @@ export default function TestHistory() {
       toast.error("Student information not available");
       return;
     }
-    
+
     // Convert to legacy format for PDF service
     const legacyFormat = {
       test_name: test.test_name || 'Test',
@@ -309,7 +261,6 @@ export default function TestHistory() {
       marks: test.marks_obtained,
       total_marks: test.total_marks
     };
-    
     exportTestToPDF({
       test: legacyFormat,
       student,
@@ -319,20 +270,113 @@ export default function TestHistory() {
     toast.success("PDF generated successfully");
   };
 
+  // Get student's first name
+  const getStudentFirstName = (fullName: string) => {
+    return fullName.split(' ')[0];
+  };
+
+  // Enhanced loading skeleton with fixed stretching issues
+  const LoadingSkeleton = () => <div className="space-y-6 px-4 md:px-0">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+          <Skeleton className="h-10 w-48 sm:w-64 flex-shrink-0" />
+        </div>
+        <Skeleton className="h-10 w-24 sm:w-32 flex-shrink-0" />
+      </div>
+      
+      {/* Student Summary Card Skeleton */}
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full flex-shrink-0" />
+            <div className="space-y-2 flex-1 min-w-0">
+              <Skeleton className="h-6 w-32 sm:w-48" />
+              <Skeleton className="h-4 w-24 sm:w-32" />
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20 sm:w-24" />
+              <Skeleton className="h-8 w-12 sm:w-16" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Stats Cards Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {Array.from({
+        length: 3
+      }).map((_, i) => <div key={i} className="rounded-lg border bg-card shadow-sm">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                <Skeleton className="h-4 w-20 sm:w-24" />
+              </div>
+              <Skeleton className="h-8 w-12 sm:w-16" />
+              <Skeleton className="h-2 w-full max-w-[200px]" />
+            </div>
+          </div>)}
+      </div>
+      
+      {/* Test Records Table Skeleton */}
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="space-y-2 flex-1 min-w-0">
+              <Skeleton className="h-6 w-24 sm:w-32" />
+              <Skeleton className="h-4 w-36 sm:w-48" />
+            </div>
+            <Skeleton className="h-10 w-20 sm:w-24 flex-shrink-0" />
+          </div>
+          
+          <div className="space-y-3">
+            {Array.from({
+            length: 5
+          }).map((_, i) => <div key={i} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2 gap-3">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <Skeleton className="h-5 w-24 sm:w-32" />
+                    <Skeleton className="h-4 w-20 sm:w-24" />
+                  </div>
+                  <Skeleton className="h-6 w-8 rounded-full flex-shrink-0" />
+                </div>
+                <div className="space-y-2 mt-3">
+                  <div className="flex justify-between items-center gap-2">
+                    <Skeleton className="h-4 w-16 sm:w-20" />
+                    <Skeleton className="h-4 w-12 sm:w-16" />
+                  </div>
+                  <Skeleton className="h-2 w-full max-w-[300px]" />
+                </div>
+              </div>)}
+          </div>
+        </div>
+      </div>
+      
+      {/* Charts Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {Array.from({
+        length: 2
+      }).map((_, i) => <div key={i} className="rounded-lg border bg-card shadow-sm">
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-32 sm:w-40" />
+                <Skeleton className="h-4 w-24 sm:w-32" />
+              </div>
+              <Skeleton className="h-48 sm:h-64 w-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-36 sm:w-48" />
+                <Skeleton className="h-4 w-28 sm:w-36" />
+              </div>
+            </div>
+          </div>)}
+      </div>
+    </div>;
+
   // Loading state
   if (studentLoading || testsLoading) {
-    return <div className="space-y-6 px-4 md:px-0">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-        </div>
-        <Skeleton className="h-64 w-full" />
-      </div>;
+    return <LoadingSkeleton />;
   }
 
   // We extract real data or use empty defaults when stats aren't loaded yet
@@ -343,7 +387,6 @@ export default function TestHistory() {
     progressData = [],
     bestSubject = null
   } = stats || {};
-  
   return <div className="w-full sm:px-6 lg:px-8 px-0">
       <AnimatedDiv initial={{
       opacity: 0
@@ -352,8 +395,8 @@ export default function TestHistory() {
     }} transition={{
       duration: 0.3
     }} className="space-y-6">
-        {/* Page Header with updated title */}
-        <EnhancedPageHeader title="Academic Records" showBackButton={true} onBack={handleBack} />
+        {/* Page Header with student's name followed by 's Academics */}
+        <EnhancedPageHeader title={student ? `${getStudentFirstName(student.full_name)}'s Academics` : "Academics"} showBackButton={true} onBack={handleBack} headerType="secondary" className="[&_h1]:text-3xl" />
         
         {/* Student Summary Card - Enhanced design */}
         {student && <AnimatedDiv initial={{
@@ -366,25 +409,7 @@ export default function TestHistory() {
         duration: 0.3,
         delay: 0.1
       }} className="mb-4">
-            <Card className="overflow-hidden bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-md border-purple-200/50 dark:border-purple-800/30">
-              <CardContent className="p-4 md:p-6 rounded-md py-[20px] bg-white">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xl md:text-2xl font-bold shadow-lg">
-                      {student.full_name?.charAt(0) || 'S'}
-                    </div>
-                    <div>
-                      <h2 className="text-xl md:text-2xl font-bold">{student.full_name}</h2>
-                    </div>
-                  </div>
-                  
-                  {averageScore > 0 && <div className="mt-2 md:mt-0 flex items-center gap-2">
-                      <div className="text-3xl font-bold font-spotify">{averageScore}%</div>
-                      <div className="text-sm text-muted-foreground">Average Score</div>
-                    </div>}
-                </div>
-              </CardContent>
-            </Card>
+            
           </AnimatedDiv>}
 
         {/* Stats Cards - Redesigned and improved for better UX */}
@@ -465,7 +490,7 @@ export default function TestHistory() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold font-spotify">{bestSubject?.name || "N/A"}</div>
+                <div className="text-xl font-bold font-sf-pro ">{bestSubject?.name || "N/A"}</div>
                 {bestSubject && <div className="mt-2 flex items-center gap-2">
                     <Progress value={bestSubject.score} className="h-2 flex-1" />
                     <span className="text-xs font-medium">{bestSubject.score}%</span>
@@ -489,8 +514,8 @@ export default function TestHistory() {
           <Card className="overflow-hidden shadow-md">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Test Records</CardTitle>
-                <CardDescription className="text-left font-thin text-sm my-[8px]">
+                <CardTitle className="text-xl">Test Records</CardTitle>
+                <CardDescription className="text-left my-[8px] font-normal text-sm">
                   Complete history of all tests taken
                 </CardDescription>
               </div>
@@ -651,108 +676,88 @@ export default function TestHistory() {
         </AnimatedDiv>
         
         {/* Charts Section - Now appears after Test Records */}
-        {progressData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Performance Progress Chart - Optimized for responsiveness */}
+        {progressData.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Performance Progress Chart - Updated Line Chart */}
             <AnimatedDiv initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.3,
-            delay: 0.5
-          }}>
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.3,
+          delay: 0.5
+        }}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Performance Progress</CardTitle>
-                  <CardDescription>Test performance over time</CardDescription>
+                  <CardTitle className="text-xl">Performance Progress</CardTitle>
+                  <CardDescription className="text-sm">Test performance over time</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={progressChartConfig}>
                     <LineChart accessibilityLayer data={progressData} margin={{
-                    left: 12,
-                    right: 12,
-                    top: 20,
-                    bottom: 10
-                  }} height={isMobile ? 250 : 300}>
+                  left: 12,
+                  right: 12
+                }}>
                       <CartesianGrid vertical={false} />
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                      <Line dataKey="score" type="monotone" stroke="var(--color-score)" strokeWidth={3} dot={{
-                      r: 4,
-                      strokeWidth: 1,
-                      fill: "var(--color-score)"
-                    }} activeDot={{
-                      r: 6,
-                      strokeWidth: 0,
-                      fill: "var(--color-score)"
-                    }} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => value.slice(0, 6)} />
+                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                      <Line dataKey="score" type="natural" stroke="#FF6B6B" strokeWidth={3} dot={{
+                    r: 4,
+                    strokeWidth: 2,
+                    fill: "#FF6B6B"
+                  }} />
                     </LineChart>
                   </ChartContainer>
                 </CardContent>
-                <CardFooter>
-                  <div className="flex w-full items-start gap-2 text-sm">
-                    <div className="grid gap-2">
-                      <div className="flex items-center gap-2 font-medium leading-none">
-                        Performance trend over time <TrendingUp className="h-4 w-4" />
-                      </div>
-                      <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                        Showing test scores chronologically
-                      </div>
-                    </div>
+                <CardFooter className="flex-col items-start gap-2 text-sm">
+                  <div className="flex gap-2 leading-none font-medium">
+                    Performance trend over time <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="text-muted-foreground leading-none">
+                    Showing test scores chronologically
                   </div>
                 </CardFooter>
               </Card>
             </AnimatedDiv>
             
-            {/* Subject Performance Chart - Enhanced sizing for mobile */}
+            {/* Subject Performance Chart - Updated Bar Chart */}
             <AnimatedDiv initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.3,
-            delay: 0.6
-          }}>
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.3,
+          delay: 0.6
+        }}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Subject Performance</CardTitle>
-                  <CardDescription>Average scores by subject</CardDescription>
+                  <CardTitle className="text-xl">Subject Performance</CardTitle>
+                  <CardDescription className="text-sm">Average scores by subject</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0">
+                <CardContent>
                   <ChartContainer config={subjectChartConfig}>
-                    <BarChart accessibilityLayer data={subjectPerformance} layout="vertical" margin={{
-                    left: 80,
-                    right: 12,
-                    top: 20,
-                    bottom: 10
-                  }} height={isMobile ? 250 : 300}>
-                      <CartesianGrid horizontal={true} vertical={false} />
-                      <XAxis type="number" domain={[0, 100]} tickFormatter={value => `${value}%`} tickLine={false} axisLine={false} />
-                      <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={80} />
+                    <BarChart accessibilityLayer data={subjectPerformance}>
+                      <CartesianGrid vertical={false} />
+                      <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={value => value.slice(0, 8)} />
                       <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Bar dataKey="score" strokeWidth={isMobile ? 3 : 2} radius={[0, 8, 8, 0]} barSize={isMobile ? 30 : 24} activeBar={({
-                      ...props
-                    }) => <Rectangle {...props} fillOpacity={0.8} stroke={props.payload.fill} strokeDasharray={4} strokeDashoffset={4} />} />
+                      <Bar dataKey="score" fill="#4ECDC4" radius={8} />
                     </BarChart>
                   </ChartContainer>
                 </CardContent>
                 <CardFooter className="flex-col items-start gap-2 text-sm">
-                  <div className="flex gap-2 font-medium leading-none">
+                  <div className="flex gap-2 leading-none font-medium">
                     {bestSubject ? bestSubject.name : "N/A"} is the strongest subject <TrendingUp className="h-4 w-4" />
                   </div>
-                  <div className="leading-none text-muted-foreground">
+                  <div className="text-muted-foreground leading-none">
                     Showing performance across all academic subjects
                   </div>
                 </CardFooter>
               </Card>
             </AnimatedDiv>
-          </div>
-        )}
+          </div>}
       </AnimatedDiv>
     </div>;
 }

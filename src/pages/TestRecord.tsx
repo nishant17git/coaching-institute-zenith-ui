@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -9,15 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy, BarChart3, TrendingUp } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Plus, LibraryBig, Loader2, FileText, ArrowLeft, History, Trophy, BarChart3, TrendingUp, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { exportTestToPDF } from "@/services/pdfService";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TestAddForm } from "@/components/tests/TestAddForm";
+import { exportTestToPDF } from "@/services/pdfService";
+import { TestForm } from "@/components/tests/TestForm";
+import { TestResultForm } from "@/components/tests/TestResultForm";
 import { TestResults } from "@/components/tests/TestResults";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -27,6 +28,7 @@ import { SubjectPerformanceChart } from "@/components/charts/SubjectPerformanceC
 import { TestDetailsView } from "@/components/tests/TestDetailsView";
 import { PerformanceInsights } from "@/components/tests/PerformanceInsights";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Helper function to safely format dates
 const formatSafeDate = (dateValue: string | null | undefined, formatString: string = 'dd MMM yyyy'): string => {
@@ -40,13 +42,79 @@ const formatSafeDate = (dateValue: string | null | undefined, formatString: stri
     return 'N/A';
   }
 };
+
+// Enhanced loading skeleton
+const TestLoadingSkeleton = () => (
+  <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-8 sm:h-10 w-32 sm:w-48" />
+      </div>
+      <Skeleton className="h-8 sm:h-10 w-24 sm:w-32" />
+    </div>
+    
+    <div className="space-y-3 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 sm:space-y-0">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-card shadow-sm">
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-2 w-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    <Skeleton className="h-8 sm:h-10 w-48 sm:w-64" />
+    
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <Skeleton className="h-8 sm:h-10 flex-1" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 sm:h-10 w-full sm:w-[150px]" />
+          <Skeleton className="h-8 sm:h-10 w-full sm:w-[130px]" />
+        </div>
+      </div>
+      
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="border rounded-lg p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div className="space-y-1">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-6 w-8 rounded-full" />
+            </div>
+            <div className="space-y-2 mt-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-2 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 export default function TestRecord() {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
   const [sortField, setSortField] = useState<"date" | "marks">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isAddTestOpen, setIsAddTestOpen] = useState(false);
+  const [isAddTestResultOpen, setIsAddTestResultOpen] = useState(false);
   const [isEditTestOpen, setIsEditTestOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [editingTest, setEditingTest] = useState<TestRecordDb | null>(null);
@@ -55,11 +123,33 @@ export default function TestRecord() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Fetch tests from Supabase
+  const {
+    data: tests = [],
+    isLoading: testsLoading,
+    refetch: refetchTests
+  } = useQuery({
+    queryKey: ['tests'],
+    queryFn: async () => {
+      const {
+        data,
+        error
+      } = await supabase.from('tests').select('*').order('created_at', {
+        ascending: false
+      });
+      if (error) {
+        console.error('Error fetching tests:', error);
+        throw error;
+      }
+      return data || [];
+    }
+  });
+
   // Fetch test records from Supabase using correct table name
   const {
     data: testRecords = [],
-    isLoading: testsLoading,
-    refetch: refetchTests
+    isLoading: testRecordsLoading,
+    refetch: refetchTestRecords
   } = useQuery({
     queryKey: ['test_results'],
     queryFn: async () => {
@@ -99,38 +189,46 @@ export default function TestRecord() {
     }
   });
 
-  // Mutation for adding test records
+  // Mutation for adding tests (not test results)
   const addTestMutation = useMutation({
     mutationFn: async (testData: any) => {
       console.log('Adding test with data:', testData);
-
-      // First, create the test in the tests table
       const {
         data: testRecord,
         error: testError
-      } = await supabase.from('tests').insert([{
-        test_name: testData.test_name,
-        subject: testData.subject,
-        test_date: testData.test_date,
-        test_type: testData.test_type,
-        total_marks: testData.total_marks,
-        class: testData.class
-      }]).select().single();
+      } = await supabase.from('tests').insert([testData]).select().single();
       if (testError) {
         console.error('Error creating test:', testError);
         throw testError;
       }
+      return testRecord;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tests']
+      });
+      setIsAddTestOpen(false);
+      toast.success("Test created successfully");
+    },
+    onError: error => {
+      console.error('Error adding test:', error);
+      toast.error("Failed to create test");
+    }
+  });
 
-      // Then, create the test result in the test_results table
+  // Mutation for adding test results
+  const addTestResultMutation = useMutation({
+    mutationFn: async (resultData: any) => {
+      console.log('Adding test result with data:', resultData);
       const {
         data: resultRecord,
         error: resultError
       } = await supabase.from('test_results').insert([{
-        student_id: testData.student_id,
-        test_id: testRecord.id,
-        marks_obtained: testData.marks_obtained,
-        total_marks: testData.total_marks,
-        percentage: testData.marks_obtained && testData.total_marks ? Math.round(testData.marks_obtained / testData.total_marks * 100) : null,
+        student_id: resultData.student_id,
+        test_id: resultData.test_id,
+        marks_obtained: resultData.marks_obtained,
+        total_marks: resultData.total_marks,
+        percentage: resultData.percentage,
         grade: null,
         rank: null,
         absent: false,
@@ -146,11 +244,11 @@ export default function TestRecord() {
       queryClient.invalidateQueries({
         queryKey: ['test_results']
       });
-      setIsAddTestOpen(false);
+      setIsAddTestResultOpen(false);
       toast.success("Test result added successfully");
     },
     onError: error => {
-      console.error('Error adding test:', error);
+      console.error('Error adding test result:', error);
       toast.error("Failed to add test result");
     }
   });
@@ -266,24 +364,30 @@ export default function TestRecord() {
   });
 
   // Handle new test creation
-  const handleAddTest = async (testData: any): Promise<void> => {
+  const handleAddTest = (testData: any) => {
     console.log('Handling add test:', testData);
-    await addTestMutation.mutateAsync(testData);
+    addTestMutation.mutate(testData);
+  };
+
+  // Handle new test result creation
+  const handleAddTestResult = (resultData: any) => {
+    console.log('Handling add test result:', resultData);
+    addTestResultMutation.mutate(resultData);
   };
 
   // Handle test update
-  const handleUpdateTest = async (testData: any): Promise<void> => {
+  const handleUpdateTest = (testData: any) => {
     if (!editingTest) return;
     console.log('Handling update test:', testData);
-    await updateTestMutation.mutateAsync({
+    updateTestMutation.mutate({
       id: editingTest.id,
       ...testData
     });
   };
 
   // Handle test deletion
-  const handleDeleteTest = async (testId: string) => {
-    return deleteTestMutation.mutateAsync(testId);
+  const handleDeleteTest = (testId: string) => {
+    deleteTestMutation.mutate(testId);
   };
 
   // Handle editing a test
@@ -292,15 +396,28 @@ export default function TestRecord() {
     setIsEditTestOpen(true);
   };
 
-  // Filter and sort test records with safe date handling (Class 9 and 10 only)
+  // Enhanced filter and sort test records with debounced search
   const filteredTests = filteredTestRecords.filter((test: TestRecordDb) => {
     const student = students.find(s => s.id === test.student_id);
-    const searchLower = searchQuery.toLowerCase();
-    const studentName = student && student.full_name && typeof student.full_name === 'string' ? student.full_name.toLowerCase() : '';
-    const studentMatches = studentName.includes(searchLower);
-    const subjectMatches = true; // Since we don't have subject in test_results
-    const classMatches = classFilter === "all" || student && student.class !== undefined && student.class.toString() === classFilter;
-    return studentMatches && subjectMatches && classMatches;
+    const searchLower = debouncedSearchQuery.toLowerCase().trim();
+    
+    // Enhanced search matching multiple fields
+    const studentMatches = !searchLower || (
+      student?.full_name?.toLowerCase().includes(searchLower) ||
+      student?.class?.toString().includes(searchLower) ||
+      student?.roll_number?.toString().includes(searchLower)
+    );
+    
+    const testMatches = !searchLower || (
+      test.test_id?.toLowerCase().includes(searchLower) ||
+      test.marks_obtained?.toString().includes(searchQuery) ||
+      test.total_marks?.toString().includes(searchQuery) ||
+      test.percentage?.toString().includes(searchQuery)
+    );
+    
+    const classMatches = classFilter === "all" || (student && student.class !== undefined && student.class.toString() === classFilter);
+    
+    return (studentMatches || testMatches) && classMatches;
   }).sort((a: TestRecordDb, b: TestRecordDb) => {
     if (sortField === "date") {
       const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -374,12 +491,26 @@ export default function TestRecord() {
     const student = students.find(s => s.id === studentId);
     const studentTests = getStudentTestHistory(studentId);
     if (student && studentTests.length > 0) {
+      // Convert to legacy format for PDF service
+      const allTestsLegacy = studentTests.map(test => ({
+        test_name: 'Test',
+        subject: 'Subject',
+        test_date: test.created_at || new Date().toISOString(),
+        marks: test.marks_obtained,
+        total_marks: test.total_marks
+      }));
       exportTestToPDF({
-        test: studentTests[0],
+        test: {
+          test_name: "Academic Records Report",
+          subject: "All Subjects",
+          test_date: new Date().toISOString(),
+          marks: 0,
+          total_marks: 100
+        },
         student,
         title: "Test History Report",
         subtitle: `Complete Test History for ${student.full_name}`,
-        allTests: studentTests
+        allTests: allTestsLegacy
       });
       toast.success("Test history PDF generated successfully");
     } else {
@@ -412,8 +543,8 @@ export default function TestRecord() {
   };
 
   // Loading state
-  if (testsLoading || studentsLoading) {
-    return <TestLoadingState />;
+  if (testsLoading || testRecordsLoading || studentsLoading) {
+    return <TestLoadingSkeleton />;
   }
   return <TooltipProvider>
       <motion.div initial={{
@@ -422,23 +553,23 @@ export default function TestRecord() {
       opacity: 1
     }} transition={{
       duration: 0.3
-    }} className="space-y-4 sm:space-y-6 p-4 sm:p-6 px-0 py-0">
+    }} className="space-y-4 sm:space-y-6 p-4 sm:p-6 py-0 px-0">
         <PageHeader title="Tests" showBackButton={true} onBack={() => navigate(-1)} action={<Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg">
-                  <Plus className="h-4 w-4" /> Add Test
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-hidden">
-                <DialogHeader>
-                  <DialogTitle>Add New Test Record</DialogTitle>
-                  <DialogDescription>
-                    Enter the details for the new test record below.
-                  </DialogDescription>
-                </DialogHeader>
-                <TestAddForm onSubmit={handleAddTest} students={students} />
-              </DialogContent>
-            </Dialog>} />
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-black hover:bg-gray-800 text-white shadow-lg sm:text-sm text-sm font-medium">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" /> Add Test
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>Create New Test</DialogTitle>
+                <DialogDescription>
+                  Create a new test that students can take. Test results can be added separately.
+                </DialogDescription>
+              </DialogHeader>
+              <TestForm onSubmit={handleAddTest} />
+            </DialogContent>
+          </Dialog>} />
         
         {/* Edit Test Dialog */}
         <Dialog open={isEditTestOpen} onOpenChange={open => {
@@ -452,7 +583,7 @@ export default function TestRecord() {
                 Update the details of this test record.
               </DialogDescription>
             </DialogHeader>
-            {editingTest && <TestAddForm onSubmit={handleUpdateTest} students={students} initialData={convertTestToFormValues(editingTest)} isEditing={true} />}
+            {editingTest && <TestResultForm onSubmit={handleUpdateTest} students={students} tests={tests} initialData={convertTestToFormValues(editingTest)} isEditing={true} />}
           </DialogContent>
         </Dialog>
         
@@ -518,13 +649,13 @@ export default function TestRecord() {
         
         {/* Stacked Layout for Stats Cards */}
         <div className="space-y-3 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 sm:space-y-0">
-          <StatCard title="Total Tests" value={totalTests} description="Class 9 & 10 only" icon={<FileText className="h-5 w-5" />} />
+          <StatCard title="Total Tests" value={totalTests} description="Class 9 & 10 only" icon={<FileText className="h-5 w-5" />} className="bg-gradient-to-r from-rose-50 to-rose-100" />
           
-          <StatCard title="Average Score" value={`${averageScore}%`} description="Overall performance" icon={<Trophy className="h-5 w-5" />} />
+          <StatCard title="Average Score" value={`${averageScore}%`} description="Overall performance" icon={<Trophy className="h-5 w-5" />} className="bg-gradient-to-r from-orange-50 to-orange-100" />
           
-          <StatCard title="Subjects" value={subjects.length} description="Different subjects" icon={<LibraryBig className="h-5 w-5" />} />
+          <StatCard title="Subjects" value={subjects.length} description="Different subjects" icon={<LibraryBig className="h-5 w-5" />} className="bg-gradient-to-r from-purple-50 to-purple-100" />
 
-          <StatCard title="Pass Rate" value={`${Math.round(filteredTestRecords.filter(test => (test.percentage || 0) >= 40).length / Math.max(filteredTestRecords.length, 1) * 100)}%`} description="Students scoring 40%+" icon={<BarChart3 className="h-5 w-5" />} />
+          <StatCard title="Pass Rate" value={`${Math.round(filteredTestRecords.filter(test => (test.percentage || 0) >= 40).length / Math.max(filteredTestRecords.length, 1) * 100)}%`} description="Students scoring 40%+" icon={<BarChart3 className="h-5 w-5" />} className="bg-gradient-to-r from-green-50 to-green-100" />
         </div>
         
         <Tabs defaultValue="records" className="space-y-4 sm:space-y-6">
@@ -539,7 +670,17 @@ export default function TestRecord() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search student name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 bg-background/50 backdrop-blur-sm transition-all focus:bg-background" />
+                <Input 
+                  placeholder="Search by student name, marks, test ID..." 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  className="pl-10 bg-background/50 backdrop-blur-sm transition-all focus:bg-background focus:ring-2 focus:ring-primary/20" 
+                />
+                {debouncedSearchQuery && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
+                    {filteredTests.length} found
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2">
@@ -553,6 +694,23 @@ export default function TestRecord() {
                     <SelectItem value="10">Class 10</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Dialog open={isAddTestResultOpen} onOpenChange={setIsAddTestResultOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg sm:text-sm text-sm font-medium">
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4" /> Add Test Result
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-hidden">
+                    <DialogHeader>
+                      <DialogTitle>Add Test Result</DialogTitle>
+                      <DialogDescription>
+                        Add a student's result for an existing test.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <TestResultForm onSubmit={handleAddTestResult} students={students} tests={tests} />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
             
@@ -576,35 +734,4 @@ export default function TestRecord() {
         </Tabs>
       </motion.div>
     </TooltipProvider>;
-}
-
-// Loading state component
-function TestLoadingState() {
-  return <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 sm:h-10 w-32 sm:w-48" />
-        <Skeleton className="h-8 sm:h-10 w-24 sm:w-32" />
-      </div>
-      
-      <div className="space-y-3 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 sm:space-y-0">
-        <Skeleton className="h-24 sm:h-32" />
-        <Skeleton className="h-24 sm:h-32" />
-        <Skeleton className="h-24 sm:h-32" />
-        <Skeleton className="h-24 sm:h-32" />
-      </div>
-      
-      <Skeleton className="h-8 sm:h-10 w-48 sm:w-64" />
-      
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Skeleton className="h-8 sm:h-10 flex-1" />
-          <div className="flex gap-2">
-            <Skeleton className="h-8 sm:h-10 w-full sm:w-[150px]" />
-            <Skeleton className="h-8 sm:h-10 w-full sm:w-[130px]" />
-          </div>
-        </div>
-        
-        <Skeleton className="h-64 sm:h-[400px]" />
-      </div>
-    </div>;
 }

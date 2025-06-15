@@ -1,14 +1,14 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
+import { EnhancedPageHeader } from "@/components/enhanced-page-header";
 import { useStudentAttendance } from "@/hooks/useStudentAttendance";
 import { StudentOverviewCard } from "@/components/student-attendance/StudentOverviewCard";
 import { AttendanceHistoryCard } from "@/components/student-attendance/AttendanceHistoryCard";
 import { StudentNotFoundState } from "@/components/student-attendance/StudentNotFoundState";
 import { Suspense, lazy, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast"; 
+import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Use React.lazy for code splitting
 const LazyAttendanceHistoryCard = lazy(() => 
@@ -41,10 +41,17 @@ export default function StudentAttendanceDetails() {
 
   // Loading skeleton
   const renderLoadingSkeleton = () => (
-    <div className="flex justify-center items-center py-20">
-      <div className="flex flex-col items-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-        <p className="text-sm text-muted-foreground">Loading attendance data...</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
     </div>
   );

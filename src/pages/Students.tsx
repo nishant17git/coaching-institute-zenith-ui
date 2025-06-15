@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { LoadingState } from "@/components/ui/loading-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import StudentCard from "@/components/ui/student-card";
 import { StudentForm } from "@/components/students/StudentForm";
 import { ModernStudentCard } from "@/components/ui/modern-student-card";
@@ -23,6 +24,7 @@ import { Search, Plus, Users, Filter } from "lucide-react";
 
 export default function Students() {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [classFilter, setClassFilter] = useState("all");
   const [feeStatusFilter, setFeeStatusFilter] = useState("all");
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
@@ -69,86 +71,88 @@ export default function Students() {
   // Add student mutation
   const addStudentMutation = useMutation({
     mutationFn: async (studentData: any) => {
-      console.log('Adding student:', studentData);
-      
       const { data, error } = await supabase
         .from('students')
         .insert([studentData])
         .select()
         .single();
       
-      if (error) {
-        console.error('Add student error:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setIsAddStudentDialogOpen(false);
       setSelectedStudent(null);
+      toast.success("Student added successfully");
     },
     onError: (error: any) => {
-      console.error('Add student mutation error:', error);
+      toast.error(`Failed to add student: ${error.message}`);
     }
   });
 
   // Update student mutation
   const updateStudentMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      console.log('Updating student:', id, data);
-      
       const { error } = await supabase
         .from('students')
         .update(data)
         .eq('id', id);
       
-      if (error) {
-        console.error('Update student error:', error);
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setIsAddStudentDialogOpen(false);
       setSelectedStudent(null);
+      toast.success("Student updated successfully");
     },
     onError: (error: any) => {
-      console.error('Update student mutation error:', error);
+      toast.error(`Failed to update student: ${error.message}`);
     }
   });
 
   // Delete student mutation
   const deleteStudentMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting student:', id);
-      
       const { error } = await supabase
         .from('students')
         .delete()
         .eq('id', id);
       
-      if (error) {
-        console.error('Delete student error:', error);
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success("Student deleted successfully");
     },
     onError: (error: any) => {
-      console.error('Delete student mutation error:', error);
+      toast.error(`Failed to delete student: ${error.message}`);
     }
   });
 
-  // Filter students
+  // Enhanced filter function with better search matching
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.roll_number?.toString().includes(searchQuery);
+    if (!student) return false;
+    
+    const searchLower = debouncedSearchQuery.toLowerCase().trim();
+    if (!searchLower && classFilter === "all" && feeStatusFilter === "all") return true;
+    
+    // Enhanced search matching multiple fields
+    const searchMatches = !searchLower || (
+      student.full_name?.toLowerCase().includes(searchLower) ||
+      student.roll_number?.toString().includes(searchLower) ||
+      student.father_name?.toLowerCase().includes(searchLower) ||
+      student.mother_name?.toLowerCase().includes(searchLower) ||
+      student.contact_number?.includes(searchLower) ||
+      student.address?.toLowerCase().includes(searchLower) ||
+      `class ${student.class}`.toLowerCase().includes(searchLower)
+    );
+    
     const matchesClass = classFilter === "all" || student.class.toString() === classFilter;
     const matchesFeeStatus = feeStatusFilter === "all" || student.fee_status === feeStatusFilter;
     
-    return matchesSearch && matchesClass && matchesFeeStatus;
+    return searchMatches && matchesClass && matchesFeeStatus;
   });
 
   // Get unique classes for filter
@@ -177,10 +181,7 @@ export default function Students() {
     });
   };
 
-  // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any): Promise<void> => {
-    console.log('Form submit data:', data);
-    
+  const handleFormSubmit = (data: any) => {
     // Transform the form data to match database schema
     const transformedData = {
       full_name: data.name,
@@ -202,15 +203,63 @@ export default function Students() {
     };
 
     if (selectedStudent) {
-      await updateStudentMutation.mutateAsync({ id: selectedStudent.id, data: transformedData });
+      updateStudentMutation.mutate({ id: selectedStudent.id, data: transformedData });
     } else {
-      await addStudentMutation.mutateAsync(transformedData);
+      addStudentMutation.mutate(transformedData);
     }
   };
 
   const handleViewDetails = (studentId: string) => {
     navigate(`/students/${studentId}`);
   };
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      
+      <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Skeleton className="h-11 flex-grow" />
+          <div className="flex gap-3">
+            <Skeleton className="h-11 w-[140px]" />
+            <Skeleton className="h-11 w-[140px]" />
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+              
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   if (error) {
     return (
@@ -238,17 +287,22 @@ export default function Students() {
         } 
       />
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search students..." 
+              placeholder="Search by name, roll number, father, contact..." 
               value={searchQuery} 
               onChange={e => setSearchQuery(e.target.value)} 
-              className="pl-10 h-11" 
+              className="pl-10 h-11 transition-all focus:ring-2 focus:ring-primary/20" 
             />
+            {searchQuery && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                {filteredStudents.length} found
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">
@@ -281,7 +335,7 @@ export default function Students() {
 
       {/* Students Grid */}
       {isLoading ? (
-        <LoadingState />
+        <LoadingSkeleton />
       ) : filteredStudents.length === 0 ? (
         <EmptyState 
           icon={<Users className="h-10 w-10 text-muted-foreground" />} 

@@ -67,7 +67,7 @@ export function StudentOverviewCard({
     });
   };
   return <Card className="bg-white shadow-sm border overflow-hidden">
-      <div className="h-12 bg-gradient-to-r from-blue-500 to-sky-400 "></div>
+      <div className="h-12 bg-gradient-to-r from-[#FF00AA] to-[#FF7722]"></div>
       <div className="px-4 sm:px-6 pb-6 pt-0 relative">
         <Avatar className="h-16 sm:h-20 w-16 sm:w-20 -mt-8 sm:-mt-10 border-4 border-white shadow-sm">
           <AvatarFallback className={cn("text-base sm:text-xl", attendanceStats.percentage >= 90 ? "bg-emerald-100 text-emerald-700" : attendanceStats.percentage >= 75 ? "bg-blue-100 text-blue-700" : attendanceStats.percentage >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700")}>
@@ -140,8 +140,8 @@ export function StudentOverviewCard({
                   <span className="sm:text-sm font-medium text-sm">{student.contact_number}</span>
                 </div>}
               {student.aadhaar_number && <div className="flex justify-between">
-                  <span className="text-xs sm:text-sm text-muted-foreground">Aadhaar:</span>
-                  <span className="text-xs sm:text-sm font-medium">{student.aadhaar_number}</span>
+                  <span className="sm:text-sm text-muted-foreground text-sm">Aadhaar:</span>
+                  <span className="sm:text-sm font-medium text-sm">{student.aadhaar_number}</span>
                 </div>}
               {student.guardian_name && <div className="flex justify-between">
                   <span className="sm:text-sm text-muted-foreground text-sm">Parent:</span>
@@ -152,8 +152,8 @@ export function StudentOverviewCard({
                   <span className="sm:text-sm font-medium truncate max-w-[150px] sm:max-w-[250px] text-sm">{student.address}</span>
                 </div>}
               {student.gender && <div className="flex justify-between">
-                  <span className="text-xs sm:text-sm text-muted-foreground">Gender:</span>
-                  <span className="text-xs sm:text-sm font-medium">{student.gender}</span>
+                  <span className="sm:text-sm text-muted-foreground text-sm">Gender:</span>
+                  <span className="sm:text-sm font-medium text-sm">{student.gender}</span>
                 </div>}
             </div>
           </div>

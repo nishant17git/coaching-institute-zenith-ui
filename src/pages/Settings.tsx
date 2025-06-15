@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
+import { EnhancedPageHeader } from "@/components/enhanced-page-header";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { User, Bell, Palette, Building, Shield, Database, HelpCircle, FileText, ChevronRight, LogOut } from "lucide-react";

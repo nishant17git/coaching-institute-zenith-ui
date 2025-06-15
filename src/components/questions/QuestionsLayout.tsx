@@ -55,10 +55,10 @@ export function QuestionsLayout() {
   };
   const headerConfig = getHeaderConfig();
   return <div className="min-h-screen bg-background">
-      <div className="pt-6 px-0 my-0 md:px-0 py-0">
+      <div className="px-0 my-0 md:px-0 py-0">
         <EnhancedPageHeader title={headerConfig.title} showBackButton={headerConfig.showBackButton} onBack={headerConfig.onBack} />
       </div>
-      <div className="container mx-auto py-6 px-0">
+      <div className="container mx-auto py-[10px] px-[8px]">
         <Outlet />
       </div>
     </div>;

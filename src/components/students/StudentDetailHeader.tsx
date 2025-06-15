@@ -1,20 +1,17 @@
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, Phone, MessageSquare, Edit3, Trash2 } from "lucide-react";
+import { ChevronLeft, Phone, MessageSquare, Edit3, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { PhoneSelectionDialog } from "@/components/ui/phone-selection-dialog";
-
 interface StudentDetailHeaderProps {
   student: any;
   onEdit: () => void;
   onDelete: () => void;
 }
-
 export function StudentDetailHeader({
   student,
   onEdit,
@@ -27,13 +24,11 @@ export function StudentDetailHeader({
   // Parse multiple phone numbers
   const phoneNumbers = student.phoneNumber ? student.phoneNumber.split(',').map((num: string) => num.trim()).filter(Boolean) : [];
   const whatsappNumbers = student.whatsappNumber ? student.whatsappNumber.split(',').map((num: string) => num.trim()).filter(Boolean) : phoneNumbers;
-
   const handlePhoneCall = () => {
     if (phoneNumbers.length === 0) {
       toast.error("No phone number available");
       return;
     }
-    
     if (phoneNumbers.length === 1) {
       window.open(`tel:${phoneNumbers[0]}`, "_blank");
       toast.success(`Calling ${student.name}`);
@@ -41,13 +36,11 @@ export function StudentDetailHeader({
       setShowPhoneDialog(true);
     }
   };
-
   const handleWhatsApp = () => {
     if (whatsappNumbers.length === 0) {
       toast.error("No WhatsApp number available");
       return;
     }
-    
     if (whatsappNumbers.length === 1) {
       const number = whatsappNumbers[0].replace(/\D/g, '');
       window.open(`https://wa.me/${number}`, "_blank");
@@ -56,33 +49,27 @@ export function StudentDetailHeader({
       setShowWhatsAppDialog(true);
     }
   };
-
   const handleCall = (phoneNumber: string) => {
     window.open(`tel:${phoneNumber}`, "_blank");
   };
-
   const handleWhatsAppOpen = (phoneNumber: string) => {
     const number = phoneNumber.replace(/\D/g, '');
     window.open(`https://wa.me/${number}`, "_blank");
   };
-
   const handleBack = () => {
     navigate("/students");
   };
-
   const getInitials = (name: string) => {
     return name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
   };
-
-  return (
-    <>
+  return <>
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Button onClick={handleBack} variant="ghost" size="icon" className="h-8 w-8 rounded-full shrink-0" aria-label="Back">
-              <ArrowLeft className="h-4 w-4" />
+          <div className="flex items-center">
+            <Button onClick={handleBack} variant="ghost" size="icon" aria-label="Back" className="h-10 w-10 rounded-full shrink-0">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Student Profile</h1>
+            <h1 className="md:text-2xl font-semibold tracking-tight text-3xl">Profile</h1>
           </div>
           
           <div className="flex gap-2">
@@ -134,22 +121,8 @@ export function StudentDetailHeader({
       </div>
 
       {/* Phone Selection Dialogs */}
-      <PhoneSelectionDialog
-        open={showPhoneDialog}
-        onOpenChange={setShowPhoneDialog}
-        studentName={student.name}
-        phoneNumbers={phoneNumbers}
-        onCall={handleCall}
-      />
+      <PhoneSelectionDialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog} studentName={student.name} phoneNumbers={phoneNumbers} onCall={handleCall} />
 
-      <PhoneSelectionDialog
-        open={showWhatsAppDialog}
-        onOpenChange={setShowWhatsAppDialog}
-        studentName={student.name}
-        phoneNumbers={whatsappNumbers}
-        onCall={handleWhatsAppOpen}
-        onWhatsApp={handleWhatsAppOpen}
-      />
-    </>
-  );
+      <PhoneSelectionDialog open={showWhatsAppDialog} onOpenChange={setShowWhatsAppDialog} studentName={student.name} phoneNumbers={whatsappNumbers} onCall={handleWhatsAppOpen} onWhatsApp={handleWhatsAppOpen} />
+    </>;
 }

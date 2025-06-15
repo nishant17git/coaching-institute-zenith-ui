@@ -37,6 +37,7 @@ const safeDateDifference = (dateValue: any, compareDate: Date = new Date()): num
   const date = safeParseDate(dateValue);
   return date ? differenceInDays(compareDate, date) : Infinity;
 };
+
 export default function Dashboard() {
   const isMobile = useIsMobile();
 
@@ -51,8 +52,11 @@ export default function Dashboard() {
         data,
         error
       } = await supabase.from('students').select('*');
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+      return data || [];
     }
   });
 
@@ -67,8 +71,11 @@ export default function Dashboard() {
         data,
         error
       } = await supabase.from('fee_transactions').select('*');
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching fee transactions:', error);
+        throw error;
+      }
+      return data || [];
     }
   });
 
@@ -84,12 +91,15 @@ export default function Dashboard() {
         data,
         error
       } = await supabase.from('attendance_records').select('*').eq('date', today);
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching today attendance:', error);
+        throw error;
+      }
+      return data || [];
     }
   });
 
-  // Calculate statistics
+  // Calculate statistics with proper error handling
   const totalStudents = students.length;
   const totalFees = students.reduce((sum, student) => sum + (student.total_fees || 0), 0);
   const totalPaid = students.reduce((sum, student) => sum + (student.paid_fees || 0), 0);
@@ -107,37 +117,71 @@ export default function Dashboard() {
   // Today's fee collections with safe date handling
   const todayCollections = feeTransactions.filter(transaction => {
     return safeDateIsToday(transaction.payment_date);
-  }).reduce((sum, transaction) => sum + transaction.amount, 0);
+  }).reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
+
   const isLoading = isLoadingStudents || isLoadingFees || isLoadingAttendance;
-  return <div className="space-y-6 sm:space-y-8 animate-fade-in">
+
+  return (
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight font-spotify">Home</h1>
-        <p className="text-muted-foreground text-sm font-spotify">We proffer august felicitations on your return, Sir; herewith, today's vicissitudes at your venerable institute.
-      </p>
+        <h1 className="text-3xl font-bold tracking-tight font-sf-pro">Home</h1>
+        <p className="text-muted-foreground text-sm font-sf-pro">We proffer august felicitations on your return, Sir; herewith, today's vicissitudes at your venerable institute.</p>
       </div>
       
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <EnhancedStatCard title="Total Students" value={totalStudents.toString()} icon={<Users className="h-5 w-5" />} trend={{
-        value: recentAdmissions,
-        isPositive: true
-      }} description={`+${recentAdmissions} new this month`} gradientClass="from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b-4 border-blue-500" iconColorClass="text-blue-600 dark:text-blue-400" />
+        <EnhancedStatCard 
+          title="Total Students" 
+          value={isLoading ? "Loading..." : totalStudents.toString()} 
+          icon={<Users className="h-5 w-5" />} 
+          trend={{
+            value: recentAdmissions,
+            isPositive: true
+          }} 
+          description={`+${recentAdmissions} new this month`} 
+          gradientClass="from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b-4 border-blue-500" 
+          iconColorClass="text-blue-600 dark:text-blue-400" 
+        />
         
-        <EnhancedStatCard title="Today's Attendance" value={`${attendanceRate}%`} icon={<Calendar className="h-5 w-5" />} trend={{
-        value: attendanceRate >= 85 ? 5 : -5,
-        isPositive: attendanceRate >= 85
-      }} description={`${presentToday}/${totalStudents} students present`} gradientClass="from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500" iconColorClass="text-green-600 dark:text-green-400" />
+        <EnhancedStatCard 
+          title="Today's Attendance" 
+          value={isLoading ? "Loading..." : `${attendanceRate}%`} 
+          icon={<Calendar className="h-5 w-5" />} 
+          trend={{
+            value: attendanceRate >= 85 ? 5 : -5,
+            isPositive: attendanceRate >= 85
+          }} 
+          description={`${presentToday}/${totalStudents} students present`} 
+          gradientClass="from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-b-4 border-green-500" 
+          iconColorClass="text-green-600 dark:text-green-400" 
+        />
         
-        <EnhancedStatCard title="Fee Collection" value={`${collectionRate}%`} icon={<CreditCard className="h-5 w-5" />} trend={{
-        value: collectionRate >= 80 ? 8 : -3,
-        isPositive: collectionRate >= 80
-      }} description={`₹${todayCollections.toLocaleString()} collected today`} gradientClass="from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-b-4 border-purple-500" iconColorClass="text-purple-600 dark:text-purple-400" />
+        <EnhancedStatCard 
+          title="Fee Collection" 
+          value={isLoading ? "Loading..." : `${collectionRate}%`} 
+          icon={<CreditCard className="h-5 w-5" />} 
+          trend={{
+            value: collectionRate >= 80 ? 8 : -3,
+            isPositive: collectionRate >= 80
+          }} 
+          description={`₹${todayCollections.toLocaleString()} collected today`} 
+          gradientClass="from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-b-4 border-purple-500" 
+          iconColorClass="text-purple-600 dark:text-purple-400" 
+        />
         
-        <EnhancedStatCard title="Academic Performance" value="85%" icon={<TrendingUp className="h-5 w-5" />} trend={{
-        value: 5,
-        isPositive: true
-      }} description="+5% from last term" gradientClass="from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-b-4 border-orange-500" iconColorClass="text-orange-600 dark:text-orange-400" />
+        <EnhancedStatCard 
+          title="Academic Performance" 
+          value="85%" 
+          icon={<TrendingUp className="h-5 w-5" />} 
+          trend={{
+            value: 5,
+            isPositive: true
+          }} 
+          description="+5% from last term" 
+          gradientClass="from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-b-4 border-orange-500" 
+          iconColorClass="text-orange-600 dark:text-orange-400" 
+        />
       </div>
 
       {/* Quick Actions */}
@@ -162,32 +206,50 @@ export default function Dashboard() {
         {/* Today's Summary - Optimized for Mobile */}
         <Card className="glass-card">
           <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="flex items-center gap-2 font-spotify sm:text-xl text-xl">
+            <CardTitle className="flex items-center gap-2 font-sf-pro sm:text-xl text-xl">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
               Today's Summary
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6">
-            <div className="space-y-3 sm:space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                <span className="text-sm font-medium font-spotify">Present Students</span>
-                <span className="font-semibold font-spotify text-sm sm:text-base">{presentToday}</span>
+            {isLoading ? (
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                  <span className="text-sm font-medium font-sf-pro">Loading...</span>
+                  <span className="font-semibold font-sf-pro text-sm sm:text-base">...</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                <span className="text-sm font-medium font-spotify">Fee Collections</span>
-                <span className="font-semibold font-spotify text-sm sm:text-base">₹{todayCollections.toLocaleString()}</span>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                  <span className="text-sm font-medium font-sf-pro">Present Students</span>
+                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                    {presentToday || "No data"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                  <span className="text-sm font-medium font-sf-pro">Fee Collections</span>
+                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                    {todayCollections > 0 ? `₹${todayCollections.toLocaleString()}` : "No data"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                  <span className="text-sm font-medium font-sf-pro">New Admissions</span>
+                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                    {recentAdmissions || "No data"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                  <span className="text-sm font-medium font-sf-pro">Date</span>
+                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                    {format(new Date(), 'MMM dd, yyyy')}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                <span className="text-sm font-medium font-spotify">New Admissions</span>
-                <span className="font-semibold font-spotify text-sm sm:text-base">{recentAdmissions}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                <span className="text-sm font-medium font-spotify">Date</span>
-                <span className="font-semibold font-spotify text-sm sm:text-base">{format(new Date(), 'MMM dd, yyyy')}</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 }

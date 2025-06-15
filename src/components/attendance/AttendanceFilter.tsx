@@ -1,4 +1,3 @@
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, User, Users } from "lucide-react";
 import { format } from "date-fns";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface AttendanceFilterProps {
   filterType: "all" | "class" | "student";
@@ -37,6 +37,8 @@ export function AttendanceFilter({
   classes,
   students
 }: AttendanceFilterProps) {
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
   const prevDay = () => {
     setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() - 1)));
   };
@@ -49,9 +51,15 @@ export function AttendanceFilter({
   const validClasses = classes.filter(cls => cls.name && cls.name.trim() !== "");
   
   // Filter out any students with empty or invalid data
-  const validStudents = students.filter(student => 
+  const filteredStudents = students.filter(student => 
     student.id && student.id.trim() !== "" && 
-    student.name && student.name.trim() !== ""
+    student.name && student.name.trim() !== "" &&
+    (
+      !debouncedSearchQuery || 
+      student.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      student.class.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      student.id.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    )
   );
 
   return (
@@ -80,11 +88,16 @@ export function AttendanceFilter({
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search students..."
+                    placeholder="Search by name, class, ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 transition-all focus:ring-2 focus:ring-primary/20"
                   />
+                  {debouncedSearchQuery && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      {filteredStudents.length}
+                    </div>
+                  )}
                 </div>
                 <Select value={selectedClass} onValueChange={setSelectedClass}>
                   <SelectTrigger className="w-32">
@@ -113,8 +126,10 @@ export function AttendanceFilter({
                   <SelectValue placeholder="Select student" />
                 </SelectTrigger>
                 <SelectContent>
-                  {validStudents.map(student => (
-                    <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
+                  {filteredStudents.map(student => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {student.name} - {student.class}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -124,11 +139,16 @@ export function AttendanceFilter({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search students..."
+                  placeholder="Search by name, class, ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 transition-all focus:ring-2 focus:ring-primary/20"
                 />
+                {debouncedSearchQuery && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {filteredStudents.length}
+                  </div>
+                )}
               </div>
             )}
           </div>

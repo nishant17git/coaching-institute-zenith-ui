@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface StudentAttendanceTabProps {
   students: any[];
@@ -19,7 +19,6 @@ interface StudentAttendanceTabProps {
   selectedClass: number;
   onClassChange: (value: string) => void;
 }
-
 export function StudentAttendanceTab({
   students,
   onStudentSelect,
@@ -28,6 +27,7 @@ export function StudentAttendanceTab({
 }: StudentAttendanceTabProps) {
   const [filteredStudents, setFilteredStudents] = useState(students);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const navigate = useNavigate();
 
@@ -40,16 +40,22 @@ export function StudentAttendanceTab({
     return `${Math.max(minHeight, Math.min(dynamicHeight, maxHeight))}px`;
   };
 
-  // Filter students based on search query
+  // Enhanced filter students with debounced search
   useEffect(() => {
     if (students) {
       let result = students;
-      if (searchQuery) {
-        result = students.filter(student => student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+      if (debouncedSearchQuery) {
+        const searchLower = debouncedSearchQuery.toLowerCase().trim();
+        result = students.filter(student => 
+          student.full_name?.toLowerCase().includes(searchLower) ||
+          student.roll_number?.toString().includes(searchLower) ||
+          student.class?.toString().includes(searchLower) ||
+          `class ${student.class}`.toLowerCase().includes(searchLower)
+        );
       }
       setFilteredStudents(result);
     }
-  }, [students, searchQuery]);
+  }, [students, debouncedSearchQuery]);
 
   const getInitials = (name: string = "") => {
     return name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2);
@@ -64,12 +70,10 @@ export function StudentAttendanceTab({
       navigate(`/students/${student.id}/attendance`);
     }
   };
-
-  return (
-    <div className="w-full">
+  return <div className="w-full">
       {/* Students List */}
       <Card className="bg-white shadow-sm border">
-        <CardHeader className="space-y-1 px-4 py-3 border-b">
+        <CardHeader className="space-y-1 border-b px-[20px] py-[16px]">
           <CardTitle className="font-semibold text-lg">Students</CardTitle>
           <CardDescription className="text-xs">
             Select a student to view their attendance
@@ -81,10 +85,10 @@ export function StudentAttendanceTab({
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search student..." 
+                  placeholder="Search by name, roll number, class..." 
                   value={searchQuery} 
                   onChange={e => setSearchQuery(e.target.value)} 
-                  className="pl-9 h-9" 
+                  className="pl-9 h-9 transition-all focus:ring-2 focus:ring-primary/20" 
                 />
                 {searchQuery && (
                   <Button 
@@ -96,44 +100,43 @@ export function StudentAttendanceTab({
                     <X className="h-3 w-3" />
                   </Button>
                 )}
+                {debouncedSearchQuery && (
+                  <div className="absolute right-8 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {filteredStudents.length}
+                  </div>
+                )}
               </div>
               <Select value={selectedClass.toString()} onValueChange={onClassChange}>
                 <SelectTrigger className="h-9 w-28">
                   <SelectValue placeholder="Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 9 }, (_, i) => i + 2).map(cls => (
-                    <SelectItem key={cls} value={cls.toString()}>
+                  {Array.from({
+                  length: 9
+                }, (_, i) => i + 2).map(cls => <SelectItem key={cls} value={cls.toString()}>
                       Class {cls}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <ScrollArea className={`rounded-md border`} style={{ height: getScrollAreaHeight() }}>
+          <ScrollArea className={`rounded-md border`} style={{
+          height: getScrollAreaHeight()
+        }}>
             <div className="p-2">
-              {filteredStudents && filteredStudents.length > 0 ? (
-                <AnimatePresence>
-                  {filteredStudents.map((student, index) => (
-                    <motion.div 
-                      key={student.id} 
-                      initial={{ opacity: 0, y: 10 }} 
-                      animate={{ opacity: 1, y: 0 }} 
-                      transition={{ delay: index * 0.03 }} 
-                      className={cn(
-                        "flex items-center p-2 rounded-lg cursor-pointer gap-3 mb-1 transition-all hover:bg-gray-50 border border-transparent"
-                      )} 
-                      onClick={() => handleStudentClick(student)}
-                    >
+              {filteredStudents && filteredStudents.length > 0 ? <AnimatePresence>
+                  {filteredStudents.map((student, index) => <motion.div key={student.id} initial={{
+                opacity: 0,
+                y: 10
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: index * 0.03
+              }} className={cn("flex items-center p-2 rounded-lg cursor-pointer gap-3 mb-1 transition-all hover:bg-gray-50 border border-transparent")} onClick={() => handleStudentClick(student)}>
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className={cn(
-                          student.attendance_percentage >= 90 ? "bg-emerald-100 text-emerald-700" : 
-                          student.attendance_percentage >= 75 ? "bg-blue-100 text-blue-700" : 
-                          student.attendance_percentage >= 50 ? "bg-amber-100 text-amber-700" : 
-                          "bg-red-100 text-red-700"
-                        )}>
+                        <AvatarFallback className={cn(student.attendance_percentage >= 90 ? "bg-emerald-100 text-emerald-700" : student.attendance_percentage >= 75 ? "bg-blue-100 text-blue-700" : student.attendance_percentage >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700")}>
                           {getInitials(student.full_name)}
                         </AvatarFallback>
                       </Avatar>
@@ -145,28 +148,17 @@ export function StudentAttendanceTab({
                           <span>Class {student.class}</span>
                         </div>
                       </div>
-                      <div className={cn(
-                        "text-xs font-medium px-1.5 py-0.5 rounded",
-                        student.attendance_percentage >= 90 ? "bg-emerald-100 text-emerald-700" : 
-                        student.attendance_percentage >= 75 ? "bg-blue-100 text-blue-700" : 
-                        student.attendance_percentage >= 50 ? "bg-amber-100 text-amber-700" : 
-                        "bg-red-100 text-red-700"
-                      )}>
+                      <div className={cn("text-xs font-medium px-1.5 py-0.5 rounded", student.attendance_percentage >= 90 ? "bg-emerald-100 text-emerald-700" : student.attendance_percentage >= 75 ? "bg-blue-100 text-blue-700" : student.attendance_percentage >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700")}>
                         {student.attendance_percentage || 0}%
                       </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                    </motion.div>)}
+                </AnimatePresence> : <div className="text-center py-8 text-muted-foreground">
                   <User className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No students found</p>
-                </div>
-              )}
+                </div>}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }

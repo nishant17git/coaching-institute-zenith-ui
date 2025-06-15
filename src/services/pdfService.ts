@@ -1,664 +1,591 @@
-import { jsPDF } from 'jspdf';
+
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Student, FeeTransaction, AttendanceRecord } from '@/types';
-import { format } from 'date-fns';
+import { AttendanceRecord, FeeTransaction, TestRecordDb } from '@/types';
 
-// Institute details
-const INSTITUTE_DETAILS = {
-  name: "INFINITY CLASSES",
-  address: "Kandri, Mandar, Ranchi",
-  phone: "+91 9905880697",
-  email: "theinfinityclasses1208@gmail.com",
-  logo: "/icon.png"
-};
+interface PDFExportData {
+  records: AttendanceRecord[];
+  studentData: {
+    id: string;
+    name: string;
+    class: number;
+    attendancePercentage: number;
+  };
+  title: string;
+  subtitle: string;
+  chartImage?: string | null;
+}
 
-// Modern color palette with proper tuple typing
-const COLORS = {
-  primary: [79, 70, 229] as [number, number, number], // Indigo
-  secondary: [99, 102, 241] as [number, number, number], // Light indigo
-  accent: [34, 197, 94] as [number, number, number], // Green
-  warning: [251, 191, 36] as [number, number, number], // Amber
-  danger: [239, 68, 68] as [number, number, number], // Red
-  success: [34, 197, 94] as [number, number, number], // Green
-  text: [31, 41, 55] as [number, number, number], // Gray-800
-  muted: [107, 114, 128] as [number, number, number], // Gray-500
-  light: [249, 250, 251] as [number, number, number], // Gray-50
-  white: [255, 255, 255] as [number, number, number]
-};
-
-// Add modern header with branding
-const addModernHeader = (doc: jsPDF, title: string, subtitle?: string) => {
-  // Header background gradient effect
-  doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-  doc.rect(0, 0, 210, 45, 'F');
-  
-  // Add logo placeholder (since we can't load external files in this context)
-  doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
-  doc.roundedRect(15, 10, 25, 25, 3, 3, 'F');
-  doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-  doc.setFontSize(10);
-  doc.text('LOGO', 27.5, 25, { align: 'center' });
-  
-  // Institute name (using regular font since we can't load custom fonts in jsPDF easily)
-  doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text(INSTITUTE_DETAILS.name, 50, 20);
-  
-  // Contact details
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(INSTITUTE_DETAILS.address, 50, 28);
-  doc.text(`Phone: ${INSTITUTE_DETAILS.phone} | Email: ${INSTITUTE_DETAILS.email}`, 50, 35);
-  
-  // Document title
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text(title, 15, 60);
-  
-  if (subtitle) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-    doc.text(subtitle, 15, 70);
-    return 80;
-  }
-  
-  return 70;
-};
-
-// Add modern footer
-const addModernFooter = (doc: jsPDF, pageNum: number, totalPages: number) => {
-  const pageHeight = doc.internal.pageSize.height;
-  
-  // Footer line
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-  doc.line(15, pageHeight - 25, 195, pageHeight - 25);
-  
-  // Footer content
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-  doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy')} | ${INSTITUTE_DETAILS.name}`, 15, pageHeight - 18);
-  doc.text(`Page ${pageNum} of ${totalPages}`, 195, pageHeight - 18, { align: 'right' });
-  
-  // Watermark
-  doc.setTextColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.setFontSize(40);
-  doc.text(INSTITUTE_DETAILS.name, 105, pageHeight / 2, { 
-    align: 'center', 
-    angle: 45,
-    renderingMode: 'stroke'
-  });
-};
-
-// PDF export for fee records
-export const exportFeesToPDF = (transactions: FeeTransaction[], student: Student) => {
-  const doc = new jsPDF();
-  
-  const startY = addModernHeader(doc, 'Fee Transaction Report', `Complete fee history for ${student.name}`);
-  
-  // Student info card
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(15, startY + 10, 180, 25, 5, 5, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  doc.text(`Student: ${student.name}`, 20, startY + 20);
-  doc.text(`Class: ${student.class}`, 20, startY + 28);
-  
-  const totalPaid = transactions.reduce((sum, t) => sum + t.amount, 0);
-  doc.setTextColor(COLORS.success[0], COLORS.success[1], COLORS.success[2]);
-  doc.text(`Total Paid: ₹${totalPaid.toLocaleString()}`, 130, startY + 20);
-  doc.text(`Transactions: ${transactions.length}`, 130, startY + 28);
-
-  const tableColumn = ["Date", "Amount", "Payment Mode", "Receipt No.", "Purpose"];
-  const tableRows: string[][] = [];
-
-  transactions.forEach(transaction => {
-    const transactionData = [
-      format(new Date(transaction.date), 'dd MMM yyyy'),
-      `₹${transaction.amount.toLocaleString()}`,
-      transaction.paymentMode,
-      transaction.receiptNumber || 'N/A',
-      transaction.purpose || 'School Fees'
-    ];
-    tableRows.push(transactionData);
-  });
-
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: startY + 45,
-    theme: 'grid',
-    headStyles: {
-      fillColor: COLORS.primary,
-      textColor: COLORS.white,
-      fontSize: 10,
-      fontStyle: 'bold'
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: COLORS.text
-    },
-    alternateRowStyles: {
-      fillColor: COLORS.light
-    },
-    styles: {
-      cellPadding: 8,
-      lineWidth: 0.1,
-      lineColor: COLORS.muted
-    }
-  });
-
-  // Add footer to all pages
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    addModernFooter(doc, i, pageCount);
-  }
-
-  doc.save(`fee_transactions_${student.name.replace(/\s+/g, "_")}.pdf`);
-};
-
-// PDF export for attendance records
 export interface AttendancePDFOptions {
   records: AttendanceRecord[];
   studentData: any;
   title: string;
   subtitle: string;
   logo?: string;
-  chartImage?: string | null;
 }
 
-export const exportAttendanceToPDF = (options: AttendancePDFOptions) => {
-  const { records, studentData, title, subtitle, chartImage } = options;
-  const doc = new jsPDF();
-  
-  const startY = addModernHeader(doc, title, subtitle);
-  
-  // Student summary card
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(15, startY + 10, 180, 30, 5, 5, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  
-  if (studentData.id) {
-    doc.text(`Student: ${studentData.name}`, 20, startY + 22);
-    doc.text(`Class: ${studentData.class}`, 20, startY + 30);
-  } else {
-    doc.text(`Class: ${studentData.name}`, 20, startY + 22);
-  }
-  
-  // Attendance percentage with color coding
-  const percentage = studentData.attendancePercentage;
-  const percentageColor = percentage >= 90 ? COLORS.success : 
-                         percentage >= 75 ? COLORS.primary : 
-                         percentage >= 60 ? COLORS.warning : COLORS.danger;
-  
-  doc.setTextColor(percentageColor[0], percentageColor[1], percentageColor[2]);
-  doc.setFontSize(16);
-  doc.text(`${percentage}%`, 150, startY + 22);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Attendance', 150, startY + 30);
-  
-  let currentY = startY + 55;
-  
-  // Add chart if provided
-  if (chartImage) {
-    doc.addImage(chartImage, 'PNG', 55, currentY, 100, 60);
-    currentY += 75;
-  }
-  
-  // Attendance records table
-  const tableRows = records.map(record => [
-    record.id.toString(),
-    record.studentId,
-    format(new Date(record.date), 'dd MMM yyyy'),
-    record.status
-  ]);
-  
-  autoTable(doc, {
-    head: [['ID', 'Student ID', 'Date', 'Status']],
-    body: tableRows,
-    startY: currentY,
-    theme: 'grid',
-    headStyles: {
-      fillColor: COLORS.primary,
-      textColor: COLORS.white,
-      fontSize: 10,
-      fontStyle: 'bold'
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: COLORS.text
-    },
-    alternateRowStyles: {
-      fillColor: COLORS.light
-    },
-    styles: {
-      cellPadding: 6
-    }
-  });
-  
-  // Add footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    addModernFooter(doc, i, pageCount);
-  }
-  
-  doc.save(`attendance-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-};
-
-// PDF export for student records
-export interface StudentPDFOptions {
-  students: Student[];
-  title: string;
-  subtitle?: string;
-  logo?: string;
-}
-
-export const exportStudentsToPDF = (options: StudentPDFOptions) => {
-  const { students, title, subtitle } = options;
-  const doc = new jsPDF();
-
-  const startY = addModernHeader(doc, title, subtitle);
-
-  // Summary cards
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(15, startY + 10, 85, 20, 5, 5, 'F');
-  doc.roundedRect(110, startY + 10, 85, 20, 5, 5, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-  doc.text(`Total Students: ${students.length}`, 20, startY + 22);
-  
-  const totalFees = students.reduce((sum, s) => sum + (s.totalFees || 0), 0);
-  doc.text(`Total Fees: ₹${totalFees.toLocaleString()}`, 115, startY + 22);
-
-  const tableColumn = ["Name", "Class", "Father's Name", "Phone", "Fee Status", "Total Fees", "Paid Fees", "Attendance %"];
-  const tableRows: string[][] = [];
-
-  students.forEach(student => {
-    const studentData = [
-      student.name,
-      student.class,
-      student.fatherName || 'N/A',
-      student.phoneNumber || 'N/A',
-      student.feeStatus,
-      `₹${(student.totalFees || 0).toLocaleString()}`,
-      `₹${(student.paidFees || 0).toLocaleString()}`,
-      `${student.attendancePercentage || 0}%`
-    ];
-    tableRows.push(studentData);
-  });
-
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: startY + 45,
-    theme: 'grid',
-    headStyles: {
-      fillColor: COLORS.primary,
-      textColor: COLORS.white,
-      fontSize: 9,
-      fontStyle: 'bold'
-    },
-    bodyStyles: {
-      fontSize: 8,
-      textColor: COLORS.text
-    },
-    alternateRowStyles: {
-      fillColor: COLORS.light
-    },
-    styles: {
-      cellPadding: 4,
-      fontSize: 8
-    }
-  });
-
-  // Add footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    addModernFooter(doc, i, pageCount);
-  }
-
-  doc.save("student_records.pdf");
-};
-
-// PDF export for fee invoice
 export interface FeeInvoicePDFOptions {
   transaction: FeeTransaction;
-  student: Student;
+  student: any;
   instituteName: string;
   instituteAddress: string;
   institutePhone: string;
   logo?: string;
 }
 
-export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
-  const { transaction, student } = options;
-  const doc = new jsPDF();
-  
-  const startY = addModernHeader(doc, 'FEE RECEIPT', `Receipt No: ${transaction.receiptNumber || transaction.id}`);
-  
-  // Receipt details in modern cards
-  doc.setFillColor(COLORS.success[0], COLORS.success[1], COLORS.success[2]);
-  doc.roundedRect(15, startY + 10, 180, 35, 8, 8, 'F');
-  
-  // Amount section
-  doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text(`₹${transaction.amount.toLocaleString()}`, 105, startY + 25, { align: 'center' });
-  doc.setFontSize(12);
-  doc.text('Amount Paid', 105, startY + 35, { align: 'center' });
-  
-  // Student and payment details
-  const detailsY = startY + 60;
-  
-  // Student details card
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(15, detailsY, 85, 40, 5, 5, 'F');
-  
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('STUDENT DETAILS', 20, detailsY + 8);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(`Name: ${student.name}`, 20, detailsY + 16);
-  doc.text(`Class: ${student.class}`, 20, detailsY + 23);
-  doc.text(`Purpose: ${transaction.purpose || 'School Fees'}`, 20, detailsY + 30);
-  
-  // Payment details card
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(110, detailsY, 85, 40, 5, 5, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('PAYMENT DETAILS', 115, detailsY + 8);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(`Date: ${format(new Date(transaction.date), 'dd MMM yyyy')}`, 115, detailsY + 16);
-  doc.text(`Method: ${transaction.paymentMode}`, 115, detailsY + 23);
-  doc.text(`Receipt: ${transaction.receiptNumber || 'N/A'}`, 115, detailsY + 30);
-  
-  // Fee breakdown table
-  autoTable(doc, {
-    head: [['Description', 'Amount']],
-    body: [[transaction.purpose || 'School Fees', `₹${transaction.amount.toLocaleString()}`]],
-    startY: detailsY + 50,
-    theme: 'grid',
-    headStyles: {
-      fillColor: COLORS.primary,
-      textColor: COLORS.white,
-      fontSize: 10,
-      fontStyle: 'bold'
-    },
-    bodyStyles: {
-      fontSize: 11,
-      textColor: COLORS.text
-    },
-    styles: {
-      cellPadding: 8
-    }
-  });
-  
-  // Total amount highlight
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
-  doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-  doc.roundedRect(130, finalY, 65, 15, 3, 3, 'F');
-  doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(`Total: ₹${transaction.amount.toLocaleString()}`, 162.5, finalY + 10, { align: 'center' });
-  
-  // Signature section
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text("Authorized Signature", 150, finalY + 35);
-  doc.line(150, finalY + 40, 190, finalY + 40);
-  
-  addModernFooter(doc, 1, 1);
-  
-  doc.save(`fee_receipt_${student.name.replace(/\s+/g, "_")}_${transaction.id}.pdf`);
-};
-
-// PDF export for reports
-export interface ReportPDFOptions {
-  title: string;
-  chartImages: string[];
-  summary: { label: string; value: string }[];
-  instituteName: string;
-  logo?: string;
+// Legacy test format for PDF export compatibility
+interface LegacyTestFormat {
+  test_name: string;
+  subject: string;
+  test_date: string;
+  marks: number;
+  total_marks: number;
 }
 
-export const exportReportToPDF = (options: ReportPDFOptions) => {
-  const { title, chartImages, summary } = options;
-  const doc = new jsPDF();
-  
-  const startY = addModernHeader(doc, title, 'Comprehensive Analytics Report');
-  
-  // Summary cards
-  let cardY = startY + 15;
-  const cardWidth = 85;
-  const cardHeight = 20;
-  
-  summary.forEach((item, index) => {
-    const x = 15 + (index % 2) * (cardWidth + 10);
-    const y = cardY + Math.floor(index / 2) * (cardHeight + 5);
-    
-    doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-    doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'F');
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-    doc.text(item.label, x + 5, y + 8);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-    doc.text(item.value, x + 5, y + 16);
-  });
-  
-  let yPos = cardY + Math.ceil(summary.length / 2) * (cardHeight + 5) + 20;
-  
-  // Charts section
-  if (chartImages.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-    doc.text("Visual Analytics", 15, yPos);
-    yPos += 15;
-    
-    chartImages.forEach((chartImage, index) => {
-      if (yPos > 220) {
-        doc.addPage();
-        yPos = 30;
-      }
-      
-      doc.addImage(chartImage, 'PNG', 20, yPos, 170, 80);
-      yPos += 90;
-    });
-  }
-  
-  // Add footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    addModernFooter(doc, i, pageCount);
-  }
-  
-  doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-};
-
-// Export the new questions PDF function
-export { exportQuestionsToPDF } from './questionsPdfService';
-
-// Test PDF export
-export interface TestPDFOptions {
-  test: any;
+// Updated interface for test PDF export
+interface TestPDFData {
+  test: TestRecordDb | LegacyTestFormat;
   student: any;
-  title?: string;
-  subtitle?: string;
-  logo?: string;
-  chartImage?: string;
-  allTests?: any[];
+  title: string;
+  subtitle: string;
+  allTests?: LegacyTestFormat[];
 }
 
-export const exportTestToPDF = (options: TestPDFOptions) => {
-  const { test, student, title = "Test Results", subtitle, chartImage, allTests } = options;
-  const doc = new jsPDF();
+// Institute branding constants
+const INSTITUTE_NAME = "INFINITY CLASSES";
+const INSTITUTE_PHONE = "+91 9905880697";
+const INSTITUTE_EMAIL = "theinfinityclasses1208@gmail.com";
+
+// Enhanced color palette for professional design
+const COLORS = {
+  primary: [13, 33, 84] as [number, number, number],
+  secondary: [59, 130, 246] as [number, number, number],
+  accent: [34, 197, 94] as [number, number, number],
+  text: [15, 23, 42] as [number, number, number],
+  textLight: [71, 85, 105] as [number, number, number],
+  background: [248, 250, 252] as [number, number, number],
+  border: [226, 232, 240] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  red: [239, 68, 68] as [number, number, number],
+  amber: [245, 158, 11] as [number, number, number]
+};
+
+// Enhanced header function
+const addInstituteHeader = (doc: jsPDF, reportType: string = '') => {
+  const pageWidth = doc.internal.pageSize.width;
+  let yPosition = 25;
+
+  // Institute name with bold styling
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(28);
+  doc.setTextColor(...COLORS.primary);
+  doc.text(INSTITUTE_NAME, pageWidth / 2, yPosition, { align: 'center' });
   
-  const startY = addModernHeader(doc, title, subtitle || `Performance Report for ${student.full_name || "Student"}`);
+  yPosition += 15;
   
-  // Student info card
-  doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-  doc.roundedRect(15, startY + 10, 180, 25, 5, 5, 'F');
+  // Contact details
+  doc.setFontSize(12);
+  doc.setTextColor(...COLORS.textLight);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${INSTITUTE_PHONE} | ${INSTITUTE_EMAIL}`, pageWidth / 2, yPosition, { align: 'center' });
   
+  yPosition += 20;
+  
+  // Separator line
+  doc.setDrawColor(...COLORS.primary);
+  doc.setLineWidth(2);
+  doc.line(20, yPosition, pageWidth - 20, yPosition);
+  
+  // Report type indicator
+  if (reportType) {
+    yPosition += 18;
+    doc.setFontSize(16);
+    doc.setTextColor(...COLORS.secondary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(reportType.toUpperCase(), pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+  }
+  
+  return yPosition + 20;
+};
+
+// Enhanced footer
+const addFooter = (doc: jsPDF) => {
+  const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  
+  // Footer separator
+  doc.setDrawColor(...COLORS.primary);
+  doc.setLineWidth(1);
+  doc.line(20, pageHeight - 30, pageWidth - 20, pageHeight - 30);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(...COLORS.textLight);
+  doc.setFont('helvetica', 'normal');
+  
+  const currentDate = new Date().toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  doc.text(`Generated on ${currentDate}`, 30, pageHeight - 15);
+  
+  // Institute name in footer
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-  doc.text(`Student: ${student.full_name || "Unknown"}`, 20, startY + 22);
-  doc.text(`Class: ${student.class || "N/A"}`, 20, startY + 30);
-  
-  let yPosition = startY + 50;
-  
-  if (allTests && allTests.length > 0) {
-    // Multiple tests summary
-    const totalPercent = allTests.reduce((sum, test) => sum + ((test.marks / test.total_marks) * 100), 0);
-    const averagePercent = Math.round(totalPercent / allTests.length);
+  doc.setTextColor(...COLORS.primary);
+  doc.text(INSTITUTE_NAME, pageWidth - 30, pageHeight - 15, { align: 'right' });
+};
+
+// Attendance export function
+export const exportAttendanceToPDF = (data: PDFExportData) => {
+  try {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
     
-    // Summary cards
-    doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-    doc.roundedRect(15, yPosition, 85, 30, 5, 5, 'F');
-    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    // Add institute header
+    let yPosition = addInstituteHeader(doc, 'Student Attendance Report');
+    
+    // Document title
+    doc.setFontSize(22);
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.title, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 12;
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.textLight);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.subtitle, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 30;
+    
+    // Student information card
+    doc.setFillColor(...COLORS.background);
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(1);
+    doc.roundedRect(25, yPosition, pageWidth - 50, 40, 6, 6, 'FD');
+    
+    yPosition += 15;
+    doc.setFontSize(18);
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.studentData.name}`, 35, yPosition);
+    
+    yPosition += 12;
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Class ${data.studentData.class}`, 35, yPosition);
+    
+    // Attendance percentage badge
+    const attendancePercentage = data.studentData.attendancePercentage;
+    const badgeColor = attendancePercentage >= 90 ? COLORS.accent : 
+                      attendancePercentage >= 75 ? COLORS.secondary : 
+                      attendancePercentage >= 50 ? COLORS.amber : COLORS.red;
+    
+    doc.setFillColor(...badgeColor);
+    doc.roundedRect(pageWidth - 95, yPosition - 25, 60, 25, 4, 4, 'F');
+    doc.setTextColor(...COLORS.white);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text(`${averagePercent}%`, 57.5, yPosition + 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('Average Score', 57.5, yPosition + 23, { align: 'center' });
+    doc.text(`${attendancePercentage}%`, pageWidth - 65, yPosition - 10, { align: 'center' });
     
-    doc.setFillColor(COLORS.accent[0], COLORS.accent[1], COLORS.accent[2]);
-    doc.roundedRect(110, yPosition, 85, 30, 5, 5, 'F');
+    yPosition += 30;
+    
+    // Summary Statistics
+    if (data.records.length > 0) {
+      const present = data.records.filter(r => r.status === 'Present').length;
+      const absent = data.records.filter(r => r.status === 'Absent').length;
+      const leave = data.records.filter(r => r.status === 'Leave').length;
+      const total = data.records.length;
+      
+      // Statistics cards
+      const cardWidth = (pageWidth - 80) / 4;
+      const cardHeight = 45;
+      const startX = 30;
+      
+      const stats = [
+        { label: 'Present', value: present, color: COLORS.accent },
+        { label: 'Absent', value: absent, color: COLORS.red },
+        { label: 'Leave', value: leave, color: COLORS.amber },
+        { label: 'Total', value: total, color: COLORS.secondary }
+      ];
+      
+      stats.forEach((stat, index) => {
+        const x = startX + (index * (cardWidth + 10));
+        
+        // Card background
+        doc.setFillColor(...COLORS.white);
+        doc.setDrawColor(...COLORS.border);
+        doc.setLineWidth(1);
+        doc.roundedRect(x, yPosition, cardWidth, cardHeight, 4, 4, 'FD');
+        
+        // Colored top bar
+        doc.setFillColor(...stat.color);
+        doc.roundedRect(x, yPosition, cardWidth, 6, 4, 4, 'F');
+        
+        // Value
+        doc.setTextColor(...COLORS.text);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text(stat.value.toString(), x + cardWidth/2, yPosition + 23, { align: 'center' });
+        
+        // Label
+        doc.setFontSize(11);
+        doc.setTextColor(...COLORS.textLight);
+        doc.setFont('helvetica', 'normal');
+        doc.text(stat.label, x + cardWidth/2, yPosition + 37, { align: 'center' });
+      });
+      
+      yPosition += 65;
+    }
+    
+    // Attendance Table
+    if (data.records.length > 0) {
+      const tableData = data.records.map((record, index) => [
+        (index + 1).toString(),
+        new Date(record.date).toLocaleDateString('en-IN'),
+        new Date(record.date).toLocaleDateString('en-IN', { weekday: 'long' }),
+        record.status
+      ]);
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['S.No', 'Date', 'Day', 'Status']],
+        body: tableData,
+        styles: {
+          fontSize: 11,
+          cellPadding: 8,
+          font: 'helvetica',
+          textColor: COLORS.text
+        },
+        headStyles: {
+          fillColor: COLORS.primary,
+          textColor: COLORS.white,
+          fontStyle: 'bold',
+          fontSize: 12
+        },
+        alternateRowStyles: {
+          fillColor: [252, 252, 252] as [number, number, number],
+        },
+        columnStyles: {
+          0: { cellWidth: 25, halign: 'center' },
+          1: { cellWidth: 55, halign: 'center' },
+          2: { cellWidth: 60 },
+          3: { cellWidth: 35, halign: 'center' },
+        },
+        didParseCell: function(data) {
+          if (data.column.index === 3 && data.section === 'body') {
+            const status = data.cell.text[0];
+            switch (status) {
+              case 'Present':
+                data.cell.styles.textColor = COLORS.accent;
+                data.cell.styles.fontStyle = 'bold';
+                break;
+              case 'Absent':
+                data.cell.styles.textColor = COLORS.red;
+                data.cell.styles.fontStyle = 'bold';
+                break;
+              case 'Leave':
+                data.cell.styles.textColor = COLORS.amber;
+                data.cell.styles.fontStyle = 'bold';
+                break;
+              case 'Holiday':
+                data.cell.styles.textColor = COLORS.secondary;
+                data.cell.styles.fontStyle = 'bold';
+                break;
+            }
+          }
+        }
+      });
+    } else {
+      // No data message
+      doc.setFontSize(16);
+      doc.setTextColor(...COLORS.textLight);
+      doc.text('No attendance records found for the selected period.', pageWidth / 2, yPosition + 40, { align: 'center' });
+    }
+    
+    // Add footer
+    addFooter(doc);
+    
+    // Save the PDF
+    const fileName = `attendance-${data.studentData.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  } catch (error) {
+    console.error('Error generating attendance PDF:', error);
+    throw new Error('Failed to generate attendance PDF');
+  }
+};
+
+// Fee invoice export - Fixed property names to match FeeTransaction interface
+export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
+  try {
+    const { transaction, student } = options;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Add institute header
+    let yPosition = addInstituteHeader(doc, 'Fee Invoice');
+    
+    // Invoice title
+    doc.setFontSize(26);
+    doc.setTextColor(...COLORS.primary);
     doc.setFont('helvetica', 'bold');
+    doc.text('PAYMENT RECEIPT', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 30;
+    
+    // Invoice details card
+    doc.setFillColor(...COLORS.background);
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(1);
+    doc.roundedRect(25, yPosition, pageWidth - 50, 85, 8, 8, 'FD');
+    
+    yPosition += 18;
+    
+    // Student Information
     doc.setFontSize(16);
-    doc.text(`${allTests.length}`, 152.5, yPosition + 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('Total Tests', 152.5, yPosition + 23, { align: 'center' });
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('STUDENT DETAILS', 35, yPosition);
+    
+    yPosition += 15;
+    doc.setFontSize(13);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Name: ${student.name || student.full_name}`, 35, yPosition);
+    yPosition += 10;
+    doc.text(`Class: ${student.class}`, 35, yPosition);
+    yPosition += 10;
+    doc.text(`Receipt No: ${transaction.receiptNumber}`, 35, yPosition);
+    
+    // Payment Details (right side)
+    yPosition -= 35;
+    doc.setFontSize(16);
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PAYMENT DETAILS', pageWidth - 35, yPosition, { align: 'right' });
+    
+    yPosition += 15;
+    doc.setFontSize(13);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date(transaction.date).toLocaleDateString('en-IN')}`, pageWidth - 35, yPosition, { align: 'right' });
+    yPosition += 10;
+    doc.text(`Mode: ${transaction.paymentMode}`, pageWidth - 35, yPosition, { align: 'right' });
+    yPosition += 10;
+    doc.text(`Purpose: ${transaction.purpose}`, pageWidth - 35, yPosition, { align: 'right' });
     
     yPosition += 45;
     
-    // Tests table
-    const tableRows = allTests.map(test => {
-      const percent = Math.round((test.marks / test.total_marks) * 100);
-      let grade = "F";
-      if (percent >= 90) grade = "A";
-      else if (percent >= 75) grade = "B";
-      else if (percent >= 60) grade = "C";
-      else if (percent >= 40) grade = "D";
-      
-      return [
-        format(new Date(test.test_date), 'dd MMM yyyy'),
-        test.subject,
-        test.test_name,
-        `${test.marks}/${test.total_marks}`,
-        `${percent}%`,
-        grade
-      ];
-    });
+    // Amount section
+    doc.setFillColor(...COLORS.primary);
+    doc.roundedRect(25, yPosition, pageWidth - 50, 50, 8, 8, 'F');
     
-    autoTable(doc, {
-      head: [["Date", "Subject", "Test Name", "Score", "Percentage", "Grade"]],
-      body: tableRows,
-      startY: yPosition,
-      theme: 'grid',
-      headStyles: {
-        fillColor: COLORS.primary,
-        textColor: COLORS.white,
-        fontSize: 10,
-        fontStyle: 'bold'
-      },
-      bodyStyles: {
-        fontSize: 9,
-        textColor: COLORS.text
-      },
-      alternateRowStyles: {
-        fillColor: COLORS.light
-      },
-      styles: {
-        cellPadding: 6
-      }
-    });
-  } else {
-    // Single test details
-    const percentage = Math.round((test.marks / test.total_marks) * 100);
-    
-    // Score card
-    const scoreColor = percentage >= 90 ? COLORS.success : 
-                      percentage >= 75 ? COLORS.primary : 
-                      percentage >= 60 ? COLORS.warning : COLORS.danger;
-    
-    doc.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-    doc.roundedRect(15, yPosition, 180, 40, 8, 8, 'F');
-    doc.setTextColor(COLORS.white[0], COLORS.white[1], COLORS.white[2]);
+    yPosition += 18;
+    doc.setFontSize(18);
+    doc.setTextColor(...COLORS.white);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(24);
-    doc.text(`${percentage}%`, 105, yPosition + 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`${test.marks}/${test.total_marks} Marks`, 105, yPosition + 30, { align: 'center' });
+    doc.text('AMOUNT PAID', 35, yPosition);
     
-    yPosition += 55;
-    
-    // Test details
-    doc.setFillColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
-    doc.roundedRect(15, yPosition, 180, 30, 5, 5, 'F');
-    
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    yPosition += 25;
+    doc.setFontSize(32);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('TEST DETAILS', 20, yPosition + 10);
     
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`Subject: ${test.subject}`, 20, yPosition + 18);
-    doc.text(`Test Name: ${test.test_name}`, 20, yPosition + 25);
-    doc.text(`Date: ${format(new Date(test.test_date), 'dd MMM yyyy')}`, 115, yPosition + 18);
+    // Format amount with rupee symbol
+    const amount = transaction.amount.toLocaleString('en-IN');
+    const rupeeText = `Rs. ${amount}`;
+    doc.text(rupeeText, pageWidth - 35, yPosition, { align: 'right' });
     
-    // Grade calculation
-    let grade = "F";
-    if (percentage >= 90) grade = "A";
-    else if (percentage >= 75) grade = "B";
-    else if (percentage >= 60) grade = "C";
-    else if (percentage >= 40) grade = "D";
+    yPosition += 40;
     
-    doc.text(`Grade: ${grade}`, 115, yPosition + 25);
+    // Thank you note
+    doc.setFontSize(15);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Thank you for your payment. Please keep this receipt for your records.', pageWidth / 2, yPosition, { align: 'center' });
     
-    if (chartImage) {
-      doc.addImage(chartImage, 'PNG', 50, yPosition + 40, 100, 60);
-    }
+    // Add footer
+    addFooter(doc);
+    
+    // Save the PDF
+    const fileName = `fee-receipt-${(student.name || student.full_name).replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  } catch (error) {
+    console.error('Error generating fee invoice PDF:', error);
+    throw new Error('Failed to generate fee invoice PDF');
   }
-  
-  addModernFooter(doc, 1, 1);
-  
-  const studentName = student.full_name ? student.full_name.replace(/\s+/g, "_") : "student";
-  const fileName = allTests && allTests.length > 1 
-    ? `test_history_${studentName}.pdf` 
-    : `test_report_${studentName}_${test.subject}.pdf`;
+};
+
+// Test result export
+export const exportTestToPDF = (data: TestPDFData) => {
+  try {
+    const { test, student, title, subtitle, allTests } = data;
     
-  doc.save(fileName);
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Add institute header
+    let yPosition = addInstituteHeader(doc, 'Test Result Report');
+    
+    // Report title
+    doc.setFontSize(22);
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 12;
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.textLight);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 30;
+    
+    // Student information card
+    doc.setFillColor(...COLORS.background);
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(1);
+    doc.roundedRect(25, yPosition, pageWidth - 50, 40, 6, 6, 'FD');
+    
+    yPosition += 15;
+    doc.setFontSize(18);
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Student: ${student.full_name || student.name}`, 35, yPosition);
+    
+    yPosition += 12;
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Class: ${student.class}`, 35, yPosition);
+    
+    yPosition += 35;
+    
+    if (allTests && allTests.length > 0) {
+      // Multiple tests - show table
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(...COLORS.primary);
+      doc.text('TEST PERFORMANCE SUMMARY', 35, yPosition);
+      yPosition += 25;
+      
+      const tableData = allTests.map((testItem, index) => [
+        (index + 1).toString(),
+        testItem.test_name || 'Test',
+        testItem.subject || 'Subject',
+        `${testItem.marks}/${testItem.total_marks}`,
+        `${Math.round((testItem.marks / testItem.total_marks) * 100)}%`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['S.No', 'Test Name', 'Subject', 'Score', 'Percentage']],
+        body: tableData,
+        styles: {
+          fontSize: 12,
+          cellPadding: 8,
+          font: 'helvetica',
+          textColor: COLORS.text
+        },
+        headStyles: {
+          fillColor: COLORS.primary,
+          textColor: COLORS.white,
+          fontStyle: 'bold',
+          fontSize: 13
+        },
+        alternateRowStyles: {
+          fillColor: [252, 252, 252] as [number, number, number],
+        },
+        columnStyles: {
+          0: { cellWidth: 25, halign: 'center' },
+          1: { cellWidth: 65 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 35, halign: 'center' },
+          4: { cellWidth: 35, halign: 'center' },
+        }
+      });
+    } else {
+      // Single test result
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(...COLORS.primary);
+      doc.text('TEST RESULT', 35, yPosition);
+      
+      yPosition += 25;
+      
+      // Test details card
+      doc.setFillColor(...COLORS.background);
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(1);
+      doc.roundedRect(25, yPosition, pageWidth - 50, 80, 6, 6, 'FD');
+      
+      yPosition += 18;
+      doc.setFontSize(14);
+      doc.setTextColor(...COLORS.text);
+      doc.setFont('helvetica', 'normal');
+      
+      // Handle both TestRecordDb and LegacyTestFormat
+      if ('test_id' in test) {
+        // TestRecordDb format
+        const testName = `Test ${test.test_id}`;
+        doc.text(`Test Name: ${testName}`, 35, yPosition);
+        yPosition += 12;
+        doc.text(`Marks Obtained: ${test.marks_obtained}`, 35, yPosition);
+        yPosition += 12;
+        doc.text(`Total Marks: ${test.total_marks}`, 35, yPosition);
+        yPosition += 18;
+        
+        const percentage = test.percentage || Math.round(test.marks_obtained / test.total_marks * 100);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        const textColor = percentage >= 75 ? COLORS.accent : percentage >= 50 ? COLORS.amber : COLORS.red;
+        doc.setTextColor(...textColor);
+        doc.text(`Percentage: ${percentage}%`, 35, yPosition);
+        
+        yPosition += 18;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        doc.setTextColor(...COLORS.textLight);
+        doc.text(`Date: ${new Date(test.created_at || Date.now()).toLocaleDateString('en-IN')}`, 35, yPosition);
+      } else {
+        // LegacyTestFormat
+        doc.text(`Test Name: ${test.test_name}`, 35, yPosition);
+        yPosition += 12;
+        doc.text(`Subject: ${test.subject}`, 35, yPosition);
+        yPosition += 12;
+        doc.text(`Marks: ${test.marks}/${test.total_marks}`, 35, yPosition);
+        yPosition += 18;
+        
+        const percentage = Math.round((test.marks / test.total_marks) * 100);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        const textColor = percentage >= 75 ? COLORS.accent : percentage >= 50 ? COLORS.amber : COLORS.red;
+        doc.setTextColor(...textColor);
+        doc.text(`Percentage: ${percentage}%`, 35, yPosition);
+        
+        yPosition += 18;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        doc.setTextColor(...COLORS.textLight);
+        doc.text(`Date: ${new Date(test.test_date).toLocaleDateString('en-IN')}`, 35, yPosition);
+      }
+    }
+    
+    // Add footer
+    addFooter(doc);
+    
+    // Save the PDF
+    const studentName = (student.full_name || student.name || 'student').replace(/\s+/g, '-').toLowerCase();
+    const fileName = `test-result-${studentName}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  } catch (error) {
+    console.error('Error generating test PDF:', error);
+    throw new Error('Failed to generate test PDF');
+  }
 };

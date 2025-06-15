@@ -1,3 +1,4 @@
+
 import React from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -49,8 +50,18 @@ export function EnhancedPageHeader({
       
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          {showBackButton}
-          <h1 className="font-semibold tracking-tight py-0 my-0 mx-0 text-2xl">{title}</h1>
+          {showBackButton && (
+            <Button 
+              onClick={handleBack} 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-full shrink-0 font-normal text-base transition-all duration-200 ease-in-out" 
+              aria-label="Back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <h1 className="tracking-tight py-0 my-0 mx-0 text-3xl font-semibold">{title}</h1>
         </div>
         
         {action && <div>{action}</div>}

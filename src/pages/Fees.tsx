@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -25,8 +24,11 @@ import { StudentFeeCard } from "@/components/fees/StudentFeeCard";
 // Icons
 import { Search, Download, Plus, HandCoins, ReceiptIndianRupee, School, Users } from "lucide-react";
 
+import { useDebounce } from "@/hooks/useDebounce";
+
 export default function Fees() {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [sortField, setSortField] = useState<"date" | "amount" | "student">("date");
@@ -79,25 +81,24 @@ export default function Fees() {
   const pendingFees = totalFees - collectedFees;
   const percentageCollected = totalFees > 0 ? Math.round((collectedFees / totalFees) * 100) : 0;
 
-  // Add payment mutation
+  // Add payment mutation with updated structure
   const addPaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
-      console.log('Adding payment:', paymentData);
-      
       // Format the data for submission with required fields
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: format(paymentData.paymentDate, 'yyyy-MM-dd'),
+        payment_date: paymentData.date,
         payment_mode: paymentData.paymentMode,
-        receipt_number: paymentData.receiptNumber || `RCP-${Date.now()}`,
+        receipt_number: paymentData.receiptNumber,
         purpose: paymentData.purpose,
         academic_year: new Date().getFullYear().toString(),
-        term: paymentData.months?.join(', ') || 'General',
+        term: 'General',
         discount: 0,
         late_fee: 0,
         notes: paymentData.notes || '',
-        due_date: format(paymentData.paymentDate, 'yyyy-MM-dd')
+        due_date: paymentData.date,
+        months: paymentData.months || []
       };
 
       // Insert the fee transaction
@@ -107,10 +108,7 @@ export default function Fees() {
         .select()
         .single();
 
-      if (transactionError) {
-        console.error('Transaction error:', transactionError);
-        throw transactionError;
-      }
+      if (transactionError) throw transactionError;
 
       // Update the student's paid fees
       const student = students.find(s => s.id === paymentData.student_id);
@@ -127,10 +125,7 @@ export default function Fees() {
           })
           .eq('id', student.id);
 
-        if (updateError) {
-          console.error('Student update error:', updateError);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
       }
 
       return transactionData;
@@ -141,29 +136,32 @@ export default function Fees() {
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
       setSelectedStudentId(null);
-      toast.success("Payment added successfully");
+      toast.success("Payment added successfully", {
+        description: "The fee transaction has been recorded",
+        action: {
+          label: "View",
+          onClick: () => setActiveTab("transactions")
+        }
+      });
     },
     onError: (error: any) => {
-      console.error('Payment mutation error:', error);
-      toast.error("Failed to add payment");
+      toast.error(`Failed to add payment: ${error.message}`);
     }
   });
 
-  // Update payment mutation
+  // Update payment mutation with updated structure
   const updatePaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
-      console.log('Updating payment:', paymentData);
-      
       // Format the data for submission
       const formattedData = {
         student_id: paymentData.student_id,
         amount: paymentData.amount,
-        payment_date: format(paymentData.paymentDate, 'yyyy-MM-dd'),
+        payment_date: paymentData.date,
         payment_mode: paymentData.paymentMode,
         receipt_number: paymentData.receiptNumber,
         purpose: paymentData.purpose,
-        term: paymentData.months?.join(', ') || 'General',
-        notes: paymentData.notes || ''
+        notes: paymentData.notes || '',
+        months: paymentData.months || []
       };
 
       // Calculate amount difference for student fee update
@@ -178,10 +176,7 @@ export default function Fees() {
         .select()
         .single();
 
-      if (transactionError) {
-        console.error('Transaction update error:', transactionError);
-        throw transactionError;
-      }
+      if (transactionError) throw transactionError;
 
       // Update the student's paid fees if amount changed
       if (amountDifference !== 0) {
@@ -199,10 +194,7 @@ export default function Fees() {
             })
             .eq('id', student.id);
 
-          if (updateError) {
-            console.error('Student update error:', updateError);
-            throw updateError;
-          }
+          if (updateError) throw updateError;
         }
       }
 
@@ -213,11 +205,16 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
-      toast.success("Payment updated successfully");
+      toast.success("Payment updated successfully", {
+        description: "The fee transaction has been updated",
+        action: {
+          label: "View",
+          onClick: () => setActiveTab("transactions")
+        }
+      });
     },
     onError: (error: any) => {
-      console.error('Payment update mutation error:', error);
-      toast.error("Failed to update payment");
+      toast.error(`Failed to update payment: ${error.message}`);
     }
   });
 
@@ -225,8 +222,6 @@ export default function Fees() {
   const deletePaymentMutation = useMutation({
     mutationFn: async () => {
       if (!selectedTransaction) throw new Error("No transaction selected");
-
-      console.log('Deleting payment:', selectedTransaction.id);
 
       // Get the transaction to be deleted
       const transaction = feeTransactions.find(t => t.id === selectedTransaction.id);
@@ -238,10 +233,7 @@ export default function Fees() {
         .delete()
         .eq('id', transaction.id);
 
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        throw deleteError;
-      }
+      if (deleteError) throw deleteError;
 
       // Update the student's paid fees
       const student = students.find(s => s.id === transaction.student_id);
@@ -258,10 +250,7 @@ export default function Fees() {
           })
           .eq('id', student.id);
 
-        if (updateError) {
-          console.error('Student update error:', updateError);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
       }
 
       return transaction;
@@ -271,21 +260,31 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       setIsAddPaymentDialogOpen(false);
       setSelectedTransaction(null);
-      toast.success("Payment deleted successfully");
+      toast.success("Payment deleted successfully", {
+        description: "The fee transaction has been removed"
+      });
     },
     onError: (error: any) => {
-      console.error('Delete mutation error:', error);
-      toast.error("Failed to delete payment");
+      toast.error(`Failed to delete payment: ${error.message}`);
     }
   });
 
-  // Filter and sort transactions
+  // Enhanced filter and sort transactions with debounced search
   const filteredTransactions = feeTransactions.filter(transaction => {
-    // Handle search
     const student = students.find(s => s.id === transaction.student_id);
-    const studentMatches = student?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const receiptMatches = transaction.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const purposeMatches = transaction.purpose?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+    const searchLower = debouncedSearchQuery.toLowerCase().trim();
+    
+    // Enhanced search matching
+    const studentMatches = !searchLower || (
+      student?.full_name?.toLowerCase().includes(searchLower) ||
+      student?.class?.toString().includes(searchLower) ||
+      student?.roll_number?.toString().includes(searchLower) ||
+      student?.contact_number?.includes(searchLower)
+    );
+    
+    const receiptMatches = !searchLower || transaction.receipt_number?.toLowerCase().includes(searchLower);
+    const purposeMatches = !searchLower || transaction.purpose?.toLowerCase().includes(searchLower);
+    const amountMatches = !searchLower || transaction.amount?.toString().includes(searchQuery);
 
     // Handle status filter
     const statusMatches = statusFilter === "all" || 
@@ -311,7 +310,7 @@ export default function Fees() {
       }
     }
 
-    return (studentMatches || receiptMatches || purposeMatches) && statusMatches && periodMatches;
+    return (studentMatches || receiptMatches || purposeMatches || amountMatches) && statusMatches && periodMatches;
   }).sort((a, b) => {
     // Handle sorting
     if (sortField === "date") {
@@ -386,34 +385,39 @@ export default function Fees() {
     // Format transaction data for the form
     setSelectedTransaction({
       ...transaction,
-      paymentMode: transaction.payment_mode,
-      paymentDate: transaction.payment_date,
-      receiptNumber: transaction.receipt_number
+      paymentMode: transaction.payment_mode
     });
     setSelectedStudentId(transaction.student_id);
     setIsAddPaymentDialogOpen(true);
   };
 
   // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any): Promise<void> => {
-    console.log('Form submit data:', data);
-    
+  const handleFormSubmit = (data: any) => {
     if (selectedTransaction) {
-      await updatePaymentMutation.mutateAsync(data);
+      return updatePaymentMutation.mutate({
+        ...data,
+        id: selectedTransaction.id
+      });
     } else {
-      await addPaymentMutation.mutateAsync(data);
+      return addPaymentMutation.mutate(data);
     }
   };
 
-  const handleDeleteTransaction = async (): Promise<void> => {
-    await deletePaymentMutation.mutateAsync();
+  const handleDeleteTransaction = () => {
+    return deletePaymentMutation.mutate();
   };
 
-  // Filtered students for the Student Fee Status section
-  const filteredStudents = students.filter(student => 
-    student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    student.class?.toString().includes(searchQuery)
-  ).sort((a, b) => {
+  // Enhanced filtered students for the Student Fee Status section
+  const filteredStudents = students.filter(student => {
+    const searchLower = debouncedSearchQuery.toLowerCase().trim();
+    return !searchLower || (
+      student.full_name?.toLowerCase().includes(searchLower) ||
+      student.class?.toString().includes(searchLower) ||
+      student.roll_number?.toString().includes(searchLower) ||
+      student.father_name?.toLowerCase().includes(searchLower) ||
+      student.contact_number?.includes(searchLower)
+    );
+  }).sort((a, b) => {
     // Sort by fee status: Pending first, then Partial, then Paid
     const statusOrder = { "Pending": 0, "Partial": 1, "Paid": 2 };
     const statusA = statusOrder[a.fee_status as keyof typeof statusOrder] || 0;
@@ -480,30 +484,37 @@ export default function Fees() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-b-4 border-purple-500">
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-b-4 border-purple-500">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
-              <Users className="h-4 w-4" /> Total Students
+              <Users className="h-4 w-4" /> Students
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{students.length}</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">Enrolled</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              {students.filter(s => s.fee_status === "Paid").length} paid in full
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
+      {/* Enhanced Filters and Search */}
       <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search students, receipts..." 
+              placeholder="Search students, receipts, amounts..." 
               value={searchQuery} 
               onChange={e => setSearchQuery(e.target.value)} 
               className="pl-10 h-11 text-base transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:scale-[1.01]" 
             />
+            {debouncedSearchQuery && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
+                {activeTab === "transactions" ? filteredTransactions.length : filteredStudents.length} found
+              </div>
+            )}
           </div>
 
           <div className="flex flex-row gap-3 w-full sm:w-auto">
@@ -607,29 +618,28 @@ export default function Fees() {
       {/* Add/Edit Payment Dialog */}
       <Dialog 
         open={isAddPaymentDialogOpen} 
-        onOpenChange={(open) => {
-          setIsAddPaymentDialogOpen(open);
-          if (!open) {
-            setSelectedTransaction(null);
-            setSelectedStudentId(null);
+        onOpenChange={open => {
+          if (!isPending) {
+            setIsAddPaymentDialogOpen(open);
+            if (!open) {
+              setSelectedStudentId(null);
+              setSelectedTransaction(null);
+            }
           }
         }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              {selectedTransaction ? "Edit Payment" : "Add New Payment"}
-            </DialogTitle>
+            <DialogTitle>{selectedTransaction ? "Edit Fee Payment" : "Add Fee Payment"}</DialogTitle>
             <DialogDescription>
-              {selectedTransaction ? "Update the payment details below." : "Enter the details for the new payment below."}
+              {selectedTransaction ? "Update an existing fee payment record." : "Record a new fee payment for a student."}
             </DialogDescription>
           </DialogHeader>
           <FeeTransactionForm 
-            onSubmit={handleFormSubmit}
-            onDelete={selectedTransaction ? handleDeleteTransaction : undefined}
-            students={students}
-            transaction={selectedTransaction}
-            preSelectedStudentId={selectedStudentId}
+            transaction={selectedTransaction} 
+            onSubmit={handleFormSubmit} 
+            onDelete={selectedTransaction ? handleDeleteTransaction : undefined} 
+            preSelectedStudentId={selectedStudentId} 
           />
         </DialogContent>
       </Dialog>
