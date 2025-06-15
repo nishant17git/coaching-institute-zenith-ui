@@ -388,21 +388,20 @@ export default function Fees() {
     setIsAddPaymentDialogOpen(true);
   };
 
-  // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any) => {
-    console.log('Form submission data:', data);
+  // Create wrapper functions that return Promise<void>
+  const handleFormSubmit = async (data: any): Promise<void> => {
     if (selectedTransaction) {
-      return updatePaymentMutation.mutateAsync({
+      await updatePaymentMutation.mutateAsync({
         ...data,
         id: selectedTransaction.id
       });
     } else {
-      return addPaymentMutation.mutateAsync(data);
+      await addPaymentMutation.mutateAsync(data);
     }
   };
 
-  const handleDeleteTransaction = async () => {
-    return deletePaymentMutation.mutateAsync();
+  const handleDeleteTransaction = async (): Promise<void> => {
+    await deletePaymentMutation.mutateAsync();
   };
 
   // Enhanced filtered students for the Student Fee Status section

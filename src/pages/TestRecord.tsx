@@ -282,6 +282,19 @@ export default function TestRecord() {
     toast.info("Delete test feature coming soon");
   };
 
+  // Create wrapper functions that return Promise<void>
+  const handleCreateTest = async (data: any): Promise<void> => {
+    await createTestMutation.mutateAsync(data);
+  };
+
+  const handleAddTestResult = async (data: any): Promise<void> => {
+    await addTestResultMutation.mutateAsync(data);
+  };
+
+  const handleAddTestRecord = async (data: any): Promise<void> => {
+    await addTestRecordMutation.mutateAsync(data);
+  };
+
   // Get unique subjects and classes for filters
   const uniqueSubjects = [...new Set(tests.map(t => t.subject))];
   const uniqueClasses = [...new Set(students.map(s => s.class?.toString()))];
@@ -485,7 +498,7 @@ export default function TestRecord() {
               Add a new test to the system with all necessary details.
             </DialogDescription>
           </DialogHeader>
-          <TestForm onSubmit={createTestMutation.mutateAsync} />
+          <TestForm onSubmit={handleCreateTest} />
         </DialogContent>
       </Dialog>
 
@@ -499,7 +512,7 @@ export default function TestRecord() {
             </DialogDescription>
           </DialogHeader>
           <TestResultForm 
-            onSubmit={addTestResultMutation.mutateAsync}
+            onSubmit={handleAddTestResult}
             students={students}
             tests={tests}
           />
@@ -516,7 +529,7 @@ export default function TestRecord() {
             </DialogDescription>
           </DialogHeader>
           <TestAddForm 
-            onSubmit={addTestRecordMutation.mutateAsync}
+            onSubmit={handleAddTestRecord}
             students={students}
           />
         </DialogContent>
