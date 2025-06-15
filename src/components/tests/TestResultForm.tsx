@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,10 +50,12 @@ export function TestResultForm({
 
   const handleSubmit = async (data: TestResultFormValues) => {
     if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
       const percentage = Math.round((data.marks_obtained / data.total_marks) * 100);
       await onSubmit({ ...data, percentage });
+      
       if (!isEditing) {
         form.reset({
           student_id: "",
@@ -62,7 +65,7 @@ export function TestResultForm({
         });
       }
     } catch (error) {
-      // (Optionally) toast.error('Failed to submit result')
+      console.error('Form submission error:', error);
     } finally {
       setIsSubmitting(false);
     }

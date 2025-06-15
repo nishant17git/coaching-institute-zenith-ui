@@ -278,9 +278,9 @@ export default function StudentDetail() {
     toast.success("Student information updated successfully!");
   };
 
-  const handleFeeSubmit = async (data: any) => {
+  const handleFeeSubmit = (data: any) => {
     if (!student) return;
-    await addFeeMutation.mutateAsync(data);
+    addFeeMutation.mutate(data);
   };
 
   const handleDelete = () => {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -49,23 +50,24 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
     },
   });
 
-  const handleSubmit = async (values: TestFormValues) => {
-    try {
-      const selectedStudent = students.find(s => s.id === values.student_id);
-      const formattedData = {
-        student_id: values.student_id,
-        subject: values.subject,
-        test_name: values.test_name,
-        test_date: format(values.test_date, "yyyy-MM-dd"),
-        test_type: values.test_type,
-        marks_obtained: Number(values.marks_obtained),
-        total_marks: Number(values.total_marks),
-        class: selectedStudent?.class || 1,
-      };
-      await onSubmit(formattedData);
-    } catch (error) {
-      // Show error toast if you wish, or delegate to parent.
-    }
+  const handleSubmit = (values: TestFormValues) => {
+    console.log('Form values before submission:', values);
+    
+    const selectedStudent = students.find(s => s.id === values.student_id);
+    
+    const formattedData = {
+      student_id: values.student_id,
+      subject: values.subject,
+      test_name: values.test_name,
+      test_date: format(values.test_date, "yyyy-MM-dd"),
+      test_type: values.test_type,
+      marks_obtained: Number(values.marks_obtained),
+      total_marks: Number(values.total_marks),
+      class: selectedStudent?.class || 1,
+    };
+    
+    console.log('Formatted data for submission:', formattedData);
+    onSubmit(formattedData);
   };
 
   const validStudents = students.filter(student => 

@@ -392,25 +392,19 @@ export default function Fees() {
   };
 
   // Handle form submission based on whether it's an add or edit operation
-  const handleFormSubmit = async (data: any) => {
-    try {
-      if (selectedTransaction) {
-        // Edit payment logic
-        await updatePaymentMutation.mutateAsync({
-          ...data,
-          id: selectedTransaction.id
-        });
-      } else {
-        // Add payment logic
-        await addPaymentMutation.mutateAsync(data);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save payment.");
+  const handleFormSubmit = (data: any) => {
+    if (selectedTransaction) {
+      return updatePaymentMutation.mutate({
+        ...data,
+        id: selectedTransaction.id
+      });
+    } else {
+      return addPaymentMutation.mutate(data);
     }
   };
 
-  const handleDeleteTransaction = async () => {
-    await deletePaymentMutation.mutateAsync();
+  const handleDeleteTransaction = () => {
+    return deletePaymentMutation.mutate();
   };
 
   // Enhanced filtered students for the Student Fee Status section
