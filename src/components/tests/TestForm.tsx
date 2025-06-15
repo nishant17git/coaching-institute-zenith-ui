@@ -20,13 +20,13 @@ const testSchema = z.object({
   test_type: z.string().min(1, "Test type is required"),
   total_marks: z.coerce.number().positive("Total marks must be positive"),
   duration_minutes: z.coerce.number().positive("Duration must be positive"),
-  description: z.string().optional(),
+  class: z.coerce.number().positive("Class is required"),
 });
 
 type TestFormValues = z.infer<typeof testSchema>;
 
 interface TestFormProps {
-  onSubmit: (data: TestFormValues) => void;
+  onSubmit: (data: TestFormValues) => Promise<void>;
   initialData?: Partial<TestFormValues>;
   isEditing?: boolean;
 }
@@ -46,7 +46,7 @@ export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormP
       test_type: initialData?.test_type || "MCQs Test (Standard)",
       total_marks: initialData?.total_marks || 100,
       duration_minutes: initialData?.duration_minutes || 60,
-      description: initialData?.description || "",
+      class: initialData?.class || 1,
     },
   });
 
@@ -56,6 +56,9 @@ export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormP
     try {
       setIsSubmitting(true);
       await onSubmit(data);
+      if (!isEditing) {
+        form.reset();
+      }
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
@@ -175,7 +178,26 @@ export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormP
                     )}
                   />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <FormField
+                      control={form.control}
+                      name="class"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Class *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="Enter class" 
+                              className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage className="font-sf-pro text-sm" />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={form.control}
                       name="total_marks"
@@ -214,24 +236,6 @@ export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormP
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Description</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Additional test details (optional)" 
-                            className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage className="font-sf-pro text-sm" />
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
               </Card>
             </form>

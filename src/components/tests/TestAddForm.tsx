@@ -10,12 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { cn } from "@/lib/utils";
-import { User, BookOpen, ClipboardList, Award, Target } from "lucide-react";
+import { User, BookOpen, Award } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TestAddFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
   students: { id: string; full_name?: string; class?: number | string }[];
   initialData?: any;
   isEditing?: boolean;
@@ -50,7 +49,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
     },
   });
 
-  const handleSubmit = (values: TestFormValues) => {
+  const handleSubmit = async (values: TestFormValues) => {
     console.log('Form values before submission:', values);
     
     const selectedStudent = students.find(s => s.id === values.student_id);
@@ -67,7 +66,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
     };
     
     console.log('Formatted data for submission:', formattedData);
-    onSubmit(formattedData);
+    await onSubmit(formattedData);
   };
 
   const validStudents = students.filter(student => 
@@ -228,18 +227,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Marks Section */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <Target className="h-4 w-4 text-amber-600" />
-                  Marks Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <FormField
                     control={form.control}
@@ -261,6 +249,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="total_marks"
