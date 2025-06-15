@@ -32,11 +32,11 @@ const feeTransactionSchema = z.object({
 type FeeTransactionFormValues = z.infer<typeof feeTransactionSchema>;
 
 interface FeeTransactionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
   submitLabel?: string;
   studentName?: string;
   transaction?: any;
-  onDelete?: () => void;
+  onDelete?: () => Promise<void>;
   preSelectedStudentId?: string;
 }
 
@@ -79,10 +79,10 @@ export function FeeTransactionForm({
   const defaultValues = transaction ? {
     studentId: transaction.student_id || preSelectedStudentId || "",
     amount: transaction.amount || 0,
-    paymentDate: transaction.paymentDate ? new Date(transaction.paymentDate) : transaction.date ? new Date(transaction.date) : new Date(),
-    paymentMode: transaction.paymentMode || "Cash" as const,
+    paymentDate: transaction.payment_date ? new Date(transaction.payment_date) : new Date(),
+    paymentMode: transaction.payment_mode || "Cash" as const,
     purpose: transaction.purpose || "Tuition Fee" as const,
-    receiptNumber: transaction.receiptNumber || generateReceiptNumber(),
+    receiptNumber: transaction.receipt_number || generateReceiptNumber(),
     notes: transaction.notes || "",
     months: transaction.months || [],
   } : {
@@ -113,13 +113,26 @@ export function FeeTransactionForm({
 
     try {
       setIsSubmitting(true);
-      // Map form data to expected format
+      // Map form data to expected Supabase format
       const submissionData = {
-        ...data,
+        id: transaction?.id,
         student_id: data.studentId,
-        date: data.paymentDate,
+        amount: data.amount,
+        payment_date: format(data.paymentDate, 'yyyy-MM-dd'),
+        payment_mode: data.paymentMode,
+        purpose: data.purpose,
+        receipt_number: data.receiptNumber,
+        notes: data.notes || "",
+        months: data.months,
+        academic_year: new Date().getFullYear().toString(),
+        term: 'General',
+        discount: 0,
+        late_fee: 0,
+        due_date: format(data.paymentDate, 'yyyy-MM-dd'),
       };
+      
       await onSubmit(submissionData);
+      
       if (!transaction) {
         form.reset({
           ...defaultValues,
@@ -133,8 +146,6 @@ export function FeeTransactionForm({
       setIsSubmitting(false);
     }
   };
-
-  const selectedStudent = students.find(s => s.id === form.watch('studentId'));
 
   return (
     <div className="w-full h-full flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
