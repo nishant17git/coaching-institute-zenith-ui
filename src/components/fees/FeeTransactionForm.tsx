@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -110,17 +109,11 @@ export function FeeTransactionForm({
 
   const handleSubmit = async (data: FeeTransactionFormValues) => {
     if (isSubmitting) return;
-
     try {
       setIsSubmitting(true);
-      // Map form data to expected format
-      const submissionData = {
-        ...data,
-        student_id: data.studentId,
-        date: data.paymentDate,
-      };
-      await onSubmit(submissionData);
+      await onSubmit(data); // Let parent handle error/success
       if (!transaction) {
+        // Optionally reset form after add
         form.reset({
           ...defaultValues,
           receiptNumber: generateReceiptNumber(),
@@ -128,7 +121,9 @@ export function FeeTransactionForm({
         });
       }
     } catch (error) {
-      console.error('Form submission error:', error);
+      // Let parent handle the toast, but can fallback:
+      // toast.error('Submission failed');
+      // (If parent handles errors fully, you don't need this.)
     } finally {
       setIsSubmitting(false);
     }
@@ -385,7 +380,7 @@ export function FeeTransactionForm({
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                  Processing...
+                  {transaction ? "Updating..." : submitLabel}
                 </>
               ) : (
                 transaction ? "Update Payment" : submitLabel
