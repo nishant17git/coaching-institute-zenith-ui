@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,11 +31,11 @@ const feeTransactionSchema = z.object({
 type FeeTransactionFormValues = z.infer<typeof feeTransactionSchema>;
 
 interface FeeTransactionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
   submitLabel?: string;
   studentName?: string;
   transaction?: any;
-  onDelete?: () => void;
+  onDelete?: () => Promise<void>;
   preSelectedStudentId?: string;
 }
 
@@ -78,10 +78,14 @@ export function FeeTransactionForm({
   const defaultValues = transaction ? {
     studentId: transaction.student_id || preSelectedStudentId || "",
     amount: transaction.amount || 0,
-    paymentDate: transaction.paymentDate ? new Date(transaction.paymentDate) : transaction.date ? new Date(transaction.date) : new Date(),
-    paymentMode: transaction.paymentMode || "Cash" as const,
+    paymentDate: transaction.payment_date
+      ? new Date(transaction.payment_date)
+      : transaction.date
+        ? new Date(transaction.date)
+        : new Date(),
+    paymentMode: transaction.payment_mode || transaction.paymentMode || "Cash" as const,
     purpose: transaction.purpose || "Tuition Fee" as const,
-    receiptNumber: transaction.receiptNumber || generateReceiptNumber(),
+    receiptNumber: transaction.receipt_number || transaction.receiptNumber || generateReceiptNumber(),
     notes: transaction.notes || "",
     months: transaction.months || [],
   } : {
@@ -107,11 +111,31 @@ export function FeeTransactionForm({
     }
   }, [form, transaction]);
 
-  const handleSubmit = async (data: FeeTransactionFormValues) => {
+  // --- FIX: Submit data using correct format for parent handler/Supabase ---
+  const handleSubmit = async (values: FeeTransactionFormValues) => {
     if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      await onSubmit(data); // Let parent handle error/success
+      // Supabase expects snake_case field names
+      const mappedData = {
+        student_id: values.studentId,
+        amount: values.amount,
+        payment_date: values.paymentDate,
+        payment_mode: values.paymentMode,
+        purpose: values.purpose,
+        receipt_number: values.receiptNumber,
+        notes: values.notes || "",
+        months: values.months,
+      };
+
+      // If editing, include the transaction ID
+      if (transaction?.id) {
+        mappedData["id"] = transaction.id;
+      }
+
+      await onSubmit(mappedData);
+
       if (!transaction) {
         // Optionally reset form after add
         form.reset({
@@ -121,9 +145,7 @@ export function FeeTransactionForm({
         });
       }
     } catch (error) {
-      // Let parent handle the toast, but can fallback:
-      // toast.error('Submission failed');
-      // (If parent handles errors fully, you don't need this.)
+      // Errors are handled by parent (Fees page)
     } finally {
       setIsSubmitting(false);
     }
@@ -392,3 +414,5 @@ export function FeeTransactionForm({
     </div>
   );
 }
+
+// ... End of FeeTransactionForm
