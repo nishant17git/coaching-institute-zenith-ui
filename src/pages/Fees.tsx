@@ -409,8 +409,8 @@ export default function Fees() {
     }
   };
 
-  const handleDeleteTransaction = () => {
-    return deletePaymentMutation.mutate();
+  const handleDeleteTransaction = async () => {
+    await deletePaymentMutation.mutateAsync();
   };
 
   // Enhanced filtered students for the Student Fee Status section
