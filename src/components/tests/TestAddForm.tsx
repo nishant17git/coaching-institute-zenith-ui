@@ -15,22 +15,23 @@ import { User, BookOpen, ClipboardList, Award, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TestAddFormProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => void;
   students: { id: string; full_name?: string; class?: number | string }[];
   initialData?: any;
   isEditing?: boolean;
 }
 
 const testFormSchema = z.object({
-  test_name: z.string().min(1, { message: "Test name is required" }),
+  student_id: z.string().min(1, { message: "Please select a student" }),
   subject: z.string().min(1, { message: "Subject is required" }),
+  test_name: z.string().min(1, { message: "Test name is required" }),
   test_date: z.date({ required_error: "Test date is required" }),
   test_type: z.string().min(1, { message: "Test type is required" }),
+  marks_obtained: z.coerce.number().min(0, { message: "Marks obtained must be non-negative" }),
   total_marks: z.coerce.number().min(1, { message: "Total marks must be positive" }),
-  duration_minutes: z.coerce.number().min(1, { message: "Duration must be positive" }),
-  class: z.coerce.number().min(1, { message: "Class is required" }),
-  instructions: z.string().optional(),
-  syllabus_covered: z.string().optional(),
+}).refine((data) => data.marks_obtained <= data.total_marks, {
+  message: "Marks obtained cannot exceed total marks",
+  path: ["marks_obtained"],
 });
 
 type TestFormValues = z.infer<typeof testFormSchema>;
@@ -39,42 +40,88 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testFormSchema),
     defaultValues: initialData || {
-      test_name: "",
+      student_id: "",
       subject: "",
+      test_name: "",
       test_date: new Date(),
       test_type: "MCQs Test (Standard)",
+      marks_obtained: 0,
       total_marks: 100,
-      duration_minutes: 60,
-      class: 9,
-      instructions: "",
-      syllabus_covered: "",
     },
   });
 
-  const handleSubmit = async (values: TestFormValues) => {
+  const handleSubmit = (values: TestFormValues) => {
     console.log('Form values before submission:', values);
     
+    const selectedStudent = students.find(s => s.id === values.student_id);
+    
     const formattedData = {
-      test_name: values.test_name,
+      student_id: values.student_id,
       subject: values.subject,
+      test_name: values.test_name,
       test_date: format(values.test_date, "yyyy-MM-dd"),
       test_type: values.test_type,
+      marks_obtained: Number(values.marks_obtained),
       total_marks: Number(values.total_marks),
-      duration_minutes: Number(values.duration_minutes),
-      class: Number(values.class),
-      instructions: values.instructions || "",
-      syllabus_covered: values.syllabus_covered || "",
+      class: selectedStudent?.class || 1,
     };
     
     console.log('Formatted data for submission:', formattedData);
-    await onSubmit(formattedData);
+    onSubmit(formattedData);
   };
+
+  const validStudents = students.filter(student => 
+    student.id && student.id.trim() !== "" && 
+    student.full_name && student.full_name.trim() !== ""
+  );
 
   return (
     <div className="w-full h-full flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+            {/* Student Selection Section */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <User className="h-4 w-4 text-blue-600" />
+                  Student Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="student_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs sm:text-sm font-medium">Student *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm">
+                            <SelectValue placeholder="Select a student" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-[200px]">
+                          <SelectGroup>
+                            <SelectLabel>Students</SelectLabel>
+                            {validStudents.map((student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs sm:text-sm">{student.full_name}</span>
+                                  <span className="text-xs text-muted-foreground">Class {student.class}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
             {/* Test Information Section */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="pb-3 sm:pb-4">
@@ -85,24 +132,6 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="test_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Test Name *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter test name" 
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-
                   <FormField
                     control={form.control}
                     name="subject"
@@ -126,6 +155,24 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                             </SelectGroup>
                           </SelectContent>
                         </Select>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="test_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs sm:text-sm font-medium">Test Name *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter test name" 
+                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
+                            {...field} 
+                          />
+                        </FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}
@@ -181,8 +228,39 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                     )}
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* Marks Section */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Target className="h-4 w-4 text-amber-600" />
+                  Marks Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField
+                    control={form.control}
+                    name="marks_obtained"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs sm:text-sm font-medium">Marks Obtained *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="Enter marks obtained" 
+                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="total_marks"
@@ -203,89 +281,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="duration_minutes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Duration (mins) *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="Enter duration" 
-                            className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="class"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs sm:text-sm font-medium">Class *</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm">
-                              <SelectValue placeholder="Select class" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Classes</SelectLabel>
-                              <SelectItem value="9">Class 9</SelectItem>
-                              <SelectItem value="10">Class 10</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="instructions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs sm:text-sm font-medium">Instructions</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter test instructions (optional)" 
-                          className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="syllabus_covered"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs sm:text-sm font-medium">Syllabus Covered</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter syllabus covered (optional)" 
-                          className="h-9 sm:h-11 border-slate-200 text-xs sm:text-sm" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
           </form>
@@ -300,7 +296,7 @@ export function TestAddForm({ onSubmit, students, initialData, isEditing = false
           className="h-9 sm:h-11 px-4 sm:px-8 font-medium w-full sm:w-auto bg-black hover:bg-black/80 text-xs sm:text-sm"
         >
           <Award className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-          {form.formState.isSubmitting ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Test' : 'Create Test')}
+          {form.formState.isSubmitting ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Test Record' : 'Add Test Record')}
         </Button>
       </DialogFooter>
     </div>

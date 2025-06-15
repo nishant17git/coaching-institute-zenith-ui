@@ -123,7 +123,7 @@ export default function TestRecord() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Fetch tests from Supabase with proper error handling
+  // Fetch tests from Supabase
   const {
     data: tests = [],
     isLoading: testsLoading,
@@ -131,7 +131,6 @@ export default function TestRecord() {
   } = useQuery({
     queryKey: ['tests'],
     queryFn: async () => {
-      console.log('Fetching tests from Supabase...');
       const {
         data,
         error
@@ -142,12 +141,11 @@ export default function TestRecord() {
         console.error('Error fetching tests:', error);
         throw error;
       }
-      console.log('Fetched tests:', data);
       return data || [];
     }
   });
 
-  // Fetch test records from Supabase with proper error handling
+  // Fetch test records from Supabase using correct table name
   const {
     data: testRecords = [],
     isLoading: testRecordsLoading,
@@ -155,7 +153,6 @@ export default function TestRecord() {
   } = useQuery({
     queryKey: ['test_results'],
     queryFn: async () => {
-      console.log('Fetching test results from Supabase...');
       const {
         data,
         error
@@ -166,7 +163,6 @@ export default function TestRecord() {
         console.error('Error fetching test results:', error);
         throw error;
       }
-      console.log('Fetched test results:', data);
       return data || [];
     }
   });
@@ -193,7 +189,7 @@ export default function TestRecord() {
     }
   });
 
-  // Mutation for adding tests with proper error handling
+  // Mutation for adding tests (not test results)
   const addTestMutation = useMutation({
     mutationFn: async (testData: any) => {
       console.log('Adding test with data:', testData);
@@ -205,7 +201,6 @@ export default function TestRecord() {
         console.error('Error creating test:', testError);
         throw testError;
       }
-      console.log('Test created successfully:', testRecord);
       return testRecord;
     },
     onSuccess: () => {
@@ -221,7 +216,7 @@ export default function TestRecord() {
     }
   });
 
-  // Mutation for adding test results with proper error handling
+  // Mutation for adding test results
   const addTestResultMutation = useMutation({
     mutationFn: async (resultData: any) => {
       console.log('Adding test result with data:', resultData);
@@ -243,7 +238,6 @@ export default function TestRecord() {
         console.error('Error adding test result:', resultError);
         throw resultError;
       }
-      console.log('Test result added successfully:', resultRecord);
       return resultRecord;
     },
     onSuccess: () => {
@@ -370,15 +364,15 @@ export default function TestRecord() {
   });
 
   // Handle new test creation
-  const handleAddTest = async (testData: any) => {
+  const handleAddTest = (testData: any) => {
     console.log('Handling add test:', testData);
-    return addTestMutation.mutate(testData);
+    addTestMutation.mutate(testData);
   };
 
   // Handle new test result creation
-  const handleAddTestResult = async (resultData: any) => {
+  const handleAddTestResult = (resultData: any) => {
     console.log('Handling add test result:', resultData);
-    return addTestResultMutation.mutate(resultData);
+    addTestResultMutation.mutate(resultData);
   };
 
   // Handle test update
@@ -560,8 +554,7 @@ export default function TestRecord() {
     }} transition={{
       duration: 0.3
     }} className="space-y-4 sm:space-y-6 p-4 sm:p-6 py-0 px-0">
-        <PageHeader title="Tests" showBackButton={true} onBack={() => navigate(-1)} action={
-          <Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
+        <PageHeader title="Tests" showBackButton={true} onBack={() => navigate(-1)} action={<Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 bg-black hover:bg-gray-800 text-white shadow-lg sm:text-sm text-sm font-medium">
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" /> Add Test
@@ -576,8 +569,7 @@ export default function TestRecord() {
               </DialogHeader>
               <TestForm onSubmit={handleAddTest} />
             </DialogContent>
-          </Dialog>
-        } />
+          </Dialog>} />
         
         {/* Edit Test Dialog */}
         <Dialog open={isEditTestOpen} onOpenChange={open => {
