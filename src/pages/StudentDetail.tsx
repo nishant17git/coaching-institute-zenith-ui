@@ -259,6 +259,29 @@ export default function StudentDetail() {
   if (studentLoading) return <LoadingState />;
   if (studentError || !student) return <StudentNotFoundState />;
 
+  // Convert Supabase student to match Student interface for components that need it
+  const mappedStudent = {
+    id: student.id,
+    name: student.full_name,
+    class: student.class.toString(),
+    father: student.father_name,
+    mother: student.mother_name || '',
+    fatherName: student.father_name,
+    motherName: student.mother_name || '',
+    phoneNumber: student.contact_number,
+    whatsappNumber: student.whatsapp_number || '',
+    address: student.address || '',
+    feeStatus: student.fee_status as "Paid" | "Pending" | "Partial",
+    totalFees: student.total_fees || 0,
+    paidFees: student.paid_fees || 0,
+    attendancePercentage: student.attendance_percentage || 0,
+    joinDate: student.admission_date || '',
+    gender: student.gender as "Male" | "Female" | "Other",
+    aadhaarNumber: student.aadhaar_number,
+    dateOfBirth: student.date_of_birth,
+    rollNumber: student.roll_number
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 space-y-6">
@@ -412,7 +435,7 @@ export default function StudentDetail() {
                   student={student}
                 />
                 <AttendanceHistoryTable 
-                  attendanceRecords={attendanceRecords}
+                  attendanceHistory={attendanceRecords}
                 />
               </>
             )}
@@ -532,7 +555,7 @@ export default function StudentDetail() {
       <EnhancedCallModal
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
-        student={student}
+        student={mappedStudent}
       />
 
       {/* Add Fee Payment Dialog */}
