@@ -12,27 +12,16 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface AttendanceHistoryCardProps {
-  attendanceStats: {
-    totalDays: number;
-    presentDays: number;
-    absentDays: number;
-    lateDays: number;
-    attendancePercentage: number;
-  } | null;
-  student: any;
+  attendanceHistory: any[];
 }
 
 export function AttendanceHistoryCard({
-  attendanceStats,
-  student
+  attendanceHistory
 }: AttendanceHistoryCardProps) {
   const [attendanceView, setAttendanceView] = useState<"list" | "calendar">("list");
   const [expanded, setExpanded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const isMobile = useMediaQuery("(max-width: 768px)");
-
-  // Mock attendance history since we don't have it passed as props
-  const attendanceHistory: any[] = [];
 
   // Get the first 3 months of data for the initial view
   const initialMonths = 3;

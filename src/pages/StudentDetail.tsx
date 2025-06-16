@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -431,8 +430,7 @@ export default function StudentDetail() {
             ) : (
               <>
                 <AttendanceHistoryCard 
-                  attendanceStats={attendanceStats} 
-                  student={student}
+                  attendanceHistory={attendanceRecords}
                 />
                 <AttendanceHistoryTable 
                   attendanceHistory={attendanceRecords}
@@ -553,8 +551,8 @@ export default function StudentDetail() {
 
       {/* Call Modal */}
       <EnhancedCallModal
-        isOpen={isCallModalOpen}
-        onClose={() => setIsCallModalOpen(false)}
+        open={isCallModalOpen}
+        onOpenChange={setIsCallModalOpen}
         student={mappedStudent}
       />
 
