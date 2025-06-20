@@ -157,6 +157,7 @@ export type Database = {
           notes: string | null
           payment_date: string
           payment_mode: string
+          payment_months: string[] | null
           purpose: string
           receipt_number: string
           student_id: string
@@ -174,6 +175,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_mode: string
+          payment_months?: string[] | null
           purpose: string
           receipt_number: string
           student_id: string
@@ -191,6 +193,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_mode?: string
+          payment_months?: string[] | null
           purpose?: string
           receipt_number?: string
           student_id?: string

@@ -366,8 +366,8 @@ export default function Reports() {
                   <CardDescription className="text-gray-600">Multi-metric analysis over the past 6 months</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-6">
-                  <div className="w-full overflow-hidden">
-                    <ChartContainer config={chartConfig} className="h-[220px] sm:h-[280px] w-full">
+                  <div className="w-full">
+                    <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[280px]")}>
                       <AreaChart
                         data={last6Months}
                         margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
@@ -380,9 +380,15 @@ export default function Reports() {
                           tickMargin={8}
                           tickFormatter={(value) => value.slice(0, 3)}
                           className="text-gray-600"
-                          fontSize={11}
+                          fontSize={isMobile ? 10 : 12}
                         />
-                        <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                        <YAxis 
+                          tickLine={false} 
+                          axisLine={false} 
+                          className="text-gray-600" 
+                          fontSize={isMobile ? 10 : 12}
+                          width={isMobile ? 30 : 40}
+                        />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                         <defs>
                           <linearGradient id="fillAttendance" x1="0" y1="0" x2="0" y2="1">
@@ -439,9 +445,12 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Student distribution by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full overflow-hidden">
-                      <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                        <BarChart data={classWiseData} margin={{ left: 12, right: 12, top: 12, bottom: 12 }}>
+                    <div className="w-full">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[180px]" : "h-[200px]")}>
+                        <BarChart 
+                          data={classWiseData} 
+                          margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                        >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
                             dataKey="name"
@@ -450,9 +459,15 @@ export default function Reports() {
                             axisLine={false}
                             tickFormatter={(value) => value.replace("Class ", "C")}
                             className="text-gray-600"
-                            fontSize={11}
+                            fontSize={isMobile ? 10 : 12}
                           />
-                          <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                          <YAxis 
+                            tickLine={false} 
+                            axisLine={false} 
+                            className="text-gray-600" 
+                            fontSize={isMobile ? 10 : 12}
+                            width={isMobile ? 25 : 35}
+                          />
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                           <Bar dataKey="students" fill="hsl(217, 91%, 60%)" radius={6} />
                         </BarChart>
@@ -480,10 +495,17 @@ export default function Reports() {
                   </CardHeader>
                   <CardContent className="flex-1 pb-6">
                     <div className="w-full flex justify-center">
-                      <ChartContainer config={chartConfig} className="h-[200px] w-full max-w-[250px]">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[180px] max-w-[200px]" : "h-[200px] max-w-[250px]")}>
                         <PieChart>
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={feeStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} />
+                          <Pie 
+                            data={feeStatusData} 
+                            dataKey="value" 
+                            nameKey="name" 
+                            cx="50%" 
+                            cy="50%" 
+                            outerRadius={isMobile ? 60 : 80} 
+                          />
                         </PieChart>
                       </ChartContainer>
                     </div>
@@ -509,8 +531,8 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Student enrollment by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full overflow-hidden">
-                      <ChartContainer config={chartConfig} className="h-[220px] w-full">
+                    <div className="w-full">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
                         <AreaChart
                           data={classWiseData}
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
@@ -523,9 +545,15 @@ export default function Reports() {
                             tickMargin={8}
                             tickFormatter={(value) => value.replace("Class ", "C")}
                             className="text-gray-600"
-                            fontSize={11}
+                            fontSize={isMobile ? 10 : 12}
                           />
-                          <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                          <YAxis 
+                            tickLine={false} 
+                            axisLine={false} 
+                            className="text-gray-600" 
+                            fontSize={isMobile ? 10 : 12}
+                            width={isMobile ? 30 : 40}
+                          />
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                           <defs>
                             <linearGradient id="fillStudents" x1="0" y1="0" x2="0" y2="1">
@@ -563,10 +591,17 @@ export default function Reports() {
                   </CardHeader>
                   <CardContent className="flex-1 pb-6">
                     <div className="w-full flex justify-center">
-                      <ChartContainer config={chartConfig} className="h-[220px] w-full max-w-[250px]">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px] max-w-[200px]" : "h-[220px] max-w-[250px]")}>
                         <PieChart>
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={attendanceDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} />
+                          <Pie 
+                            data={attendanceDistribution} 
+                            dataKey="value" 
+                            nameKey="name" 
+                            cx="50%" 
+                            cy="50%" 
+                            outerRadius={isMobile ? 60 : 80} 
+                          />
                         </PieChart>
                       </ChartContainer>
                     </div>
@@ -591,8 +626,8 @@ export default function Reports() {
                   <CardDescription className="text-gray-600">Detailed attendance patterns and insights</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-6">
-                  <div className="w-full overflow-hidden">
-                    <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
+                  <div className="w-full">
+                    <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[220px]" : "h-[300px]")}>
                       <LineChart
                         data={classWiseData}
                         margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
@@ -605,17 +640,23 @@ export default function Reports() {
                           tickMargin={8}
                           tickFormatter={(value) => value.replace("Class ", "C")}
                           className="text-gray-600"
-                          fontSize={11}
+                          fontSize={isMobile ? 10 : 12}
                         />
-                        <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                        <YAxis 
+                          tickLine={false} 
+                          axisLine={false} 
+                          className="text-gray-600" 
+                          fontSize={isMobile ? 10 : 12}
+                          width={isMobile ? 30 : 40}
+                        />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                         <Line
                           dataKey="attendance"
                           type="natural"
                           stroke="hsl(142, 76%, 36%)"
                           strokeWidth={3}
-                          dot={{ fill: "hsl(142, 76%, 36%)", strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: "hsl(142, 76%, 36%)", strokeWidth: 2 }}
+                          dot={{ fill: "hsl(142, 76%, 36%)", strokeWidth: 2, r: isMobile ? 3 : 4 }}
+                          activeDot={{ r: isMobile ? 5 : 6, stroke: "hsl(142, 76%, 36%)", strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ChartContainer>
@@ -641,8 +682,8 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Revenue trends over time</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full overflow-hidden">
-                      <ChartContainer config={chartConfig} className="h-[220px] w-full">
+                    <div className="w-full">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
                         <AreaChart
                           data={last6Months}
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
@@ -655,9 +696,15 @@ export default function Reports() {
                             tickMargin={8}
                             tickFormatter={(value) => value.slice(0, 3)}
                             className="text-gray-600"
-                            fontSize={11}
+                            fontSize={isMobile ? 10 : 12}
                           />
-                          <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                          <YAxis 
+                            tickLine={false} 
+                            axisLine={false} 
+                            className="text-gray-600" 
+                            fontSize={isMobile ? 10 : 12}
+                            width={isMobile ? 30 : 40}
+                          />
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                           <defs>
                             <linearGradient id="fillFeesOnly" x1="0" y1="0" x2="0" y2="1">
@@ -694,9 +741,12 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Collection efficiency by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full overflow-hidden">
-                      <ChartContainer config={chartConfig} className="h-[220px] w-full">
-                        <BarChart data={classWiseData}>
+                    <div className="w-full">
+                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
+                        <BarChart 
+                          data={classWiseData}
+                          margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                        >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
                             dataKey="name"
@@ -705,9 +755,15 @@ export default function Reports() {
                             axisLine={false}
                             tickFormatter={(value) => value.replace("Class ", "C")}
                             className="text-gray-600"
-                            fontSize={11}
+                            fontSize={isMobile ? 10 : 12}
                           />
-                          <YAxis tickLine={false} axisLine={false} className="text-gray-600" fontSize={11} />
+                          <YAxis 
+                            tickLine={false} 
+                            axisLine={false} 
+                            className="text-gray-600" 
+                            fontSize={isMobile ? 10 : 12}
+                            width={isMobile ? 25 : 35}
+                          />
                           <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                           <Bar dataKey="feeRate" fill="hsl(25, 95%, 53%)" radius={6} />
                         </BarChart>
