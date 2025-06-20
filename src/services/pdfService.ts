@@ -57,10 +57,10 @@ const INSTITUTE_TAGLINE = "Excellence in Education Since 2022";
 const INSTITUTE_PHONE = "+91 9905880697";
 const INSTITUTE_EMAIL = "theinfinityclasses1208@gmail.com";
 
-// Modern, minimal color palette
+// Professional color palette - consistent across all PDFs
 const COLORS = {
   primary: [13, 33, 84] as [number, number, number],
-  primaryLight: [26, 66, 168] as [number, number, number],
+  primaryLight: [37, 99, 235] as [number, number, number],
   secondary: [59, 130, 246] as [number, number, number],
   accent: [34, 197, 94] as [number, number, number],
   text: [15, 23, 42] as [number, number, number],
@@ -69,53 +69,55 @@ const COLORS = {
   background: [248, 250, 252] as [number, number, number],
   border: [226, 232, 240] as [number, number, number],
   white: [255, 255, 255] as [number, number, number],
-  red: [220, 38, 38] as [number, number, number],
-  amber: [245, 158, 11] as [number, number, number],
-  green: [22, 163, 74] as [number, number, number]
+  success: [22, 163, 74] as [number, number, number],
+  warning: [245, 158, 11] as [number, number, number],
+  danger: [220, 38, 38] as [number, number, number]
 };
 
 // Professional header function with prominent branding
-const addModernHeader = (doc: jsPDF, reportType: string = '', subtitle?: string) => {
+const addProfessionalHeader = (doc: jsPDF, reportType: string = '', subtitle?: string) => {
   const pageWidth = doc.internal.pageSize.width;
-  let yPosition = 30;
+  let yPosition = 20;
 
   // Background accent bar
   doc.setFillColor(...COLORS.primary);
-  doc.rect(0, 0, pageWidth, 8, 'F');
+  doc.rect(0, 0, pageWidth, 12, 'F');
+  
+  yPosition += 25;
 
   // Institute name - highly prominent
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(32);
+  doc.setFontSize(28);
   doc.setTextColor(...COLORS.primary);
   doc.text(INSTITUTE_NAME, pageWidth / 2, yPosition, { align: 'center' });
   
-  yPosition += 12;
+  yPosition += 8;
   
   // Tagline
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(...COLORS.textMuted);
   doc.setFont('helvetica', 'normal');
   doc.text(INSTITUTE_TAGLINE, pageWidth / 2, yPosition, { align: 'center' });
   
-  yPosition += 8;
+  yPosition += 6;
   
   // Contact info - minimal and clean
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...COLORS.textLight);
   doc.text(`${INSTITUTE_PHONE} • ${INSTITUTE_EMAIL}`, pageWidth / 2, yPosition, { align: 'center' });
   
-  yPosition += 25;
+  yPosition += 20;
   
   // Thin separator line
   doc.setDrawColor(...COLORS.border);
   doc.setLineWidth(0.5);
-  doc.line(40, yPosition, pageWidth - 40, yPosition);
+  doc.line(25, yPosition, pageWidth - 25, yPosition);
   
   yPosition += 20;
   
   // Report type - prominent but clean
   if (reportType) {
-    doc.setFontSize(20);
+    doc.setFontSize(22);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
     doc.text(reportType, pageWidth / 2, yPosition, { align: 'center' });
@@ -130,18 +132,18 @@ const addModernHeader = (doc: jsPDF, reportType: string = '', subtitle?: string)
     }
   }
   
-  return yPosition + 15;
+  return yPosition + 20;
 };
 
-// Enhanced minimal footer
-const addModernFooter = (doc: jsPDF) => {
+// Enhanced professional footer
+const addProfessionalFooter = (doc: jsPDF) => {
   const pageHeight = doc.internal.pageSize.height;
   const pageWidth = doc.internal.pageSize.width;
   
   // Footer separator
   doc.setDrawColor(...COLORS.border);
   doc.setLineWidth(0.5);
-  doc.line(40, pageHeight - 25, pageWidth - 40, pageHeight - 25);
+  doc.line(25, pageHeight - 25, pageWidth - 25, pageHeight - 25);
   
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.textMuted);
@@ -153,13 +155,13 @@ const addModernFooter = (doc: jsPDF) => {
     day: 'numeric'
   });
   
-  doc.text(`Generated on ${currentDate}`, 40, pageHeight - 12);
+  doc.text(`Generated on ${currentDate}`, 25, pageHeight - 12);
   
-  // Institute name in footer - minimal
+  // Institute name in footer
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.primary);
-  doc.text(INSTITUTE_NAME, pageWidth - 40, pageHeight - 12, { align: 'right' });
+  doc.text(INSTITUTE_NAME, pageWidth - 25, pageHeight - 12, { align: 'right' });
 };
 
 // Individual Student Attendance Report
@@ -168,14 +170,14 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    // Add modern header
-    let yPosition = addModernHeader(doc, 'Student Attendance Report', 'Individual Academic Performance Overview');
+    // Add professional header
+    let yPosition = addProfessionalHeader(doc, 'Student Attendance Report', 'Individual Academic Performance Overview');
     
-    // Student profile card - modern and minimal
-    doc.setFillColor(250, 251, 255);
+    // Student profile card - modern and professional
+    doc.setFillColor(...COLORS.background);
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 50, 8, 8, 'FD');
+    doc.roundedRect(25, yPosition, pageWidth - 50, 55, 8, 8, 'FD');
     
     yPosition += 20;
     
@@ -183,30 +185,32 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
     doc.setFontSize(18);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
-    doc.text(data.studentData.name, 45, yPosition);
+    doc.text(data.studentData.name, 40, yPosition);
     
     yPosition += 12;
     doc.setFontSize(12);
     doc.setTextColor(...COLORS.textLight);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Class ${data.studentData.class} • Student ID: ${data.studentData.id.slice(-6)}`, 45, yPosition);
+    doc.text(`Class ${data.studentData.class} • Student ID: ${data.studentData.id.slice(-6)}`, 40, yPosition);
     
-    // Attendance percentage - clean badge
+    // Attendance percentage - professional badge
     const attendancePercentage = data.studentData.attendancePercentage;
-    const badgeColor = attendancePercentage >= 90 ? COLORS.green : 
+    const badgeColor = attendancePercentage >= 90 ? COLORS.success : 
                       attendancePercentage >= 75 ? COLORS.secondary : 
-                      attendancePercentage >= 50 ? COLORS.amber : COLORS.red;
+                      attendancePercentage >= 50 ? COLORS.warning : COLORS.danger;
     
     doc.setFillColor(...badgeColor);
-    doc.roundedRect(pageWidth - 90, yPosition - 25, 50, 20, 6, 6, 'F');
+    doc.roundedRect(pageWidth - 80, yPosition - 25, 50, 25, 8, 8, 'F');
     doc.setTextColor(...COLORS.white);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text(`${attendancePercentage}%`, pageWidth - 65, yPosition - 12, { align: 'center' });
+    doc.setFontSize(16);
+    doc.text(`${attendancePercentage}%`, pageWidth - 55, yPosition - 12, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text('ATTENDANCE', pageWidth - 55, yPosition - 5, { align: 'center' });
     
-    yPosition += 35;
+    yPosition += 40;
     
-    // Performance metrics - clean cards
+    // Performance metrics - professional cards
     if (data.records.length > 0) {
       const present = data.records.filter(r => r.status === 'Present').length;
       const absent = data.records.filter(r => r.status === 'Absent').length;
@@ -214,49 +218,49 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
       const total = data.records.length;
       
       const metrics = [
-        { label: 'Present Days', value: present, color: COLORS.green },
-        { label: 'Absent Days', value: absent, color: COLORS.red },
-        { label: 'Leave Days', value: leave, color: COLORS.amber },
+        { label: 'Present Days', value: present, color: COLORS.success },
+        { label: 'Absent Days', value: absent, color: COLORS.danger },
+        { label: 'Leave Days', value: leave, color: COLORS.warning },
         { label: 'Total Days', value: total, color: COLORS.primary }
       ];
       
-      const cardWidth = (pageWidth - 100) / 4;
+      const cardWidth = (pageWidth - 80) / 4;
       
       metrics.forEach((metric, index) => {
-        const x = 40 + (index * (cardWidth + 10));
+        const x = 30 + (index * (cardWidth + 10));
         
-        // Minimal card design
+        // Professional card design
         doc.setFillColor(...COLORS.white);
         doc.setDrawColor(...COLORS.border);
         doc.setLineWidth(1);
-        doc.roundedRect(x, yPosition, cardWidth, 35, 4, 4, 'FD');
+        doc.roundedRect(x, yPosition, cardWidth, 40, 6, 6, 'FD');
         
-        // Colored indicator
+        // Colored top accent
         doc.setFillColor(...metric.color);
-        doc.rect(x, yPosition, cardWidth, 3, 'F');
+        doc.roundedRect(x, yPosition, cardWidth, 6, 6, 6, 'F');
         
         // Value
         doc.setTextColor(...COLORS.text);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
-        doc.text(metric.value.toString(), x + cardWidth/2, yPosition + 18, { align: 'center' });
+        doc.text(metric.value.toString(), x + cardWidth/2, yPosition + 22, { align: 'center' });
         
         // Label
         doc.setFontSize(9);
         doc.setTextColor(...COLORS.textLight);
         doc.setFont('helvetica', 'normal');
-        doc.text(metric.label, x + cardWidth/2, yPosition + 28, { align: 'center' });
+        doc.text(metric.label, x + cardWidth/2, yPosition + 32, { align: 'center' });
       });
       
-      yPosition += 55;
+      yPosition += 60;
     }
     
-    // Attendance Records Table - enhanced with student name
+    // Attendance Records Table
     if (data.records.length > 0) {
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(...COLORS.text);
       doc.setFont('helvetica', 'bold');
-      doc.text('Detailed Attendance Records', 40, yPosition);
+      doc.text('Detailed Attendance Records', 30, yPosition);
       yPosition += 15;
       
       const tableData = data.records.map((record, index) => [
@@ -273,7 +277,7 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
         body: tableData,
         styles: {
           fontSize: 10,
-          cellPadding: 6,
+          cellPadding: 8,
           font: 'helvetica',
           textColor: COLORS.text
         },
@@ -284,7 +288,7 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
           fontSize: 11
         },
         alternateRowStyles: {
-          fillColor: [248, 250, 252] as [number, number, number],
+          fillColor: COLORS.background,
         },
         columnStyles: {
           0: { cellWidth: 20, halign: 'center' },
@@ -298,15 +302,15 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
             const status = data.cell.text[0];
             switch (status) {
               case 'Present':
-                data.cell.styles.textColor = COLORS.green;
+                data.cell.styles.textColor = COLORS.success;
                 data.cell.styles.fontStyle = 'bold';
                 break;
               case 'Absent':
-                data.cell.styles.textColor = COLORS.red;
+                data.cell.styles.textColor = COLORS.danger;
                 data.cell.styles.fontStyle = 'bold';
                 break;
               case 'Leave':
-                data.cell.styles.textColor = COLORS.amber;
+                data.cell.styles.textColor = COLORS.warning;
                 data.cell.styles.fontStyle = 'bold';
                 break;
               case 'Holiday':
@@ -319,7 +323,7 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
       });
     }
     
-    addModernFooter(doc);
+    addProfessionalFooter(doc);
     
     const fileName = `attendance-${data.studentData.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
@@ -329,7 +333,7 @@ export const exportAttendanceToPDF = (data: PDFExportData) => {
   }
 };
 
-// Class-wise Attendance Summary Report
+// Class-wise Attendance Summary Report with student names and class info
 export const exportClassAttendancePDF = (classData: {
   className: string;
   students: any[];
@@ -345,74 +349,78 @@ export const exportClassAttendancePDF = (classData: {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    // Add modern header
-    let yPosition = addModernHeader(doc, 'Class Attendance Summary', `${classData.className} - Academic Overview`);
+    // Add professional header
+    let yPosition = addProfessionalHeader(doc, 'Class Attendance Summary', `${classData.className} - Academic Overview`);
     
     // Date range and summary
-    doc.setFillColor(245, 247, 250);
+    doc.setFillColor(...COLORS.background);
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 40, 8, 8, 'FD');
+    doc.roundedRect(25, yPosition, pageWidth - 50, 45, 8, 8, 'FD');
     
-    yPosition += 15;
-    doc.setFontSize(12);
+    yPosition += 18;
+    doc.setFontSize(14);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Report Period: ${new Date(classData.dateRange.start).toLocaleDateString('en-IN')} to ${new Date(classData.dateRange.end).toLocaleDateString('en-IN')}`, 45, yPosition);
+    doc.text(`Report Period: ${new Date(classData.dateRange.start).toLocaleDateString('en-IN')} to ${new Date(classData.dateRange.end).toLocaleDateString('en-IN')}`, 40, yPosition);
     
     yPosition += 12;
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setTextColor(...COLORS.textLight);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Total Students: ${classData.summary.totalStudents} • Average Attendance: ${classData.summary.averageAttendance}%`, 45, yPosition);
+    doc.text(`Class: ${classData.className} • Total Students: ${classData.summary.totalStudents}`, 40, yPosition);
     
-    yPosition += 50;
+    yPosition += 10;
+    doc.text(`Average Attendance: ${classData.summary.averageAttendance}% • Present Today: ${classData.summary.presentToday}`, 40, yPosition);
     
-    // Class statistics
+    yPosition += 55;
+    
+    // Class statistics with professional design
     const stats = [
       { label: 'Total Students', value: classData.summary.totalStudents, color: COLORS.primary },
-      { label: 'Present Today', value: classData.summary.presentToday, color: COLORS.green },
-      { label: 'Absent Today', value: classData.summary.absentToday, color: COLORS.red },
+      { label: 'Present Today', value: classData.summary.presentToday, color: COLORS.success },
+      { label: 'Absent Today', value: classData.summary.absentToday, color: COLORS.danger },
       { label: 'Avg. Attendance', value: `${classData.summary.averageAttendance}%`, color: COLORS.secondary }
     ];
     
-    const cardWidth = (pageWidth - 100) / 4;
+    const cardWidth = (pageWidth - 80) / 4;
     
     stats.forEach((stat, index) => {
-      const x = 40 + (index * (cardWidth + 10));
+      const x = 30 + (index * (cardWidth + 10));
       
       doc.setFillColor(...COLORS.white);
       doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(1);
-      doc.roundedRect(x, yPosition, cardWidth, 40, 6, 6, 'FD');
+      doc.roundedRect(x, yPosition, cardWidth, 45, 6, 6, 'FD');
       
       doc.setFillColor(...stat.color);
-      doc.rect(x, yPosition, cardWidth, 4, 'F');
+      doc.roundedRect(x, yPosition, cardWidth, 6, 6, 6, 'F');
       
       doc.setTextColor(...COLORS.text);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text(stat.value.toString(), x + cardWidth/2, yPosition + 22, { align: 'center' });
+      doc.text(stat.value.toString(), x + cardWidth/2, yPosition + 25, { align: 'center' });
       
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.textLight);
       doc.setFont('helvetica', 'normal');
-      doc.text(stat.label, x + cardWidth/2, yPosition + 32, { align: 'center' });
+      doc.text(stat.label, x + cardWidth/2, yPosition + 36, { align: 'center' });
     });
     
-    yPosition += 60;
+    yPosition += 70;
     
-    // Student list table
+    // Student list table with enhanced design
     if (classData.students.length > 0) {
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(...COLORS.text);
       doc.setFont('helvetica', 'bold');
-      doc.text('Student Attendance Overview', 40, yPosition);
+      doc.text(`Student Attendance Overview - ${classData.className}`, 30, yPosition);
       yPosition += 15;
       
       const tableData = classData.students.map((student, index) => [
         (index + 1).toString(),
         student.full_name || student.name,
+        `Class ${student.class}`,
         student.roll_number || student.id.slice(-4),
         `${student.attendance_percentage || 0}%`,
         student.status || 'Present'
@@ -420,11 +428,11 @@ export const exportClassAttendancePDF = (classData: {
       
       autoTable(doc, {
         startY: yPosition,
-        head: [['S.No', 'Student Name', 'Roll No.', 'Attendance %', 'Today Status']],
+        head: [['S.No', 'Student Name', 'Class', 'Roll No.', 'Attendance %', 'Today Status']],
         body: tableData,
         styles: {
           fontSize: 10,
-          cellPadding: 6,
+          cellPadding: 8,
           font: 'helvetica',
           textColor: COLORS.text
         },
@@ -435,19 +443,20 @@ export const exportClassAttendancePDF = (classData: {
           fontSize: 11
         },
         alternateRowStyles: {
-          fillColor: [248, 250, 252] as [number, number, number],
+          fillColor: COLORS.background,
         },
         columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 60 },
+          0: { cellWidth: 18, halign: 'center' },
+          1: { cellWidth: 50 },
           2: { cellWidth: 25, halign: 'center' },
-          3: { cellWidth: 30, halign: 'center' },
-          4: { cellWidth: 30, halign: 'center' },
+          3: { cellWidth: 25, halign: 'center' },
+          4: { cellWidth: 28, halign: 'center' },
+          5: { cellWidth: 28, halign: 'center' },
         }
       });
     }
     
-    addModernFooter(doc);
+    addProfessionalFooter(doc);
     
     const fileName = `class-attendance-${classData.className.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
@@ -457,7 +466,7 @@ export const exportClassAttendancePDF = (classData: {
   }
 };
 
-// Enhanced Fee Invoice PDF with optimized Amount Paid section
+// Enhanced Fee Invoice PDF with payment months and professional design
 export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
   try {
     const { transaction, student } = options;
@@ -465,79 +474,87 @@ export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    // Add modern header
-    let yPosition = addModernHeader(doc, 'Payment Receipt', 'Fee Transaction Confirmation');
+    // Add professional header
+    let yPosition = addProfessionalHeader(doc, 'Payment Receipt', 'Fee Transaction Confirmation');
     
-    // Receipt details card - enhanced spacing
-    doc.setFillColor(248, 250, 252);
+    // Receipt details card
+    doc.setFillColor(...COLORS.background);
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 75, 8, 8, 'FD');
+    doc.roundedRect(25, yPosition, pageWidth - 50, 85, 8, 8, 'FD');
     
     yPosition += 20;
     
-    // Student & Receipt Information - better structured
-    doc.setFontSize(14);
+    // Student & Receipt Information
+    doc.setFontSize(16);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
-    doc.text('Student Information', 45, yPosition);
+    doc.text('Student Information', 40, yPosition);
     
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
-    doc.text('Receipt Details', pageWidth - 45, yPosition, { align: 'right' });
+    doc.text('Receipt Details', pageWidth - 40, yPosition, { align: 'right' });
     
     yPosition += 15;
     
     // Left column - Student details
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setTextColor(...COLORS.textLight);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Name: ${student.name || student.full_name}`, 45, yPosition);
+    doc.text(`Name: ${student.name || student.full_name}`, 40, yPosition);
     yPosition += 8;
-    doc.text(`Class: ${student.class}`, 45, yPosition);
+    doc.text(`Class: ${student.class}`, 40, yPosition);
     yPosition += 8;
-    doc.text(`Student ID: ${student.id?.slice(-6) || 'N/A'}`, 45, yPosition);
+    doc.text(`Student ID: ${student.id?.slice(-6) || 'N/A'}`, 40, yPosition);
     
     // Right column - Receipt details
     yPosition -= 16;
-    doc.text(`Receipt No: ${transaction.receiptNumber}`, pageWidth - 45, yPosition, { align: 'right' });
+    doc.text(`Receipt No: ${transaction.receiptNumber}`, pageWidth - 40, yPosition, { align: 'right' });
     yPosition += 8;
-    doc.text(`Date: ${new Date(transaction.date).toLocaleDateString('en-IN')}`, pageWidth - 45, yPosition, { align: 'right' });
+    doc.text(`Date: ${new Date(transaction.date).toLocaleDateString('en-IN')}`, pageWidth - 40, yPosition, { align: 'right' });
     yPosition += 8;
-    doc.text(`Payment Mode: ${transaction.paymentMode}`, pageWidth - 45, yPosition, { align: 'right' });
-    
-    yPosition += 35;
-    
-    // Purpose section
-    doc.setFillColor(...COLORS.white);
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 25, 6, 6, 'FD');
-    
-    yPosition += 16;
-    doc.setFontSize(12);
-    doc.setTextColor(...COLORS.text);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Payment Purpose: ${transaction.purpose}`, 45, yPosition);
+    doc.text(`Payment Mode: ${transaction.paymentMode}`, pageWidth - 40, yPosition, { align: 'right' });
     
     yPosition += 40;
     
-    // Amount Paid section - significantly enhanced with better spacing and structure
+    // Payment details section
+    doc.setFillColor(...COLORS.white);
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(1);
+    doc.roundedRect(25, yPosition, pageWidth - 50, 35, 6, 6, 'FD');
+    
+    yPosition += 18;
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.text);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Payment Purpose: ${transaction.purpose}`, 40, yPosition);
+    
+    // Payment months (if available)
+    if (transaction.payment_months && transaction.payment_months.length > 0) {
+      yPosition += 10;
+      doc.setFontSize(12);
+      doc.setTextColor(...COLORS.textLight);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Payment Months: ${transaction.payment_months.join(', ')}`, 40, yPosition);
+    }
+    
+    yPosition += 35;
+    
+    // Amount section - highly prominent
     doc.setFillColor(...COLORS.primary);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 70, 12, 12, 'F');
+    doc.roundedRect(25, yPosition, pageWidth - 50, 80, 12, 12, 'F');
     
     yPosition += 25;
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setTextColor(...COLORS.white);
     doc.setFont('helvetica', 'bold');
     doc.text('AMOUNT PAID', pageWidth / 2, yPosition, { align: 'center' });
     
     yPosition += 25;
-    doc.setFontSize(36);
+    doc.setFontSize(40);
     doc.setFont('helvetica', 'bold');
     
-    // Enhanced amount formatting with better spacing
     const amount = transaction.amount.toLocaleString('en-IN');
     const rupeeText = `₹ ${amount}`;
     doc.text(rupeeText, pageWidth / 2, yPosition, { align: 'center' });
@@ -548,20 +565,20 @@ export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
     doc.setTextColor(240, 245, 255);
     doc.text('(Amount in Indian Rupees)', pageWidth / 2, yPosition, { align: 'center' });
     
-    yPosition += 35;
+    yPosition += 40;
     
     // Professional thank you note
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setTextColor(...COLORS.textLight);
     doc.setFont('helvetica', 'italic');
     doc.text('Thank you for your payment. Please retain this receipt for your records.', pageWidth / 2, yPosition, { align: 'center' });
     
-    yPosition += 8;
+    yPosition += 10;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text('For any queries, please contact the administration office.', pageWidth / 2, yPosition, { align: 'center' });
     
-    addModernFooter(doc);
+    addProfessionalFooter(doc);
     
     const fileName = `fee-receipt-${(student.name || student.full_name).replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
@@ -571,7 +588,7 @@ export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
   }
 };
 
-// Enhanced Test Result PDF - more professional and minimal
+// Enhanced Test Result PDF - minimal and professional
 export const exportTestToPDF = (data: TestPDFData) => {
   try {
     const { test, student, title, subtitle, allTests } = data;
@@ -579,35 +596,35 @@ export const exportTestToPDF = (data: TestPDFData) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    // Add modern header
-    let yPosition = addModernHeader(doc, 'Academic Test Report', 'Performance Analysis & Results');
+    // Add professional header
+    let yPosition = addProfessionalHeader(doc, 'Academic Test Report', 'Performance Analysis & Results');
     
-    // Student profile card - enhanced
-    doc.setFillColor(248, 250, 252);
+    // Student profile card
+    doc.setFillColor(...COLORS.background);
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 45, 8, 8, 'FD');
+    doc.roundedRect(25, yPosition, pageWidth - 50, 50, 8, 8, 'FD');
     
-    yPosition += 18;
-    doc.setFontSize(16);
+    yPosition += 20;
+    doc.setFontSize(18);
     doc.setTextColor(...COLORS.text);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Student: ${student.full_name || student.name}`, 45, yPosition);
+    doc.text(`Student: ${student.full_name || student.name}`, 40, yPosition);
     
     yPosition += 12;
     doc.setFontSize(12);
     doc.setTextColor(...COLORS.textLight);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Class: ${student.class} • Student ID: ${student.id?.slice(-6) || 'N/A'}`, 45, yPosition);
+    doc.text(`Class: ${student.class} • Student ID: ${student.id?.slice(-6) || 'N/A'}`, 40, yPosition);
     
-    yPosition += 40;
+    yPosition += 45;
     
     if (allTests && allTests.length > 0) {
       // Multiple tests - enhanced table design
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(...COLORS.text);
-      doc.text('Comprehensive Test Performance', 40, yPosition);
+      doc.text('Comprehensive Test Performance', 30, yPosition);
       yPosition += 20;
       
       const tableData = allTests.map((testItem, index) => {
@@ -641,7 +658,7 @@ export const exportTestToPDF = (data: TestPDFData) => {
           fontSize: 12
         },
         alternateRowStyles: {
-          fillColor: [248, 250, 252] as [number, number, number],
+          fillColor: COLORS.background,
         },
         columnStyles: {
           0: { cellWidth: 20, halign: 'center' },
@@ -655,10 +672,10 @@ export const exportTestToPDF = (data: TestPDFData) => {
           if (data.column.index === 5 && data.section === 'body') {
             const grade = data.cell.text[0];
             if (grade === 'A+' || grade === 'A') {
-              data.cell.styles.textColor = COLORS.green;
+              data.cell.styles.textColor = COLORS.success;
               data.cell.styles.fontStyle = 'bold';
             } else if (grade === 'F') {
-              data.cell.styles.textColor = COLORS.red;
+              data.cell.styles.textColor = COLORS.danger;
               data.cell.styles.fontStyle = 'bold';
             }
           }
@@ -669,18 +686,18 @@ export const exportTestToPDF = (data: TestPDFData) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(...COLORS.text);
-      doc.text('Test Result Details', 40, yPosition);
+      doc.text('Test Result Details', 30, yPosition);
       
       yPosition += 20;
       
-      // Test details card with better typography
+      // Test details card
       doc.setFillColor(...COLORS.white);
       doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(1);
-      doc.roundedRect(30, yPosition, pageWidth - 60, 90, 8, 8, 'FD');
+      doc.roundedRect(25, yPosition, pageWidth - 50, 100, 8, 8, 'FD');
       
-      yPosition += 20;
-      doc.setFontSize(12);
+      yPosition += 25;
+      doc.setFontSize(14);
       doc.setTextColor(...COLORS.text);
       doc.setFont('helvetica', 'normal');
       
@@ -690,21 +707,21 @@ export const exportTestToPDF = (data: TestPDFData) => {
       if ('test_id' in test) {
         // TestRecordDb format
         const testName = `Test ${test.test_id}`;
-        doc.text(`Test Name: ${testName}`, 45, yPosition);
+        doc.text(`Test Name: ${testName}`, 40, yPosition);
         yPosition += 12;
-        doc.text(`Marks Obtained: ${test.marks_obtained}`, 45, yPosition);
+        doc.text(`Marks Obtained: ${test.marks_obtained}`, 40, yPosition);
         yPosition += 12;
-        doc.text(`Total Marks: ${test.total_marks}`, 45, yPosition);
+        doc.text(`Total Marks: ${test.total_marks}`, 40, yPosition);
         
         percentage = test.percentage || Math.round(test.marks_obtained / test.total_marks * 100);
         testDate = new Date(test.created_at || Date.now()).toLocaleDateString('en-IN');
       } else {
         // LegacyTestFormat
-        doc.text(`Test Name: ${test.test_name}`, 45, yPosition);
+        doc.text(`Test Name: ${test.test_name}`, 40, yPosition);
         yPosition += 12;
-        doc.text(`Subject: ${test.subject}`, 45, yPosition);
+        doc.text(`Subject: ${test.subject}`, 40, yPosition);
         yPosition += 12;
-        doc.text(`Marks: ${test.marks}/${test.total_marks}`, 45, yPosition);
+        doc.text(`Marks: ${test.marks}/${test.total_marks}`, 40, yPosition);
         
         percentage = Math.round((test.marks / test.total_marks) * 100);
         testDate = new Date(test.test_date).toLocaleDateString('en-IN');
@@ -712,23 +729,25 @@ export const exportTestToPDF = (data: TestPDFData) => {
       
       yPosition += 20;
       
-      // Performance badge
+      // Performance badge - prominent
       const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B+' : percentage >= 60 ? 'B' : percentage >= 50 ? 'C' : 'F';
-      const textColor = percentage >= 75 ? COLORS.green : percentage >= 50 ? COLORS.amber : COLORS.red;
+      const badgeColor = percentage >= 75 ? COLORS.success : percentage >= 50 ? COLORS.warning : COLORS.danger;
       
+      doc.setFillColor(...badgeColor);
+      doc.roundedRect(40, yPosition - 5, 80, 25, 6, 6, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(...textColor);
-      doc.text(`${percentage}% (Grade: ${grade})`, 45, yPosition);
+      doc.setFontSize(18);
+      doc.setTextColor(...COLORS.white);
+      doc.text(`${percentage}% (${grade})`, 80, yPosition + 8, { align: 'center' });
       
-      yPosition += 20;
+      yPosition += 30;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
       doc.setTextColor(...COLORS.textLight);
-      doc.text(`Test Date: ${testDate}`, 45, yPosition);
+      doc.text(`Test Date: ${testDate}`, 40, yPosition);
     }
     
-    addModernFooter(doc);
+    addProfessionalFooter(doc);
     
     const studentName = (student.full_name || student.name || 'student').replace(/\s+/g, '-').toLowerCase();
     const fileName = `test-result-${studentName}-${new Date().toISOString().split('T')[0]}.pdf`;
@@ -757,7 +776,7 @@ export const exportAcademicRecordsPDF = (data: {
     const pageWidth = doc.internal.pageSize.width;
     
     // Add modern header
-    let yPosition = addModernHeader(doc, 'Academic Records', `Comprehensive Academic Report - ${data.academicYear}`);
+    let yPosition = addProfessionalHeader(doc, 'Academic Records', `Comprehensive Academic Report - ${data.academicYear}`);
     
     // Student profile section
     doc.setFillColor(248, 250, 252);
@@ -786,8 +805,8 @@ export const exportAcademicRecordsPDF = (data: {
     const summaryData = [
       { label: 'Overall GPA', value: data.overallGPA.toFixed(2), color: COLORS.primary },
       { label: 'Total Credits', value: data.totalCredits.toString(), color: COLORS.secondary },
-      { label: 'Attendance', value: `${data.attendance.percentage}%`, color: COLORS.green },
-      { label: 'Present Days', value: `${data.attendance.presentDays}/${data.attendance.totalDays}`, color: COLORS.amber }
+      { label: 'Attendance', value: `${data.attendance.percentage}%`, color: COLORS.success },
+      { label: 'Present Days', value: `${data.attendance.presentDays}/${data.attendance.totalDays}`, color: COLORS.warning }
     ];
     
     const cardWidth = (pageWidth - 100) / 4;
@@ -863,7 +882,7 @@ export const exportAcademicRecordsPDF = (data: {
       });
     }
     
-    addModernFooter(doc);
+    addProfessionalFooter(doc);
     
     const studentName = (data.student.full_name || data.student.name || 'student').replace(/\s+/g, '-').toLowerCase();
     const fileName = `academic-records-${studentName}-${data.academicYear.replace(/\s+/g, '-')}.pdf`;

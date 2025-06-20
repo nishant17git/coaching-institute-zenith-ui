@@ -35,18 +35,21 @@ const INSTITUTE_DETAILS = {
   email: "theinfinityclasses1208@gmail.com"
 };
 
-// Modern minimal color palette
+// Modern professional color palette
 const COLORS = {
-  primary: [37, 99, 235], // Blue-600
-  secondary: [99, 102, 241], // Indigo-500
-  accent: [34, 197, 94], // Green-500
-  warning: [251, 191, 36], // Amber-400
-  danger: [248, 113, 113], // Red-400
-  text: [31, 41, 55], // Gray-800
-  muted: [107, 114, 128], // Gray-500
-  light: [248, 250, 252], // Slate-50
-  white: [255, 255, 255],
-  border: [226, 232, 240] // Slate-200
+  primary: [13, 33, 84] as [number, number, number],
+  primaryLight: [37, 99, 235] as [number, number, number],
+  secondary: [59, 130, 246] as [number, number, number],
+  accent: [34, 197, 94] as [number, number, number],
+  text: [15, 23, 42] as [number, number, number],
+  textLight: [71, 85, 105] as [number, number, number],
+  textMuted: [148, 163, 184] as [number, number, number],
+  background: [248, 250, 252] as [number, number, number],
+  border: [226, 232, 240] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  success: [22, 163, 74] as [number, number, number],
+  warning: [245, 158, 11] as [number, number, number],
+  danger: [220, 38, 38] as [number, number, number]
 };
 
 // Enhanced LaTeX processing for PDF
@@ -105,93 +108,167 @@ const processLaTeXForPDF = (text: string): string => {
   return processed;
 };
 
-// Clean minimal header
-const addMinimalHeader = (doc: jsPDF, options: QuestionsPDFOptions) => {
-  // Simple header line
-  doc.setDrawColor(COLORS.border[0], COLORS.border[1], COLORS.border[2]);
-  doc.setLineWidth(0.5);
-  doc.line(20, 30, 190, 30);
+// Professional header with prominent branding
+const addProfessionalHeader = (doc: jsPDF, options: QuestionsPDFOptions) => {
+  const pageWidth = doc.internal.pageSize.width;
+  let yPosition = 20;
+
+  // Background accent bar
+  doc.setFillColor(...COLORS.primary);
+  doc.rect(0, 0, pageWidth, 12, 'F');
   
-  // Institute name
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+  yPosition += 25;
+
+  // Institute name - highly prominent
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text(INSTITUTE_DETAILS.name, 20, 25);
+  doc.setFontSize(28);
+  doc.setTextColor(...COLORS.primary);
+  doc.text(INSTITUTE_DETAILS.name, pageWidth / 2, yPosition, { align: 'center' });
   
-  // Document type
-  doc.setFont('helvetica', 'normal');
+  yPosition += 8;
+  
+  // Tagline
   doc.setFontSize(10);
-  doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-  doc.text('Question Bank', 20, 40);
-  
-  // Subject and topic info
-  doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+  doc.setTextColor(...COLORS.textMuted);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.text(`${options.subjectName} - ${options.className}`, 20, 50);
+  doc.text('Excellence in Education Since 2022', pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 6;
+  
+  // Contact info - minimal and clean
   doc.setFontSize(9);
-  doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-  doc.text(`${options.chapterName} > ${options.topicName}`, 20, 58);
+  doc.setTextColor(...COLORS.textLight);
+  doc.text(`${INSTITUTE_DETAILS.phone} • ${INSTITUTE_DETAILS.email}`, pageWidth / 2, yPosition, { align: 'center' });
   
-  // Metadata on right
-  doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
+  yPosition += 20;
+  
+  // Thin separator line
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.line(25, yPosition, pageWidth - 25, yPosition);
+  
+  yPosition += 20;
+  
+  // Document title - prominent but clean
+  doc.setFontSize(22);
+  doc.setTextColor(...COLORS.text);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Question Bank', pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 15;
+  
+  // Subject and class information
+  doc.setFillColor(...COLORS.background);
+  doc.roundedRect(25, yPosition, pageWidth - 50, 35, 6, 6, 'F');
+  
+  yPosition += 12;
+  doc.setTextColor(...COLORS.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(`${options.subjectName} - ${options.className}`, pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 10;
+  doc.setFontSize(11);
+  doc.setTextColor(...COLORS.textLight);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text(`Date: ${format(new Date(), 'dd MMM yyyy')}`, 150, 25);
-  doc.text(`Questions: ${options.questions.length}`, 150, 32);
+  doc.text(`${options.chapterName} > ${options.topicName}`, pageWidth / 2, yPosition, { align: 'center' });
   
-  return 70;
+  yPosition += 8;
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy')} • Questions: ${options.questions.length}`, pageWidth / 2, yPosition, { align: 'center' });
+  
+  return yPosition + 25;
+};
+
+// Professional footer
+const addProfessionalFooter = (doc: jsPDF, pageNum: number, totalPages: number) => {
+  const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  
+  // Footer separator
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.line(25, pageHeight - 25, pageWidth - 25, pageHeight - 25);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFont('helvetica', 'normal');
+  
+  // Institute name on left
+  doc.text(INSTITUTE_DETAILS.name, 25, pageHeight - 12);
+  
+  // Page number on right
+  doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 25, pageHeight - 12, { align: 'right' });
 };
 
 export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
   const { questions, topicName } = options;
   const doc = new jsPDF();
   
-  let yPosition = addMinimalHeader(doc, options);
+  let yPosition = addProfessionalHeader(doc, options);
   
   // Process each question
   questions.forEach((question, index) => {
     // Check if we need a new page
-    if (yPosition > 240) {
+    if (yPosition > 230) {
       doc.addPage();
       yPosition = 30;
     }
     
-    // Question number and metadata
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(`Question ${index + 1}`, 20, yPosition);
+    // Question container with subtle background
+    const questionHeight = 25 + (question.options?.length || 0) * 8 + (question.explanation ? 20 : 0);
+    doc.setFillColor(250, 251, 255);
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, yPosition - 5, 170, Math.min(questionHeight, 50), 4, 4, 'FD');
     
-    // Difficulty and type badges (minimal)
-    doc.setFont('helvetica', 'normal');
+    // Question number and metadata
+    doc.setTextColor(...COLORS.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(`Question ${index + 1}`, 25, yPosition + 5);
+    
+    // Difficulty and type badges
+    const badgeY = yPosition + 5;
+    const difficultyColor = question.difficulty === 'Easy' ? COLORS.success : 
+                           question.difficulty === 'Medium' ? COLORS.warning : COLORS.danger;
+    
+    doc.setFillColor(...difficultyColor);
+    doc.roundedRect(120, badgeY - 8, 25, 12, 3, 3, 'F');
+    doc.setTextColor(...COLORS.white);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-    doc.text(`${question.difficulty} • ${question.type} • ${question.marks} marks`, 20, yPosition + 8);
+    doc.text(question.difficulty, 132.5, badgeY - 2, { align: 'center' });
+    
+    doc.setFillColor(...COLORS.secondary);
+    doc.roundedRect(148, badgeY - 8, 20, 12, 3, 3, 'F');
+    doc.setTextColor(...COLORS.white);
+    doc.text(`${question.marks}m`, 158, badgeY - 2, { align: 'center' });
     
     yPosition += 18;
     
-    // Question text with enhanced LaTeX processing
+    // Question text
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    doc.setTextColor(...COLORS.text);
     
     const processedQuestion = processLaTeXForPDF(question.question);
     const questionLines = doc.splitTextToSize(processedQuestion, 160);
     questionLines.forEach((line: string) => {
-      if (yPosition > 270) {
+      if (yPosition > 265) {
         doc.addPage();
         yPosition = 30;
       }
-      doc.text(line, 20, yPosition);
+      doc.text(line, 25, yPosition);
       yPosition += 6;
     });
     
-    // Options for MCQ (clean layout)
+    // Options for MCQ
     if (question.options && question.options.length > 0) {
       yPosition += 5;
       question.options.forEach((option, optIndex) => {
-        if (yPosition > 270) {
+        if (yPosition > 265) {
           doc.addPage();
           yPosition = 30;
         }
@@ -200,105 +277,82 @@ export const exportQuestionsToPDF = (options: QuestionsPDFOptions) => {
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
-        doc.text(`${optionLabel}. ${processedOption}`, 25, yPosition);
+        doc.setTextColor(...COLORS.text);
+        doc.text(`${optionLabel}. ${processedOption}`, 30, yPosition);
         yPosition += 7;
       });
     }
     
     yPosition += 8;
     
-    // Answer section (minimal design)
+    // Answer section with professional styling
     if (yPosition > 250) {
       doc.addPage();
       yPosition = 30;
     }
     
+    doc.setFillColor(...COLORS.success);
+    doc.roundedRect(25, yPosition - 3, 15, 10, 2, 2, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(COLORS.accent[0], COLORS.accent[1], COLORS.accent[2]);
-    doc.text('Answer:', 20, yPosition);
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.white);
+    doc.text('ANS', 32.5, yPosition + 2, { align: 'center' });
     
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.success);
     const processedAnswer = processLaTeXForPDF(question.answer);
-    const answerLines = doc.splitTextToSize(processedAnswer, 140);
-    let answerX = 45;
-    answerLines.forEach((line: string, lineIndex: number) => {
-      if (lineIndex > 0) {
-        yPosition += 5;
-        answerX = 20;
-      }
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 30;
-        answerX = 20;
-      }
-      doc.text(line, answerX, yPosition);
-    });
+    doc.text(processedAnswer, 45, yPosition + 2);
     
-    yPosition += 10;
+    yPosition += 15;
     
-    // Explanation section (if available)
+    // Explanation section
     if (question.explanation && question.explanation.trim()) {
-      if (yPosition > 250) {
+      if (yPosition > 245) {
         doc.addPage();
         yPosition = 30;
       }
       
+      doc.setFillColor(...COLORS.primaryLight);
+      doc.roundedRect(25, yPosition - 3, 20, 10, 2, 2, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2]);
-      doc.text('Explanation:', 20, yPosition);
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.white);
+      doc.text('EXPL', 35, yPosition + 2, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(COLORS.text[0], COLORS.text[1], COLORS.text[2]);
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.text);
       const processedExplanation = processLaTeXForPDF(question.explanation);
-      const explanationLines = doc.splitTextToSize(processedExplanation, 140);
-      let explanationX = 60;
+      const explanationLines = doc.splitTextToSize(processedExplanation, 130);
+      let explanationY = yPosition + 2;
       explanationLines.forEach((line: string, lineIndex: number) => {
-        if (lineIndex > 0) {
-          yPosition += 5;
-          explanationX = 20;
-        }
-        if (yPosition > 270) {
+        if (explanationY > 265) {
           doc.addPage();
-          yPosition = 30;
-          explanationX = 20;
+          explanationY = 30;
         }
-        doc.text(line, explanationX, yPosition);
+        doc.text(line, lineIndex === 0 ? 50 : 25, explanationY);
+        explanationY += 5;
       });
       
-      yPosition += 10;
+      yPosition = explanationY + 5;
     }
     
-    // Minimal separator
+    // Question separator
     if (index < questions.length - 1) {
-      yPosition += 5;
-      doc.setDrawColor(COLORS.light[0], COLORS.light[1], COLORS.light[2]);
+      yPosition += 10;
+      doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(0.5);
-      doc.line(20, yPosition, 190, yPosition);
+      doc.line(25, yPosition, 185, yPosition);
       yPosition += 15;
     }
   });
   
-  // Add minimal footer to all pages
+  // Add professional footer to all pages
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    
-    const pageHeight = doc.internal.pageSize.height;
-    
-    // Simple footer line
-    doc.setDrawColor(COLORS.border[0], COLORS.border[1], COLORS.border[2]);
-    doc.setLineWidth(0.5);
-    doc.line(20, pageHeight - 20, 190, pageHeight - 20);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(COLORS.muted[0], COLORS.muted[1], COLORS.muted[2]);
-    doc.text(INSTITUTE_DETAILS.name, 20, pageHeight - 12);
-    doc.text(`Page ${i} of ${pageCount}`, 180, pageHeight - 12);
+    addProfessionalFooter(doc, i, pageCount);
   }
   
   // Save the PDF
