@@ -1,3 +1,4 @@
+
 export interface Student {
   id: string;
   name: string;
@@ -37,6 +38,7 @@ export interface FeeTransaction {
   purpose: string;
   notes?: string;
   months?: string[];
+  payment_months?: string[]; // Added to match database schema and PDF usage
 }
 
 export interface AttendanceRecord {
