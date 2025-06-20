@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -603,7 +602,7 @@ export default function Reports() {
                       <div className={cn("w-full flex justify-center", isMobile ? "max-w-[180px]" : "max-w-[220px]")}>
                         <ChartContainer config={chartConfig} className="w-full h-[200px] sm:h-[220px]">
                           <PieChart width="100%" height="100%">
-                            <ChartTooltip cursor={false} content={<Chart TooltipContent hideLabel />} />
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                             <Pie 
                               data={attendanceDistribution} 
                               dataKey="value" 
