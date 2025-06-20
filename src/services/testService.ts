@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { TestRecordDb, TestRecord, HistoryStats, SubjectStat } from "@/types";
+import { TestRecordDb, TestRecord, HistoryStats, SubjectStat, TestDb } from "@/types";
 import { isValid, parseISO } from "date-fns";
 
 export const testService = {
@@ -21,6 +21,40 @@ export const testService = {
     }
 
     return data || [];
+  },
+
+  // Get all tests from tests table
+  async getTests(): Promise<TestDb[]> {
+    const { data, error } = await supabase
+      .from("tests")
+      .select("*")
+      .order("test_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching tests:", error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Create a new test
+  async createTest(testData: any): Promise<TestDb> {
+    console.log('Creating test with data:', testData);
+    
+    const { data, error } = await supabase
+      .from("tests")
+      .insert([testData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating test:", error);
+      throw error;
+    }
+
+    console.log('Test created successfully:', data);
+    return data;
   },
 
   // Get test records for a specific student

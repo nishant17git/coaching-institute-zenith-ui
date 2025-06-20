@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,18 +9,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, BookOpen, Calendar, FileText } from "lucide-react";
+import { BookOpen, Calendar, Target, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-// Test form schema
 const testSchema = z.object({
   test_name: z.string().min(1, "Test name is required"),
   subject: z.string().min(1, "Subject is required"),
   test_date: z.date({ required_error: "Test date is required" }),
-  test_type: z.string().min(1, "Test type is required"),
+  class: z.coerce.number().min(1, "Class is required"),
   total_marks: z.coerce.number().positive("Total marks must be positive"),
-  duration_minutes: z.coerce.number().positive("Duration must be positive"),
-  class: z.coerce.number().positive("Class is required"),
+  test_type: z.string().min(1, "Test type is required"),
 });
 
 type TestFormValues = z.infer<typeof testSchema>;
@@ -31,11 +29,29 @@ interface TestFormProps {
   isEditing?: boolean;
 }
 
-const SUBJECTS = ["Mathematics", "Science", "Social Science", "Hindi", "English"];
-const TEST_TYPES = ["MCQs Test (Standard)", "Written Test", "Practical Test", "Oral Test"];
+const SUBJECTS = [
+  "Mathematics",
+  "Science", 
+  "Social Science",
+  "Hindi",
+  "English",
+  "Physics",
+  "Chemistry",
+  "Biology"
+];
+
+const TEST_TYPES = [
+  "Unit Test",
+  "Monthly Test", 
+  "Half Yearly Exam",
+  "Final Exam",
+  "MCQs Test (Standard)",
+  "Assignment",
+  "Project Work"
+];
 
 export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema),
@@ -43,226 +59,202 @@ export function TestForm({ onSubmit, initialData, isEditing = false }: TestFormP
       test_name: initialData?.test_name || "",
       subject: initialData?.subject || "",
       test_date: initialData?.test_date || new Date(),
-      test_type: initialData?.test_type || "MCQs Test (Standard)",
+      class: initialData?.class || 10,
       total_marks: initialData?.total_marks || 100,
-      duration_minutes: initialData?.duration_minutes || 60,
-      class: initialData?.class || 1,
+      test_type: initialData?.test_type || "",
     },
   });
 
   const handleSubmit = async (data: TestFormValues) => {
     if (isSubmitting) return;
-
+    
     try {
       setIsSubmitting(true);
+      console.log('Submitting test data:', data);
       await onSubmit(data);
+      
       if (!isEditing) {
         form.reset();
       }
+      
+      toast.success(isEditing ? "Test updated successfully" : "Test created successfully", {
+        description: `${data.test_name} has been ${isEditing ? 'updated' : 'added'} for ${data.subject}`,
+      });
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('Test form submission error:', error);
+      toast.error(isEditing ? "Failed to update test" : "Failed to create test", {
+        description: "Please check your input and try again",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full h-full flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
-      <ScrollArea className="flex-1">
-        <div className="p-3 sm:p-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-              <Card>
-                <CardHeader className="pb-3 sm:pb-4">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-sf-pro">
-                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    {isEditing ? "Edit Test Details" : "Create New Test"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Test Name */}
-                  <FormField
-                    control={form.control}
-                    name="test_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base font-medium font-sf-pro flex items-center gap-2">
-                          <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-                          Test Name *
-                        </FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter test name" 
-                            className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage className="font-sf-pro text-sm" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <FormField
-                      control={form.control}
-                      name="subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Subject *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base">
-                                <SelectValue placeholder="Select subject" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {SUBJECTS.map((subject) => (
-                                <SelectItem key={subject} value={subject} className="font-sf-pro text-sm sm:text-base">
-                                  {subject}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage className="font-sf-pro text-sm" />
-                        </FormItem>
-                      )}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BookOpen className="h-5 w-5 text-primary" />
+          {isEditing ? "Edit Test" : "Create New Test"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="test_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Test Name *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter test name" 
+                      {...field} 
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                    <FormField
-                      control={form.control}
-                      name="test_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Test Type *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base">
-                                <SelectValue placeholder="Select test type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {TEST_TYPES.map((type) => (
-                                <SelectItem key={type} value={type} className="font-sf-pro text-sm sm:text-base">
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage className="font-sf-pro text-sm" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SUBJECTS.map((subject) => (
+                          <SelectItem key={subject} value={subject}>
+                            {subject}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <FormField
-                    control={form.control}
-                    name="test_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base font-medium font-sf-pro flex items-center gap-2">
-                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                          Test Date *
-                        </FormLabel>
-                        <FormControl>
-                          <DatePicker
-                            date={field.value}
-                            onSelect={field.onChange}
-                            placeholder="Select test date"
-                            className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base"
-                            fromYear={2020}
-                            toYear={new Date().getFullYear() + 2}
-                          />
-                        </FormControl>
-                        <FormMessage className="font-sf-pro text-sm" />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={form.control}
+                name="class"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="9">Class 9</SelectItem>
+                        <SelectItem value="10">Class 10</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <FormField
-                      control={form.control}
-                      name="class"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Class *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Enter class" 
-                              className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage className="font-sf-pro text-sm" />
-                        </FormItem>
-                      )}
-                    />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="test_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Test Date *
+                    </FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        date={field.value}
+                        onSelect={field.onChange}
+                        placeholder="Select test date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                    <FormField
-                      control={form.control}
-                      name="total_marks"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Total Marks *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Enter total marks" 
-                              className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage className="font-sf-pro text-sm" />
-                        </FormItem>
-                      )}
-                    />
+              <FormField
+                control={form.control}
+                name="total_marks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Total Marks *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Enter total marks" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                    <FormField
-                      control={form.control}
-                      name="duration_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm sm:text-base font-medium font-sf-pro">Duration (minutes) *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Enter duration in minutes" 
-                              className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage className="font-sf-pro text-sm" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </form>
-          </Form>
-        </div>
-      </ScrollArea>
+            <FormField
+              control={form.control}
+              name="test_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Test Type *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select test type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TEST_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <div className="flex-shrink-0 border-t bg-white p-3 sm:p-6">
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            className="h-11 sm:h-12 px-6 sm:px-8 font-sf-pro font-medium text-sm sm:text-base w-full sm:w-auto" 
-            disabled={isSubmitting}
-            size="lg"
-            onClick={form.handleSubmit(handleSubmit)}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                {isEditing ? "Updating..." : "Creating..."}
-              </>
-            ) : (
-              isEditing ? "Update Test" : "Create Test"
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
+            <div className="flex justify-end pt-4">
+              <Button 
+                type="submit" 
+                className="w-full md:w-auto" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditing ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  isEditing ? "Update Test" : "Create Test"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

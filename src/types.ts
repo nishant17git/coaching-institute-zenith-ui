@@ -35,6 +35,8 @@ export interface FeeTransaction {
   paymentMode: "Cash" | "Online" | "Cheque";
   receiptNumber: string;
   purpose: string;
+  notes?: string;
+  months?: string[];
 }
 
 export interface AttendanceRecord {

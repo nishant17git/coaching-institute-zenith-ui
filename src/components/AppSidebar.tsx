@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Users, BadgeIndianRupee, CalendarDays, BarChart2, Settings, LogOut, FileText, BookOpenText, Search, Command } from "lucide-react";
+import { Home, Users, BadgeIndianRupee, CalendarDays, BarChart2, Settings, LogOut, FileText, BookOpenText, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -61,12 +61,6 @@ export function AppSidebar() {
   const { logout, user } = useAuth();
   const { state } = useSidebar();
   const [isMoreOpen, setIsMoreOpen] = useState(true);
-
-  const handleSpotlightSearch = () => {
-    // Dispatch custom event to trigger spotlight search
-    const event = new CustomEvent('openSpotlightSearch');
-    window.dispatchEvent(event);
-  };
 
   const renderNavItem = (item: typeof mainNavItems[0]) => {
     const isActive = currentPath === item.path || 
@@ -159,17 +153,18 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="font-geist">Search</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-geist">Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleSpotlightSearch}
-                  className="flex items-center gap-3 font-medium transition-all duration-300 ease-in-out font-geist text-base hover:bg-primary/10"
-                >
-                  <Search className="h-5 w-5" />
-                  <span className="text-left font-geist text-base">Spotlight Search</span>
-                  <kbd className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+                <SidebarMenuButton asChild isActive={currentPath === "/more"}>
+                  <Link 
+                    to="/more" 
+                    className="flex items-center gap-3 font-medium transition-all duration-300 ease-in-out font-geist text-base"
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                    <span className="text-left font-geist text-base">More</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -180,7 +175,7 @@ export function AppSidebar() {
           <Collapsible open={isMoreOpen} onOpenChange={setIsMoreOpen}>
             <CollapsibleTrigger asChild>
               <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md font-geist transition-all duration-200 ease-in-out">
-                More
+                Advanced
               </SidebarGroupLabel>
             </CollapsibleTrigger>
             <CollapsibleContent className="transition-all duration-300 ease-in-out">

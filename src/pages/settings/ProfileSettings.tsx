@@ -6,12 +6,11 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { User, Camera, ChevronRight, Save, Mail, Phone, Key, Smartphone, Bell, Trash2, AlertTriangle } from "lucide-react";
+import { User, Camera, ChevronRight, Save, Mail, Phone, Key, Smartphone, Bell, Trash2, AlertTriangle, ChevronLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { EnhancedPageHeader } from "@/components/ui/enhanced-page-header";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 const profileSchema = z.object({
@@ -45,7 +44,17 @@ export default function ProfileSettings() {
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-full mx-auto px-0 py-0 bg-white">
         {/* Header */}
-        <EnhancedPageHeader title="Profile & Account" description="Manage your personal information" showBackButton onBack={() => navigate("/settings")} />
+        <div className="sticky top-0 z-50 bg-white backdrop-blur-sm">
+          <div className="flex items-center max-w-4xl mx-auto px-0 py-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/settings")} className="h-12 w-12 p-0 rounded-full">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="font-semibold text-gray-900 text-2xl">Profile & Account</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage your personal information</p>
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-4 mt-6">
           {/* Profile Card */}
@@ -58,12 +67,12 @@ export default function ProfileSettings() {
         }} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl font-bold bg-blue-500 text-white">
+                <AvatarFallback className="text-2xl font-bold bg-[#FFC0CB] text-[#FF007F]">
                   {user?.name?.[0] || "U"}
                 </AvatarFallback>
               </Avatar>
-              <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 hover:bg-blue-500 transition">
-                <Camera className="h-4 w-4 text-white" />
+              <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-[#FFC0CB] rounded-full p-2 hover:-[#FFC0CB] transition">
+                <Camera className="h-4 w-4 text-[#FF007F]" />
               </label>
               <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
@@ -132,7 +141,9 @@ export default function ProfileSettings() {
                               </FormLabel>
                               {isEditing ? <FormControl>
                                   <Input {...field} type={type} className="mt-1 w-full p-3 bg-transparent border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-0" placeholder={label} />
-                                </FormControl> : <p className="text-sm text-gray-600 dark:text-gray-300">{field.value || "Not set"}</p>}
+                                </FormControl> : <p className="text-sm text-gray-600 dark:text-gray-300">
+                                  {field.value || "Not set"}
+                                </p>}
                             </div>
                           </div>
                           {!isEditing && <ChevronRight className="h-5 w-5 text-gray-400" />}

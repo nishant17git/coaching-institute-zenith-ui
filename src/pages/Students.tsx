@@ -18,6 +18,7 @@ import StudentCard from "@/components/ui/student-card";
 import { StudentForm } from "@/components/students/StudentForm";
 import { ModernStudentCard } from "@/components/ui/modern-student-card";
 import { OptimizedStudentForm } from "@/components/students/OptimizedStudentForm";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
 
 // Icons
 import { Search, Plus, Users, Filter } from "lucide-react";
@@ -215,50 +216,11 @@ export default function Students() {
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-      
-      <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Skeleton className="h-11 flex-grow" />
-          <div className="flex gap-3">
-            <Skeleton className="h-11 w-[140px]" />
-            <Skeleton className="h-11 w-[140px]" />
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div className="p-6 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </div>
-              
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-              
-              <div className="flex gap-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <PageSkeleton 
+      headerTitle="Students" 
+      headerDescription="Manage your students"
+      showHeader={false}
+    />
   );
 
   if (error) {
@@ -271,6 +233,7 @@ export default function Students() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header - Always visible */}
       <EnhancedPageHeader 
         title="Students" 
         action={
@@ -287,96 +250,100 @@ export default function Students() {
         } 
       />
 
-      {/* Enhanced Filters */}
-      <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by name, roll number, father, contact..." 
-              value={searchQuery} 
-              onChange={e => setSearchQuery(e.target.value)} 
-              className="pl-10 h-11 transition-all focus:ring-2 focus:ring-primary/20" 
-            />
-            {searchQuery && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                {filteredStudents.length} found
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {uniqueClasses.map(cls => (
-                  <SelectItem key={cls} value={cls.toString()}>Class {cls}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={feeStatusFilter} onValueChange={setFeeStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Fee Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Paid">Paid</SelectItem>
-                <SelectItem value="Partial">Partial</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Students Grid */}
       {isLoading ? (
         <LoadingSkeleton />
-      ) : filteredStudents.length === 0 ? (
-        <EmptyState 
-          icon={<Users className="h-10 w-10 text-muted-foreground" />} 
-          title="No students found" 
-          description="No students match your current filters." 
-        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStudents.map((student, index) => (
-            <ModernStudentCard
-              key={student.id}
-              student={{
-                id: student.id,
-                name: student.full_name,
-                class: `Class ${student.class}`,
-                father: student.father_name,
-                mother: student.mother_name || '',
-                fatherName: student.father_name,
-                motherName: student.mother_name || '',
-                phoneNumber: student.contact_number,
-                whatsappNumber: student.whatsapp_number || student.contact_number,
-                address: student.address || '',
-                feeStatus: student.fee_status as "Paid" | "Pending" | "Partial",
-                totalFees: student.total_fees || 0,
-                paidFees: student.paid_fees || 0,
-                attendancePercentage: student.attendance_percentage || 0,
-                joinDate: student.admission_date || student.created_at,
-                gender: student.gender as "Male" | "Female" | "Other",
-                aadhaarNumber: student.aadhaar_number,
-                dateOfBirth: student.date_of_birth,
-                rollNumber: student.roll_number
-              }}
-              index={index}
-              onCallClick={handleCallClick}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onViewDetails={handleViewDetails}
-              onDownloadVCF={handleDownloadVCF}
+        <>
+          {/* Enhanced Filters */}
+          <div className="bg-background/60 backdrop-blur-sm p-5 rounded-lg border shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by name, roll number, father, contact..." 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  className="pl-10 h-11 transition-all focus:ring-2 focus:ring-primary/20" 
+                />
+                {searchQuery && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {filteredStudents.length} found
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Select value={classFilter} onValueChange={setClassFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {uniqueClasses.map(cls => (
+                      <SelectItem key={cls} value={cls.toString()}>Class {cls}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={feeStatusFilter} onValueChange={setFeeStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Fee Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Partial">Partial</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Students Grid */}
+          {filteredStudents.length === 0 ? (
+            <EmptyState 
+              icon={<Users className="h-10 w-10 text-muted-foreground" />} 
+              title="No students found" 
+              description="No students match your current filters." 
             />
-          ))}
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredStudents.map((student, index) => (
+                <ModernStudentCard
+                  key={student.id}
+                  student={{
+                    id: student.id,
+                    name: student.full_name,
+                    class: `Class ${student.class}`,
+                    father: student.father_name,
+                    mother: student.mother_name || '',
+                    fatherName: student.father_name,
+                    motherName: student.mother_name || '',
+                    phoneNumber: student.contact_number,
+                    whatsappNumber: student.whatsapp_number || student.contact_number,
+                    address: student.address || '',
+                    feeStatus: student.fee_status as "Paid" | "Pending" | "Partial",
+                    totalFees: student.total_fees || 0,
+                    paidFees: student.paid_fees || 0,
+                    attendancePercentage: student.attendance_percentage || 0,
+                    joinDate: student.admission_date || student.created_at,
+                    gender: student.gender as "Male" | "Female" | "Other",
+                    aadhaarNumber: student.aadhaar_number,
+                    dateOfBirth: student.date_of_birth,
+                    rollNumber: student.roll_number
+                  }}
+                  index={index}
+                  onCallClick={handleCallClick}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onViewDetails={handleViewDetails}
+                  onDownloadVCF={handleDownloadVCF}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Student Dialog */}

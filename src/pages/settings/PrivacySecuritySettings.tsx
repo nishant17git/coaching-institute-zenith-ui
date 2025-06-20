@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, Lock, Eye, EyeOff, Fingerprint, Key, AlertTriangle, Download } from "lucide-react";
+import { Shield, Lock, Eye, EyeOff, Fingerprint, Key, AlertTriangle, Download, ChevronLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,30 +18,50 @@ export default function PrivacySecuritySettings() {
   const [dataSharing, setDataSharing] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState(true);
+
   const handleChangePassword = () => {
     toast.success("Password changed successfully!");
   };
+
   const handleEnable2FA = () => {
     setTwoFactorEnabled(!twoFactorEnabled);
     toast.success(twoFactorEnabled ? "Two-factor authentication disabled" : "Two-factor authentication enabled");
   };
+
   const handleDataExport = () => {
     toast.success("Data export started. You'll receive an email when ready.");
   };
+
   const handleDataDeletion = () => {
     toast.error("Data deletion request submitted. This action cannot be undone.");
   };
-  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl mx-auto space-y-8 px-0 py-0 bg-white">
-        <EnhancedPageHeader title="Privacy & Security" description="Manage your account security and privacy settings" showBackButton onBack={() => navigate("/settings")} />
 
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="space-y-8">
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-4xl mx-auto space-y-8 px-0 py-0 bg-white">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-white backdrop-blur-sm">
+          <div className="flex items-center max-w-4xl mx-auto px-0 py-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/settings")} 
+              className="h-12 w-12 p-0 rounded-full"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="font-semibold text-gray-900 text-2xl">Privacy & Security</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage your account security and privacy settings</p>
+            </div>
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
           {/* Password & Authentication */}
           <Card className="bg-white dark:bg-gray-800 shadow-sm border-0 rounded-3xl">
             <CardContent className="p-8">
@@ -60,13 +80,31 @@ export default function PrivacySecuritySettings() {
                   <Label className="text-base font-medium text-gray-900 dark:text-gray-100">Change Password</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} placeholder="Current password" className="rounded-2xl h-12 pr-12" />
-                      <Button type="button" variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => setShowPassword(!showPassword)}>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Current password"
+                        className="rounded-2xl h-12 pr-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                    <Input type={showPassword ? "text" : "password"} placeholder="New password" className="rounded-2xl h-12" />
-                    <Input type={showPassword ? "text" : "password"} placeholder="Confirm new password" className="rounded-2xl h-12 md:col-span-2" />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="New password"
+                      className="rounded-2xl h-12"
+                    />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      className="rounded-2xl h-12 md:col-span-2"
+                    />
                   </div>
                   <Button onClick={handleChangePassword} variant="outline" className="w-full rounded-2xl h-12">
                     Update Password
@@ -182,5 +220,6 @@ export default function PrivacySecuritySettings() {
           </Card>
         </motion.div>
       </div>
-    </div>;
+    </div>
+  );
 }

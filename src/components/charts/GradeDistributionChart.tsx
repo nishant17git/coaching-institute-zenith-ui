@@ -1,8 +1,9 @@
 
 "use client";
 
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { Pie, PieChart, Cell, Legend, Tooltip } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface GradeDistributionData {
   name: string;
@@ -14,37 +15,14 @@ interface GradeDistributionChartProps {
   data: GradeDistributionData[];
 }
 
+const chartConfig = {
+  value: {
+    label: "Students",
+  },
+} satisfies ChartConfig;
+
 export function GradeDistributionChart({ data }: GradeDistributionChartProps) {
   const chartData = data.filter(item => item.value > 0);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div className="rounded-lg border bg-background p-2 shadow-md">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Grade
-              </span>
-              <span className="font-bold text-muted-foreground">
-                {data.payload.name}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Students
-              </span>
-              <span className="font-bold">
-                {data.value}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const CustomLegend = ({ payload }: any) => {
     return (
@@ -69,27 +47,25 @@ export function GradeDistributionChart({ data }: GradeDistributionChartProps) {
         <CardDescription className="text-sm">Distribution of grades across all tests</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <div className="mx-auto aspect-square max-h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={120}
+              paddingAngle={5}
+              dataKey="value"
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <Legend content={<CustomLegend />} />
+          </PieChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

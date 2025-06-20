@@ -102,6 +102,19 @@ export function FeeTransactionCard({ transaction, student, onEdit, className }: 
     }
   };
 
+  // Format payment months for display
+  const formatPaymentMonths = (months: string[] | null | undefined): string => {
+    if (!months || !Array.isArray(months) || months.length === 0) {
+      return 'General';
+    }
+    
+    if (months.length <= 2) {
+      return months.join(', ');
+    }
+    
+    return `${months.slice(0, 2).join(', ')} +${months.length - 2} more`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -147,6 +160,12 @@ export function FeeTransactionCard({ transaction, student, onEdit, className }: 
               <p className="text-xs text-muted-foreground font-medium">Class</p>
               <p className="font-medium">{student?.class || 'N/A'}</p>
             </div>
+          </div>
+
+          {/* Payment Months Section */}
+          <div className="mt-3 space-y-1 rounded-lg p-2.5 bg-secondary/20">
+            <p className="text-xs text-muted-foreground font-medium">Payment Months</p>
+            <p className="font-medium text-sm">{formatPaymentMonths(transaction.payment_months)}</p>
           </div>
           
           <div className="mt-4 pt-3 border-t border-border/40">

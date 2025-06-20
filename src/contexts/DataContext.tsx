@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Student, 
@@ -16,6 +16,7 @@ interface DataContextType {
   attendanceRecords: AttendanceRecord[];
   classes: Class[];
   testRecords: any[];
+  tests: any[];
   
   // Student methods
   addStudent: (student: Omit<Student, 'id'>) => Promise<string>;
@@ -33,6 +34,9 @@ interface DataContextType {
   bulkAddAttendance: (records: Omit<AttendanceRecord, 'id'>[]) => Promise<void>;
 
   // Test methods
+  addTest: (test: any) => Promise<string>;
+  updateTest: (id: string, data: any) => Promise<void>;
+  deleteTest: (id: string) => Promise<void>;
   addTestRecord: (record: any) => Promise<string>;
   updateTestRecord: (id: string, data: any) => Promise<void>;
   deleteTestRecord: (id: string) => Promise<void>;
@@ -45,6 +49,7 @@ export const DataContext = createContext<DataContextType | null>(null);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [classes, setClasses] = useState<Class[]>([]);
+  const queryClient = useQueryClient();
   
   // Fetch students data from Supabase using React Query
   const { 
@@ -63,12 +68,30 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return data;
     }
   });
+
+  // Fetch tests data from Supabase
+  const { 
+    data: tests = [], 
+    isLoading: isLoadingTests,
+    refetch: refetchTests
+  } = useQuery({
+    queryKey: ['tests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
   
   // Fetch test records from Supabase (using test_results table)
   const { 
     data: testRecords = [], 
-    isLoading: isLoadingTests,
-    refetch: refetchTests
+    isLoading: isLoadingTestRecords,
+    refetch: refetchTestRecords
   } = useQuery({
     queryKey: ['testRecords'],
     queryFn: async () => {
@@ -245,15 +268,38 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           payment_mode: transactionData.paymentMode,
           receipt_number: transactionData.receiptNumber,
           purpose: transactionData.purpose,
-          academic_year: '2024-25' // Default academic year
+          academic_year: '2024-25',
+          term: 'General',
+          discount: 0,
+          late_fee: 0,
+          notes: transactionData.notes || '',
+          due_date: transactionData.date,
+          months: transactionData.months || []
         }])
         .select()
         .single();
       
       if (error) throw error;
       
+      // Update student's paid fees
+      const student = students.find(s => s.id === transactionData.studentId);
+      if (student) {
+        const newPaidFees = (student.paidFees || 0) + transactionData.amount;
+        const newFeeStatus = newPaidFees >= student.totalFees ? 'Paid' : 
+                            newPaidFees > 0 ? 'Partial' : 'Pending';
+
+        await supabase
+          .from('students')
+          .update({
+            paid_fees: newPaidFees,
+            fee_status: newFeeStatus
+          })
+          .eq('id', student.id);
+      }
+      
       // Refresh the students to get updated fee status
-      refetchStudents();
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
       
       toast.success(`Added fee transaction of ₹${transactionData.amount}`);
       return data.id;
@@ -264,15 +310,54 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateFeeTransaction = async (id: string, data: Partial<FeeTransaction>): Promise<void> => {
-    // Not implemented in the Supabase service yet
-    toast.error("Updating fee transactions is not implemented yet");
-    throw new Error("Not implemented");
+    try {
+      const updateData: any = {};
+      
+      if (data.studentId) updateData.student_id = data.studentId;
+      if (data.amount !== undefined) updateData.amount = data.amount;
+      if (data.date) updateData.payment_date = data.date;
+      if (data.paymentMode) updateData.payment_mode = data.paymentMode;
+      if (data.receiptNumber) updateData.receipt_number = data.receiptNumber;
+      if (data.purpose) updateData.purpose = data.purpose;
+      if (data.notes) updateData.notes = data.notes;
+      if (data.months) updateData.months = data.months;
+
+      const { error } = await supabase
+        .from('fee_transactions')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh students to get updated fee status
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
+      
+      toast.success(`Updated fee transaction`);
+    } catch (error) {
+      toast.error(`Failed to update transaction: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   const deleteFeeTransaction = async (id: string): Promise<void> => {
-    // Not implemented in the Supabase service yet
-    toast.error("Deleting fee transactions is not implemented yet");
-    throw new Error("Not implemented");
+    try {
+      const { error } = await supabase
+        .from('fee_transactions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh students to get updated fee status
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['feeTransactions'] });
+      
+      toast.success(`Deleted fee transaction`);
+    } catch (error) {
+      toast.error(`Failed to delete transaction: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   // Attendance CRUD operations
@@ -302,9 +387,28 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateAttendanceRecord = async (id: string, data: Partial<AttendanceRecord>): Promise<void> => {
-    // Not implemented in the Supabase service yet
-    toast.error("Updating attendance records is not implemented yet");
-    throw new Error("Not implemented");
+    try {
+      const updateData: any = {};
+      
+      if (data.studentId) updateData.student_id = data.studentId;
+      if (data.date) updateData.date = data.date;
+      if (data.status) updateData.status = data.status;
+
+      const { error } = await supabase
+        .from('attendance_records')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh students to get updated attendance percentage
+      refetchStudents();
+      
+      toast.success(`Updated attendance record`);
+    } catch (error) {
+      toast.error(`Failed to update attendance record: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   const bulkAddAttendance = async (records: Omit<AttendanceRecord, 'id'>[]): Promise<void> => {
@@ -330,32 +434,89 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Test CRUD operations
-  const addTestRecord = async (recordData: any): Promise<string> => {
+  const addTest = async (testData: any): Promise<string> => {
     try {
-      // First create the test
-      const { data: testData, error: testError } = await supabase
+      const { data, error } = await supabase
         .from('tests')
         .insert([{
-          test_name: recordData.test_name,
-          subject: recordData.subject,
-          test_date: recordData.test_date,
-          class: recordData.class || 10,
-          total_marks: recordData.total_marks,
-          test_type: recordData.test_type
+          test_name: testData.test_name,
+          subject: testData.subject,
+          test_date: testData.test_date,
+          class: testData.class || 10,
+          total_marks: testData.total_marks,
+          test_type: testData.test_type
         }])
         .select()
         .single();
 
-      if (testError) throw testError;
+      if (error) throw error;
+      
+      // Refresh tests
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+      
+      toast.success(`Added test: ${testData.test_name}`);
+      return data.id;
+    } catch (error) {
+      toast.error(`Failed to add test: ${(error as Error).message}`);
+      throw error;
+    }
+  };
 
-      // Then create the test result
+  const updateTest = async (id: string, testData: any): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('tests')
+        .update({
+          test_name: testData.test_name,
+          subject: testData.subject,
+          test_date: testData.test_date,
+          class: testData.class,
+          total_marks: testData.total_marks,
+          test_type: testData.test_type
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh tests
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+      
+      toast.success(`Updated test`);
+    } catch (error) {
+      toast.error(`Failed to update test: ${(error as Error).message}`);
+      throw error;
+    }
+  };
+
+  const deleteTest = async (id: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('tests')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh tests
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+      
+      toast.success(`Deleted test`);
+    } catch (error) {
+      toast.error(`Failed to delete test: ${(error as Error).message}`);
+      throw error;
+    }
+  };
+
+  const addTestRecord = async (recordData: any): Promise<string> => {
+    try {
       const { data: resultData, error: resultError } = await supabase
         .from('test_results')
         .insert([{
           student_id: recordData.student_id,
-          test_id: testData.id,
-          marks_obtained: recordData.marks,
-          total_marks: recordData.total_marks
+          test_id: recordData.test_id,
+          marks_obtained: recordData.marks_obtained,
+          total_marks: recordData.total_marks,
+          percentage: Math.round((recordData.marks_obtained / recordData.total_marks) * 100)
         }])
         .select()
         .single();
@@ -363,9 +524,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       if (resultError) throw resultError;
       
       // Refresh test records
-      refetchTests();
+      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
       
-      toast.success(`Added test record for ${recordData.test_name}`);
+      toast.success(`Added test result`);
       return resultData.id;
     } catch (error) {
       toast.error(`Failed to add test record: ${(error as Error).message}`);
@@ -378,15 +539,16 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase
         .from('test_results')
         .update({
-          marks_obtained: data.marks,
-          total_marks: data.total_marks
+          marks_obtained: data.marks_obtained,
+          total_marks: data.total_marks,
+          percentage: Math.round((data.marks_obtained / data.total_marks) * 100)
         })
         .eq('id', id);
       
       if (error) throw error;
       
       // Refresh test records
-      refetchTests();
+      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
       
       toast.success(`Updated test record`);
     } catch (error) {
@@ -405,7 +567,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       // Refresh test records
-      refetchTests();
+      queryClient.invalidateQueries({ queryKey: ['testRecords'] });
       
       toast.success(`Deleted test record`);
     } catch (error) {
@@ -414,7 +576,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const isLoading = isLoadingStudents || isLoadingTests;
+  const isLoading = isLoadingStudents || isLoadingTests || isLoadingTestRecords;
 
   return (
     <DataContext.Provider value={{
@@ -423,6 +585,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       attendanceRecords,
       classes,
       testRecords,
+      tests,
       addStudent,
       updateStudent,
       deleteStudent,
@@ -432,6 +595,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       addAttendanceRecord,
       updateAttendanceRecord,
       bulkAddAttendance,
+      addTest,
+      updateTest,
+      deleteTest,
       addTestRecord,
       updateTestRecord,
       deleteTestRecord,

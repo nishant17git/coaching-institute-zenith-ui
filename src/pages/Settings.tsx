@@ -120,7 +120,7 @@ export default function Settings() {
     backgroundColor: "#F3F4F6"
   };
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* HEADER (UNCHANGED) */}
+      {/* HEADER - Always visible */}
       <EnhancedPageHeader title="Settings" description="Manage your account and app preferences" showBackButton className="bg-white" />
 
       {/* MAIN CONTENT */}
@@ -138,7 +138,7 @@ export default function Settings() {
         }} whileHover={!isMobile ? rowHover : {}} whileTap={{
           scale: 0.98
         }} className="flex items-center px-4 py-4 cursor-pointer" onClick={() => handleItemClick("/settings/profile")}>
-            <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-[#FFC0CB] dark:-[#FFC0CB] flex items-center justify-center text-[#FF007F]">
               <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             </div>
             <div className="ml-4 flex-1">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { StudentCombobox } from "@/components/ui/student-combobox";
+import { DatePickerCalendar } from "@/components/ui/date-picker-calendar";
 
 // Fee transaction form schema
 const feeTransactionSchema = z.object({
@@ -78,12 +79,12 @@ export function FeeTransactionForm({
   const defaultValues = transaction ? {
     studentId: transaction.student_id || preSelectedStudentId || "",
     amount: transaction.amount || 0,
-    paymentDate: transaction.payment_date ? new Date(transaction.payment_date) : new Date(),
+    paymentDate: transaction.payment_date ? new Date(transaction.payment_date) : transaction.date ? new Date(transaction.date) : new Date(),
     paymentMode: transaction.payment_mode || "Cash" as const,
     purpose: transaction.purpose || "Tuition Fee" as const,
     receiptNumber: transaction.receipt_number || generateReceiptNumber(),
     notes: transaction.notes || "",
-    months: Array.isArray(transaction.months) ? transaction.months : [],
+    months: transaction.payment_months || [],
   } : {
     studentId: preSelectedStudentId || "",
     amount: 0,
@@ -112,38 +113,50 @@ export function FeeTransactionForm({
 
     try {
       setIsSubmitting(true);
+      console.log('Submitting fee transaction:', data);
+      
       // Map form data to expected format
       const submissionData = {
         student_id: data.studentId,
         amount: data.amount,
-        payment_date: format(data.paymentDate, 'yyyy-MM-dd'),
+        payment_date: data.paymentDate.toISOString(),
         payment_mode: data.paymentMode,
-        purpose: data.purpose,
         receipt_number: data.receiptNumber,
+        purpose: data.purpose,
         notes: data.notes || "",
-        months: data.months,
+        payment_months: data.months,
         academic_year: new Date().getFullYear().toString(),
-        term: 'General',
+        term: 'Annual',
         discount: 0,
         late_fee: 0,
-        due_date: format(data.paymentDate, 'yyyy-MM-dd'),
+        due_date: data.paymentDate.toISOString(),
       };
       
       await onSubmit(submissionData);
       
       if (!transaction) {
+        // Reset form with new receipt number
         form.reset({
           ...defaultValues,
           receiptNumber: generateReceiptNumber(),
           months: [],
         });
       }
+      
+      toast.success(transaction ? "Payment updated successfully" : "Payment added successfully", {
+        description: `Payment of ₹${data.amount} has been ${transaction ? 'updated' : 'recorded'}`,
+      });
     } catch (error) {
       console.error('Form submission error:', error);
+      toast.error(transaction ? "Failed to update payment" : "Failed to add payment", {
+        description: "Please check your input and try again",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const selectedStudent = students.find(s => s.id === form.watch('studentId'));
 
   return (
     <div className="w-full h-full flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
@@ -170,23 +183,16 @@ export function FeeTransactionForm({
                           <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                           Select Student *
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={!!preSelectedStudentId}>
-                          <FormControl>
-                            <SelectTrigger className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base">
-                              <SelectValue placeholder="Choose a student" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel className="font-sf-pro">Students</SelectLabel>
-                              {students.map((student) => (
-                                <SelectItem key={student.id} value={student.id} className="font-sf-pro text-sm sm:text-base">
-                                  {student.full_name} - Class {student.class}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <StudentCombobox
+                            students={students}
+                            value={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Choose a student"
+                            disabled={!!preSelectedStudentId}
+                            className="w-full h-11 sm:h-12 font-sf-pro text-sm sm:text-base"
+                          />
+                        </FormControl>
                         <FormMessage className="font-sf-pro text-sm" />
                       </FormItem>
                     )}
@@ -222,14 +228,11 @@ export function FeeTransactionForm({
                             Payment Date *
                           </FormLabel>
                           <FormControl>
-                            <DatePicker
+                            <DatePickerCalendar
                               date={field.value}
                               onSelect={field.onChange}
                               placeholder="Select payment date"
-                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                              className="h-11 sm:h-12 font-sf-pro text-sm sm:text-base"
-                              fromYear={2020}
-                              toYear={new Date().getFullYear()}
+                              className="w-full h-11 sm:h-12 font-sf-pro text-sm sm:text-base"
                             />
                           </FormControl>
                           <FormMessage className="font-sf-pro text-sm" />
@@ -379,6 +382,7 @@ export function FeeTransactionForm({
               variant="destructive" 
               onClick={onDelete}
               className="h-11 sm:h-12 px-4 sm:px-6 font-sf-pro font-medium text-sm sm:text-base order-2 sm:order-1"
+              disabled={isSubmitting}
             >
               Delete
             </Button>

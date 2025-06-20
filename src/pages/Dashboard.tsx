@@ -13,6 +13,7 @@ import { LowAttendanceSection } from "@/components/dashboard/LowAttendanceSectio
 import { Users, GraduationCap, CreditCard, Calendar, TrendingUp, Clock } from "lucide-react";
 import { format, isToday, differenceInDays, isValid, parseISO } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { DashboardSkeleton } from "@/components/ui/dashboard-skeleton";
 
 // Helper function to safely parse dates
 const safeParseDate = (dateValue: any): Date | null => {
@@ -121,9 +122,13 @@ export default function Dashboard() {
 
   const isLoading = isLoadingStudents || isLoadingFees || isLoadingAttendance;
 
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in">
-      {/* Header */}
+      {/* Header - Always visible */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight font-sf-pro">Home</h1>
         <p className="text-muted-foreground text-sm font-sf-pro">We proffer august felicitations on your return, Sir; herewith, today's vicissitudes at your venerable institute.</p>
@@ -133,7 +138,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <EnhancedStatCard 
           title="Total Students" 
-          value={isLoading ? "Loading..." : totalStudents.toString()} 
+          value={totalStudents.toString()} 
           icon={<Users className="h-5 w-5" />} 
           trend={{
             value: recentAdmissions,
@@ -146,7 +151,7 @@ export default function Dashboard() {
         
         <EnhancedStatCard 
           title="Today's Attendance" 
-          value={isLoading ? "Loading..." : `${attendanceRate}%`} 
+          value={`${attendanceRate}%`} 
           icon={<Calendar className="h-5 w-5" />} 
           trend={{
             value: attendanceRate >= 85 ? 5 : -5,
@@ -159,7 +164,7 @@ export default function Dashboard() {
         
         <EnhancedStatCard 
           title="Fee Collection" 
-          value={isLoading ? "Loading..." : `${collectionRate}%`} 
+          value={`${collectionRate}%`} 
           icon={<CreditCard className="h-5 w-5" />} 
           trend={{
             value: collectionRate >= 80 ? 8 : -3,
@@ -212,41 +217,32 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6">
-            {isLoading ? (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                  <span className="text-sm font-medium font-sf-pro">Loading...</span>
-                  <span className="font-semibold font-sf-pro text-sm sm:text-base">...</span>
-                </div>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                <span className="text-sm font-medium font-sf-pro">Present Students</span>
+                <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                  {presentToday || "No data"}
+                </span>
               </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                  <span className="text-sm font-medium font-sf-pro">Present Students</span>
-                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
-                    {presentToday || "No data"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                  <span className="text-sm font-medium font-sf-pro">Fee Collections</span>
-                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
-                    {todayCollections > 0 ? `₹${todayCollections.toLocaleString()}` : "No data"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                  <span className="text-sm font-medium font-sf-pro">New Admissions</span>
-                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
-                    {recentAdmissions || "No data"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
-                  <span className="text-sm font-medium font-sf-pro">Date</span>
-                  <span className="font-semibold font-sf-pro text-sm sm:text-base">
-                    {format(new Date(), 'MMM dd, yyyy')}
-                  </span>
-                </div>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                <span className="text-sm font-medium font-sf-pro">Fee Collections</span>
+                <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                  {todayCollections > 0 ? `₹${todayCollections.toLocaleString()}` : "No data"}
+                </span>
               </div>
-            )}
+              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                <span className="text-sm font-medium font-sf-pro">New Admissions</span>
+                <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                  {recentAdmissions || "No data"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/20">
+                <span className="text-sm font-medium font-sf-pro">Date</span>
+                <span className="font-semibold font-sf-pro text-sm sm:text-base">
+                  {format(new Date(), 'MMM dd, yyyy')}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

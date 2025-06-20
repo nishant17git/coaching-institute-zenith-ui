@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Subject {
@@ -151,7 +151,7 @@ export function useTopics(chapterId: string) {
         ...topic,
         difficulty: (topic.difficulty || "Medium") as "Easy" | "Medium" | "Hard",
         type: (topic.type || "Conceptual") as "Conceptual" | "Application" | "Problem Solving" | "Computational" | "Proof-based",
-        questions: topic.questions?.length || 0,
+        questions: topic.questions?.[0]?.count || 0,
         last_used: new Date(topic.last_used).toLocaleDateString()
       }));
     },
@@ -189,12 +189,14 @@ export function useQuestions(topicId: string) {
 }
 
 export function useUpdateQuestionFavorite() {
-  return async (questionId: string, isFavorite: boolean) => {
-    const { error } = await supabase
-      .from("questions")
-      .update({ is_favorite: isFavorite })
-      .eq("id", questionId);
+  return useMutation({
+    mutationFn: async ({ questionId, isFavorite }: { questionId: string; isFavorite: boolean }) => {
+      const { error } = await supabase
+        .from("questions")
+        .update({ is_favorite: isFavorite })
+        .eq("id", questionId);
 
-    if (error) throw error;
-  };
+      if (error) throw error;
+    }
+  });
 }

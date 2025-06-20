@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -10,11 +9,9 @@ import { AttendanceHistoryTable } from "./AttendanceHistoryTable";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
 interface AttendanceHistoryCardProps {
   attendanceHistory: any[];
 }
-
 export function AttendanceHistoryCard({
   attendanceHistory
 }: AttendanceHistoryCardProps) {
@@ -38,39 +35,30 @@ export function AttendanceHistoryCard({
     // Get selected month's attendance records
     const monthStart = selectedDate ? startOfMonth(selectedDate) : startOfMonth(new Date());
     const monthEnd = selectedDate ? endOfMonth(selectedDate) : endOfMonth(new Date());
-    
-    return (
-      <div className="flex flex-col items-center space-y-4">
-        <CalendarComponent 
-          mode="single" 
-          selected={selectedDate} 
-          onSelect={setSelectedDate} 
-          className="rounded-md border shadow" 
-          modifiers={{
-            present: date => {
-              const dateString = format(date, 'yyyy-MM-dd');
-              return attendanceDates[dateString] === 'Present';
-            },
-            absent: date => {
-              const dateString = format(date, 'yyyy-MM-dd');
-              return attendanceDates[dateString] === 'Absent';
-            },
-            leave: date => {
-              const dateString = format(date, 'yyyy-MM-dd');
-              return attendanceDates[dateString] === 'Leave';
-            },
-            holiday: date => {
-              const dateString = format(date, 'yyyy-MM-dd');
-              return attendanceDates[dateString] === 'Holiday';
-            }
-          }} 
-          modifiersClassNames={{
-            present: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-            absent: "bg-red-100 text-red-700 hover:bg-red-200",
-            leave: "bg-amber-100 text-amber-700 hover:bg-amber-200",
-            holiday: "bg-blue-100 text-blue-700 hover:bg-blue-200"
-          }} 
-        />
+    return <div className="flex flex-col items-center space-y-4">
+        <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate} className="rounded-md border shadow" modifiers={{
+        present: date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          return attendanceDates[dateString] === 'Present';
+        },
+        absent: date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          return attendanceDates[dateString] === 'Absent';
+        },
+        leave: date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          return attendanceDates[dateString] === 'Leave';
+        },
+        holiday: date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          return attendanceDates[dateString] === 'Holiday';
+        }
+      }} modifiersClassNames={{
+        present: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+        absent: "bg-red-100 text-red-700 hover:bg-red-200",
+        leave: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+        holiday: "bg-blue-100 text-blue-700 hover:bg-blue-200"
+      }} />
         
         <div className="flex flex-wrap gap-2 justify-center text-xs">
           <div className="flex items-center gap-1">
@@ -90,12 +78,9 @@ export function AttendanceHistoryCard({
             <span>Holiday</span>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   };
-
-  return (
-    <Card className="bg-white shadow-sm border">
+  return <Card className="bg-white shadow-sm border">
       <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b">
         <div className="flex items-center justify-between">
           <div>
@@ -123,28 +108,20 @@ export function AttendanceHistoryCard({
             <Collapsible open={expanded} onOpenChange={setExpanded}>
               <AttendanceHistoryTable attendanceHistory={displayRecords} />
               
-              {attendanceHistory.length > 30 && (
-                <CollapsibleTrigger asChild>
+              {attendanceHistory.length > 30 && <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full mt-4 border-dashed border border-gray-200 hover:bg-gray-50">
-                    {expanded ? (
-                      <span className="flex items-center gap-1">
+                    {expanded ? <span className="flex items-center gap-1">
                         <ChevronUp className="h-4 w-4" /> Show Less
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
+                      </span> : <span className="flex items-center gap-1">
                         <ChevronDown className="h-4 w-4" /> View More ({attendanceHistory.length - 30} records)
-                      </span>
-                    )}
+                      </span>}
                   </Button>
-                </CollapsibleTrigger>
-              )}
+                </CollapsibleTrigger>}
               
               <CollapsibleContent>
-                {expanded && attendanceHistory.length > 30 && (
-                  <div className="mt-4 pt-4 border-t">
+                {expanded && attendanceHistory.length > 30 && <div className="mt-4 pt-4 border-t">
                     <AttendanceHistoryTable attendanceHistory={attendanceHistory.slice(30)} />
-                  </div>
-                )}
+                  </div>}
               </CollapsibleContent>
             </Collapsible>
           </CardContent>
@@ -165,6 +142,5 @@ export function AttendanceHistoryCard({
           <FileText className="h-4 w-4" /> Generate Full Report
         </Button>
       </CardFooter>
-    </Card>
-  );
+    </Card>;
 }

@@ -10,6 +10,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents";
+import { DashboardSkeleton } from "@/components/ui/dashboard-skeleton";
 import { 
   Users, 
   GraduationCap, 
@@ -98,9 +99,13 @@ export default function Index() {
     .sort((a, b) => a.attendancePercentage - b.attendancePercentage)
     .slice(0, 5);
   
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+  
   return (
     <div className="space-y-6 sm:space-y-8 animate-slide-up">
-      {/* Header */}
+      {/* Header - Always visible */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Home</h1>
         <p className="text-muted-foreground">

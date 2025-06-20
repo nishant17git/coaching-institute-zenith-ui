@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -86,7 +85,7 @@ export default function Fees() {
   const addPaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
       console.log('Adding payment with data:', paymentData);
-
+      
       // Insert the fee transaction
       const { data: transactionData, error: transactionError } = await supabase
         .from('fee_transactions')
@@ -103,7 +102,7 @@ export default function Fees() {
       const student = students.find(s => s.id === paymentData.student_id);
       if (student) {
         const newPaidFees = (student.paid_fees || 0) + paymentData.amount;
-        const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
+        const newFeeStatus = newPaidFees >= (student.total_fees || 0) ? 'Paid' : 
                             newPaidFees > 0 ? 'Partial' : 'Pending';
 
         const { error: updateError } = await supabase
@@ -137,7 +136,7 @@ export default function Fees() {
       });
     },
     onError: (error: any) => {
-      console.error('Payment addition error:', error);
+      console.error('Payment error:', error);
       toast.error(`Failed to add payment: ${error.message}`);
     }
   });
@@ -145,10 +144,14 @@ export default function Fees() {
   // Update payment mutation with updated structure
   const updatePaymentMutation = useMutation({
     mutationFn: async (paymentData: any) => {
+      if (!selectedTransaction) throw new Error("No transaction selected");
+      
       console.log('Updating payment with data:', paymentData);
 
       // Calculate amount difference for student fee update
       const originalTransaction = feeTransactions.find(t => t.id === selectedTransaction.id);
+      if (!originalTransaction) throw new Error("Original transaction not found");
+      
       const amountDifference = paymentData.amount - originalTransaction.amount;
 
       // Update the fee transaction
@@ -169,7 +172,7 @@ export default function Fees() {
         const student = students.find(s => s.id === paymentData.student_id);
         if (student) {
           const newPaidFees = (student.paid_fees || 0) + amountDifference;
-          const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
+          const newFeeStatus = newPaidFees >= (student.total_fees || 0) ? 'Paid' : 
                               newPaidFees > 0 ? 'Partial' : 'Pending';
 
           const { error: updateError } = await supabase
@@ -210,8 +213,10 @@ export default function Fees() {
 
   // Delete payment mutation
   const deletePaymentMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<void> => {
       if (!selectedTransaction) throw new Error("No transaction selected");
+
+      console.log('Deleting payment:', selectedTransaction.id);
 
       // Get the transaction to be deleted
       const transaction = feeTransactions.find(t => t.id === selectedTransaction.id);
@@ -224,7 +229,7 @@ export default function Fees() {
         .eq('id', transaction.id);
 
       if (deleteError) {
-        console.error('Transaction delete error:', deleteError);
+        console.error('Delete error:', deleteError);
         throw deleteError;
       }
 
@@ -232,7 +237,7 @@ export default function Fees() {
       const student = students.find(s => s.id === transaction.student_id);
       if (student) {
         const newPaidFees = Math.max(0, (student.paid_fees || 0) - transaction.amount);
-        const newFeeStatus = newPaidFees >= student.total_fees ? 'Paid' : 
+        const newFeeStatus = newPaidFees >= (student.total_fees || 0) ? 'Paid' : 
                             newPaidFees > 0 ? 'Partial' : 'Pending';
 
         const { error: updateError } = await supabase
@@ -248,8 +253,6 @@ export default function Fees() {
           throw updateError;
         }
       }
-
-      return transaction;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
@@ -261,7 +264,7 @@ export default function Fees() {
       });
     },
     onError: (error: any) => {
-      console.error('Payment deletion error:', error);
+      console.error('Delete error:', error);
       toast.error(`Failed to delete payment: ${error.message}`);
     }
   });
@@ -388,13 +391,10 @@ export default function Fees() {
     setIsAddPaymentDialogOpen(true);
   };
 
-  // Create wrapper functions that return Promise<void>
+  // Handle form submission based on whether it's an add or edit operation
   const handleFormSubmit = async (data: any): Promise<void> => {
     if (selectedTransaction) {
-      await updatePaymentMutation.mutateAsync({
-        ...data,
-        id: selectedTransaction.id
-      });
+      await updatePaymentMutation.mutateAsync(data);
     } else {
       await addPaymentMutation.mutateAsync(data);
     }

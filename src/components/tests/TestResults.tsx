@@ -1,15 +1,26 @@
+
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpDown, Share, History, Download, FileText, Edit, Trash2, Clock, TrendingUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useNavigate } from "react-router-dom";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { ArrowUpDown, FileText, History, Edit, Trash2, Share2 } from "lucide-react";
+import { format } from "date-fns";
+import { TestRecordDb, StudentRecord } from "@/types";
+import { motion } from "framer-motion";
+
+interface TestResultsProps {
+  tests: TestRecordDb[];
+  students: StudentRecord[];
+  getGrade: (marks: number, totalMarks: number) => { grade: string; color: string };
+  handleSort: (field: "date" | "marks") => void;
+  isMobile: boolean;
+  onExportPDF: (test: TestRecordDb) => void;
+  onViewHistory: (studentId: string) => void;
+  onEditTest: (test: TestRecordDb) => void;
+  onDeleteTest: (testId: string) => void;
+}
 
 // Helper function to safely format dates
 const formatSafeDate = (dateValue: string | null | undefined, formatString: string = 'dd MMM yyyy'): string => {
@@ -24,21 +35,6 @@ const formatSafeDate = (dateValue: string | null | undefined, formatString: stri
   }
 };
 
-interface TestResultsProps {
-  tests: any[];
-  students: any[];
-  getGrade: (marks: number, totalMarks: number) => {
-    grade: string;
-    color: string;
-  };
-  handleSort: (field: "date" | "marks") => void;
-  isMobile: boolean;
-  onExportPDF: (test: any) => void;
-  onViewHistory: (studentId: string) => void;
-  onEditTest: (test: any) => void;
-  onDeleteTest: (testId: string) => void;
-}
-
 export function TestResults({
   tests,
   students,
@@ -48,198 +44,20 @@ export function TestResults({
   onExportPDF,
   onViewHistory,
   onEditTest,
-  onDeleteTest
+  onDeleteTest,
 }: TestResultsProps) {
-  const navigate = useNavigate();
-
-  const handleShare = (test: any) => {
-    if (navigator.share) {
-      const student = students.find(s => s.id === test.student_id);
-      const { grade } = getGrade(test.marks_obtained, test.total_marks);
-      const percent = Math.round((test.marks_obtained / test.total_marks) * 100);
-      
-      navigator.share({
-        title: `Test Results`,
-        text: `${student?.full_name || 'Student'} scored ${test.marks_obtained}/${test.total_marks} (${percent}%, Grade ${grade}) on ${formatSafeDate(test.created_at)}`
-      }).then(() => {
-        toast.success("Shared successfully!");
-      }).catch(err => {
-        console.error("Error sharing:", err);
-        toast.error("Couldn't share the content. Try another method.");
-      });
-    } else {
-      onExportPDF(test);
-    }
-  };
-
-  const copyToClipboard = (test: any) => {
-    const student = students.find(s => s.id === test.student_id);
-    const { grade } = getGrade(test.marks_obtained, test.total_marks);
-    const percent = Math.round((test.marks_obtained / test.total_marks) * 100);
-    const textToCopy = `${student?.full_name || 'Student'} scored ${test.marks_obtained}/${test.total_marks} (${percent}%, Grade ${grade}) on ${formatSafeDate(test.created_at)}`;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      toast.success("Copied to clipboard!");
-    }).catch(() => {
-      toast.error("Failed to copy to clipboard");
-    });
-  };
-
   if (tests.length === 0) {
     return (
-      <Card className="overflow-hidden shadow-sm border bg-card">
-        <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
-          <div className="rounded-full bg-muted p-3 mb-3">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="font-medium text-lg mb-1">No test records found</p>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            No test records match your search criteria. Try adjusting your filters or add a new test record.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isMobile) {
-    return (
-      <Card className="overflow-hidden shadow-sm border bg-card">
-        <CardHeader className="pb-3 px-4 bg-muted/30">
-          <CardTitle className="font-semibold text-xl">Test Records</CardTitle>
-          <CardDescription className="text-sm">
-            Showing {tests.length} test {tests.length === 1 ? 'record' : 'records'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="space-y-1">
-            {tests.map((test, index) => {
-              const student = students.find(s => s.id === test.student_id);
-              const { grade, color } = getGrade(test.marks_obtained, test.total_marks);
-              const percent = Math.round((test.marks_obtained / test.total_marks) * 100);
-              
-              return (
-                <motion.div
-                  key={test.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="border-b border-border/50 last:border-b-0"
-                >
-                  <div className="p-4 space-y-3">
-                    {/* Header with Student Info and Grade */}
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold text-base text-foreground leading-tight truncate">
-                            {student?.full_name || "Unknown Student"}
-                          </h3>
-                          <Badge className={`${color} text-white text-xs font-medium shrink-0`}>
-                            {grade}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                            Class {student?.class || "N/A"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatSafeDate(test.created_at, 'MMM dd')}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 rounded-full hover:bg-primary/10" 
-                          onClick={() => onViewHistory(test.student_id)}
-                        >
-                          <History className="h-3.5 w-3.5" />
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
-                            >
-                              <Share className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover">
-                            <DropdownMenuItem onClick={() => handleShare(test)}>
-                              <Share className="h-4 w-4 mr-2" />
-                              Share
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onExportPDF(test)}>
-                              <FileText className="h-4 w-4 mr-2" />
-                              Export PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => copyToClipboard(test)}>
-                              <Download className="h-4 w-4 mr-2" />
-                              Copy to clipboard
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    
-                    {/* Enhanced Score Display */}
-                    <div className="bg-muted/30 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Test Score</p>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-foreground">
-                              {test.marks_obtained}
-                            </span>
-                            <span className="text-sm text-muted-foreground">/{test.total_marks}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Percentage</p>
-                          <div className="flex items-center gap-1">
-                            <span className="text-lg font-bold text-primary">
-                              {percent}%
-                            </span>
-                            {percent >= 75 && <TrendingUp className="h-4 w-4 text-green-500" />}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-8 px-3 text-xs" 
-                        onClick={() => onEditTest(test)}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-8 px-3 text-xs text-destructive hover:text-destructive" 
-                        onClick={() => {
-                          if (confirm("Are you sure you want to delete this test record?")) {
-                            onDeleteTest(test.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+      <Card className="overflow-hidden shadow-sm">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium">No test records found</h3>
+            <p className="text-muted-foreground text-sm mt-1 max-w-md mx-auto">
+              No test records match your current filters. Try adjusting your search or add new test results.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -247,145 +65,230 @@ export function TestResults({
   }
 
   return (
-    <Card className="overflow-hidden shadow-sm border bg-card">
-      <CardHeader className="bg-muted/30 border-b border-border pb-3">
-        <CardTitle className="text-lg font-medium">Test Records</CardTitle>
-        <CardDescription>
-          Showing {tests.length} test {tests.length === 1 ? 'record' : 'records'}
-        </CardDescription>
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle className="text-xl">Test Results</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Individual test results for Class 9 & 10 students
+            </p>
+          </div>
+          {!isMobile && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSort("date")}
+                className="gap-2"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                Sort by Date
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSort("marks")}
+                className="gap-2"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                Sort by Marks
+              </Button>
+            </div>
+          )}
+        </div>
       </CardHeader>
+
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/20">
-                <TableHead className="font-semibold">Student</TableHead>
-                <TableHead>
-                  <div 
-                    className="flex items-center cursor-pointer hover:text-foreground transition-colors" 
-                    onClick={() => handleSort("date")}
-                  >
-                    Date <ArrowUpDown className="ml-2 h-3 w-3" />
+        {isMobile ? (
+          // Mobile view: Enhanced cards
+          <div className="divide-y divide-border/60">
+            {tests.map((test, index) => {
+              const student = students.find(s => s.id === test.student_id);
+              const percent = test.percentage || Math.round((test.marks_obtained / test.total_marks) * 100);
+              const { grade, color } = getGrade(test.marks_obtained, test.total_marks);
+
+              return (
+                <motion.div
+                  key={test.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="p-4"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-base truncate">
+                        {student?.full_name || 'Unknown Student'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Class {student?.class || 'N/A'} • {formatSafeDate(test.created_at)}
+                      </p>
+                    </div>
+                    <Badge className={color}>{grade}</Badge>
                   </div>
-                </TableHead>
-                <TableHead>
-                  <div 
-                    className="flex items-center cursor-pointer hover:text-foreground transition-colors" 
-                    onClick={() => handleSort("marks")}
-                  >
-                    Score <ArrowUpDown className="ml-2 h-3 w-3" />
+
+                  <div className="bg-muted/30 rounded-lg p-3 mb-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Score</span>
+                      <span className="font-medium text-lg">
+                        {test.marks_obtained}/{test.total_marks}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Percentage</span>
+                        <span className="font-medium">{percent}%</span>
+                      </div>
+                      <Progress
+                        value={percent}
+                        className="h-2"
+                        indicatorClassName={
+                          percent >= 90 ? "bg-emerald-500" :
+                          percent >= 75 ? "bg-blue-500" :
+                          percent >= 60 ? "bg-yellow-500" :
+                          percent >= 40 ? "bg-orange-500" : "bg-red-500"
+                        }
+                      />
+                    </div>
                   </div>
-                </TableHead>
-                <TableHead className="font-semibold">Grade</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <AnimatePresence>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 rounded-full"
+                        onClick={() => onExportPDF(test)}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 rounded-full"
+                        onClick={() => onViewHistory(test.student_id)}
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 rounded-full"
+                        onClick={() => onEditTest(test)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600"
+                        onClick={() => onDeleteTest(test.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          // Desktop view: Enhanced table
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Grade</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {tests.map((test, index) => {
                   const student = students.find(s => s.id === test.student_id);
+                  const percent = test.percentage || Math.round((test.marks_obtained / test.total_marks) * 100);
                   const { grade, color } = getGrade(test.marks_obtained, test.total_marks);
-                  const percent = Math.round((test.marks_obtained / test.total_marks) * 100);
-                  
+
                   return (
-                    <motion.tr
-                      key={test.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.02 }}
-                      className="hover:bg-muted/20 group transition-colors"
-                    >
-                      <TableCell>
-                        <div className="font-medium">{student?.full_name || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground">Class {student?.class || "N/A"}</div>
+                    <TableRow key={test.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        {student?.full_name || 'Unknown Student'}
                       </TableCell>
-                      <TableCell className="font-medium">{formatSafeDate(test.created_at)}</TableCell>
+                      <TableCell>Class {student?.class || 'N/A'}</TableCell>
+                      <TableCell>{formatSafeDate(test.created_at)}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{test.marks_obtained}/{test.total_marks}</div>
-                        <div className="text-xs text-muted-foreground">{percent}%</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${color} text-white shadow-sm font-medium`}>{grade}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-8 w-8 rounded-full hover:bg-primary/10" 
-                                onClick={() => onViewHistory(test.student_id)}
-                              >
-                                <History className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>View test history</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-8 w-8 rounded-full hover:bg-primary/10" 
-                                onClick={() => onEditTest(test)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit test</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-8 w-8 rounded-full hover:bg-destructive/10 text-destructive" 
-                                onClick={() => {
-                                  if (confirm("Are you sure you want to delete this test record?")) {
-                                    onDeleteTest(test.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete test</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-8 w-8 rounded-full hover:bg-primary/10" 
-                                onClick={() => handleShare(test)}
-                              >
-                                <Share className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Share test results</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {test.marks_obtained}/{test.total_marks}
+                          </div>
+                          <div className="w-24">
+                            <Progress
+                              value={percent}
+                              className="h-1.5"
+                              indicatorClassName={
+                                percent >= 90 ? "bg-emerald-500" :
+                                percent >= 75 ? "bg-blue-500" :
+                                percent >= 60 ? "bg-yellow-500" :
+                                percent >= 40 ? "bg-orange-500" : "bg-red-500"
+                              }
+                            />
+                          </div>
                         </div>
                       </TableCell>
-                    </motion.tr>
+                      <TableCell>
+                        <Badge className={color}>{grade}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            onClick={() => onExportPDF(test)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Export
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            onClick={() => onViewHistory(test.student_id)}
+                          >
+                            <History className="h-4 w-4 mr-2" />
+                            History
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={() => onEditTest(test)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                            onClick={() => onDeleteTest(test.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </AnimatePresence>
-            </TableBody>
-          </Table>
-        </div>
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
