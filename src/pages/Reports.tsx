@@ -356,7 +356,7 @@ export default function Reports() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
-              {/* Performance Trends Area Chart */}
+              {/* Performance Trends Area Chart - Fixed container and responsive sizing */}
               <Card className="shadow-sm border-0">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl text-gray-900">
@@ -366,11 +366,13 @@ export default function Reports() {
                   <CardDescription className="text-gray-600">Multi-metric analysis over the past 6 months</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-6">
-                  <div className="w-full">
-                    <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[280px]")}>
+                  <div className="w-full overflow-hidden">
+                    <ChartContainer config={chartConfig} className="w-full h-[240px] sm:h-[280px]">
                       <AreaChart
                         data={last6Months}
                         margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                        width="100%"
+                        height="100%"
                       >
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis
@@ -435,7 +437,7 @@ export default function Reports() {
               </Card>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Class Performance Bar Chart */}
+                {/* Class Performance Bar Chart - Fixed sizing */}
                 <Card className="shadow-sm border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl text-gray-900">
@@ -445,11 +447,13 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Student distribution by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[180px]" : "h-[200px]")}>
+                    <div className="w-full overflow-hidden">
+                      <ChartContainer config={chartConfig} className="w-full h-[180px] sm:h-[200px]">
                         <BarChart 
                           data={classWiseData} 
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                          width="100%"
+                          height="100%"
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
@@ -484,7 +488,7 @@ export default function Reports() {
                   </CardFooter>
                 </Card>
 
-                {/* Fee Status Pie Chart */}
+                {/* Fee Status Pie Chart - Fixed sizing and mobile optimization */}
                 <Card className="shadow-sm border-0 flex flex-col">
                   <CardHeader className="items-center pb-4">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl text-gray-900">
@@ -494,20 +498,23 @@ export default function Reports() {
                     <CardDescription className="text-gray-600">Current payment distribution</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 pb-6">
-                    <div className="w-full flex justify-center">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[180px] max-w-[200px]" : "h-[200px] max-w-[250px]")}>
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie 
-                            data={feeStatusData} 
-                            dataKey="value" 
-                            nameKey="name" 
-                            cx="50%" 
-                            cy="50%" 
-                            outerRadius={isMobile ? 60 : 80} 
-                          />
-                        </PieChart>
-                      </ChartContainer>
+                    <div className="w-full flex justify-center overflow-hidden">
+                      <div className={cn("w-full flex justify-center", isMobile ? "max-w-[180px]" : "max-w-[220px]")}>
+                        <ChartContainer config={chartConfig} className="w-full h-[180px] sm:h-[200px]">
+                          <PieChart width="100%" height="100%">
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                            <Pie 
+                              data={feeStatusData} 
+                              dataKey="value" 
+                              nameKey="name" 
+                              cx="50%" 
+                              cy="50%" 
+                              outerRadius={isMobile ? 50 : 65}
+                              innerRadius={0}
+                            />
+                          </PieChart>
+                        </ChartContainer>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex-col gap-2 text-sm">
@@ -524,18 +531,20 @@ export default function Reports() {
 
             <TabsContent value="students" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Class Distribution Area Chart */}
+                {/* Class Distribution Area Chart - Fixed sizing */}
                 <Card className="shadow-sm border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg sm:text-xl text-gray-900">Class Distribution</CardTitle>
                     <CardDescription className="text-gray-600">Student enrollment by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
+                    <div className="w-full overflow-hidden">
+                      <ChartContainer config={chartConfig} className="w-full h-[200px] sm:h-[220px]">
                         <AreaChart
                           data={classWiseData}
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                          width="100%"
+                          height="100%"
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
@@ -583,27 +592,30 @@ export default function Reports() {
                   </CardFooter>
                 </Card>
 
-                {/* Attendance Distribution Pie Chart */}
+                {/* Attendance Distribution Pie Chart - Fixed sizing */}
                 <Card className="shadow-sm border-0 flex flex-col">
                   <CardHeader className="items-center pb-4">
                     <CardTitle className="text-lg sm:text-xl text-gray-900">Attendance Performance</CardTitle>
                     <CardDescription className="text-gray-600">Student performance categories</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 pb-6">
-                    <div className="w-full flex justify-center">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px] max-w-[200px]" : "h-[220px] max-w-[250px]")}>
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie 
-                            data={attendanceDistribution} 
-                            dataKey="value" 
-                            nameKey="name" 
-                            cx="50%" 
-                            cy="50%" 
-                            outerRadius={isMobile ? 60 : 80} 
-                          />
-                        </PieChart>
-                      </ChartContainer>
+                    <div className="w-full flex justify-center overflow-hidden">
+                      <div className={cn("w-full flex justify-center", isMobile ? "max-w-[180px]" : "max-w-[220px]")}>
+                        <ChartContainer config={chartConfig} className="w-full h-[200px] sm:h-[220px]">
+                          <PieChart width="100%" height="100%">
+                            <ChartTooltip cursor={false} content={<Chart TooltipContent hideLabel />} />
+                            <Pie 
+                              data={attendanceDistribution} 
+                              dataKey="value" 
+                              nameKey="name" 
+                              cx="50%" 
+                              cy="50%" 
+                              outerRadius={isMobile ? 55 : 70}
+                              innerRadius={0}
+                            />
+                          </PieChart>
+                        </ChartContainer>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex-col gap-2 text-sm">
@@ -619,18 +631,20 @@ export default function Reports() {
             </TabsContent>
 
             <TabsContent value="attendance" className="space-y-6">
-              {/* Attendance Analytics Line Chart */}
+              {/* Attendance Analytics Line Chart - Fixed sizing */}
               <Card className="shadow-sm border-0">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg sm:text-xl text-gray-900">Attendance Analytics</CardTitle>
                   <CardDescription className="text-gray-600">Detailed attendance patterns and insights</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-6">
-                  <div className="w-full">
-                    <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[220px]" : "h-[300px]")}>
+                  <div className="w-full overflow-hidden">
+                    <ChartContainer config={chartConfig} className="w-full h-[220px] sm:h-[300px]">
                       <LineChart
                         data={classWiseData}
                         margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                        width="100%"
+                        height="100%"
                       >
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis
@@ -675,18 +689,20 @@ export default function Reports() {
 
             <TabsContent value="finances" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Monthly Fee Collection Area Chart */}
+                {/* Monthly Fee Collection Area Chart - Fixed sizing */}
                 <Card className="shadow-sm border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg sm:text-xl text-gray-900">Monthly Collection</CardTitle>
                     <CardDescription className="text-gray-600">Revenue trends over time</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
+                    <div className="w-full overflow-hidden">
+                      <ChartContainer config={chartConfig} className="w-full h-[200px] sm:h-[220px]">
                         <AreaChart
                           data={last6Months}
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                          width="100%"
+                          height="100%"
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
@@ -734,18 +750,20 @@ export default function Reports() {
                   </CardFooter>
                 </Card>
 
-                {/* Class-wise Fee Collection Bar Chart */}
+                {/* Class-wise Fee Collection Bar Chart - Fixed sizing */}
                 <Card className="shadow-sm border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg sm:text-xl text-gray-900">Class-wise Collection</CardTitle>
                     <CardDescription className="text-gray-600">Collection efficiency by class</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-6">
-                    <div className="w-full">
-                      <ChartContainer config={chartConfig} className={cn("w-full", isMobile ? "h-[200px]" : "h-[220px]")}>
+                    <div className="w-full overflow-hidden">
+                      <ChartContainer config={chartConfig} className="w-full h-[200px] sm:h-[220px]">
                         <BarChart 
                           data={classWiseData}
                           margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                          width="100%"
+                          height="100%"
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
