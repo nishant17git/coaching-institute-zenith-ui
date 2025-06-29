@@ -1,4 +1,4 @@
-
+import '@/fonts/INDIA2023bold-normal.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { AttendanceRecord, FeeTransaction, TestRecordDb } from '@/types';
@@ -53,7 +53,7 @@ interface TestPDFData {
 
 // Enhanced Institute branding constants
 const INSTITUTE_NAME = "INFINITY CLASSES";
-const INSTITUTE_TAGLINE = "Excellence in Education Since 2022";
+const INSTITUTE_TAGLINE = "Learn till eternity, with dignity in Infinity.";
 const INSTITUTE_PHONE = "+91 9905880697";
 const INSTITUTE_EMAIL = "theinfinityclasses1208@gmail.com";
 
@@ -86,9 +86,8 @@ const addProfessionalHeader = (doc: jsPDF, reportType: string = '', subtitle?: s
   yPosition += 25;
 
   // Institute name - highly prominent
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('INDIA2023bold', 'normal');
   doc.setFontSize(28);
-  doc.setTextColor(...COLORS.primary);
   doc.text(INSTITUTE_NAME, pageWidth / 2, yPosition, { align: 'center' });
   
   yPosition += 8;
@@ -135,15 +134,16 @@ const addProfessionalHeader = (doc: jsPDF, reportType: string = '', subtitle?: s
   return yPosition + 20;
 };
 
-// Enhanced professional footer
+// Enhanced professional footer with proper positioning
 const addProfessionalFooter = (doc: jsPDF) => {
   const pageHeight = doc.internal.pageSize.height;
   const pageWidth = doc.internal.pageSize.width;
   
-  // Footer separator
+  // Footer separator - positioned properly at bottom
+  const footerY = pageHeight - 25;
   doc.setDrawColor(...COLORS.border);
   doc.setLineWidth(0.5);
-  doc.line(25, pageHeight - 25, pageWidth - 25, pageHeight - 25);
+  doc.line(25, footerY, pageWidth - 25, footerY);
   
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.textMuted);
@@ -158,7 +158,7 @@ const addProfessionalFooter = (doc: jsPDF) => {
   doc.text(`Generated on ${currentDate}`, 25, pageHeight - 12);
   
   // Institute name in footer
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('INDIA2023bold', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.primary);
   doc.text(INSTITUTE_NAME, pageWidth - 25, pageHeight - 12, { align: 'right' });
@@ -466,121 +466,265 @@ export const exportClassAttendancePDF = (classData: {
   }
 };
 
-// Enhanced Fee Invoice PDF with payment months and professional design
+// Optimized Fee Invoice PDF with enhanced father's name handling and proper footer positioning
 export const exportFeeInvoicePDF = (options: FeeInvoicePDFOptions) => {
   try {
     const { transaction, student } = options;
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
     
-    // Add professional header
-    let yPosition = addProfessionalHeader(doc, 'Payment Receipt', 'Fee Transaction Confirmation');
-    
-    // Receipt details card
-    doc.setFillColor(...COLORS.background);
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(1);
-    doc.roundedRect(25, yPosition, pageWidth - 50, 85, 8, 8, 'FD');
-    
-    yPosition += 20;
-    
-    // Student & Receipt Information
-    doc.setFontSize(16);
-    doc.setTextColor(...COLORS.text);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Student Information', 40, yPosition);
-    
-    doc.setFontSize(16);
-    doc.setTextColor(...COLORS.text);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Receipt Details', pageWidth - 40, yPosition, { align: 'right' });
-    
-    yPosition += 15;
-    
-    // Left column - Student details
-    doc.setFontSize(12);
-    doc.setTextColor(...COLORS.textLight);
+    // Set custom font - using helvetica as base with consistent styling
     doc.setFont('helvetica', 'normal');
-    doc.text(`Name: ${student.name || student.full_name}`, 40, yPosition);
-    yPosition += 8;
-    doc.text(`Class: ${student.class}`, 40, yPosition);
-    yPosition += 8;
-    doc.text(`Student ID: ${student.id?.slice(-6) || 'N/A'}`, 40, yPosition);
     
-    // Right column - Receipt details
-    yPosition -= 16;
-    doc.text(`Receipt No: ${transaction.receiptNumber}`, pageWidth - 40, yPosition, { align: 'right' });
-    yPosition += 8;
-    doc.text(`Date: ${new Date(transaction.date).toLocaleDateString('en-IN')}`, pageWidth - 40, yPosition, { align: 'right' });
-    yPosition += 8;
-    doc.text(`Payment Mode: ${transaction.paymentMode}`, pageWidth - 40, yPosition, { align: 'right' });
+    // Light gray background pattern
+    doc.setFillColor(248, 248, 248);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
     
-    yPosition += 40;
+    // Add geometric pattern elements
+    doc.setFillColor(230, 230, 230);
+    doc.triangle(0, 0, 80, 0, 40, 60, 'F');
+    doc.triangle(pageWidth - 80, 0, pageWidth, 0, pageWidth - 40, 60, 'F');
     
-    // Payment details section
-    doc.setFillColor(...COLORS.white);
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(1);
-    doc.roundedRect(25, yPosition, pageWidth - 50, 35, 6, 6, 'FD');
+    let yPosition = 35;
+    
+    // Header - Institute Name and Address (top right, properly aligned within margins)
+    const rightMargin = 30;
+    
+    // Use custom font for Infinity Classes - simulate bold version of INDIA2023Bold
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('INDIA2023bold', 'normal');
+    doc.text('Infinity Classes', pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    yPosition += 5;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Kandari More, Ranchi, Pin Code: 835214', pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    yPosition += 4;
+    doc.text('Ph: +91 9905880697', pageWidth - rightMargin, yPosition, { align: 'right' });
     
     yPosition += 18;
-    doc.setFontSize(14);
-    doc.setTextColor(...COLORS.text);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Payment Purpose: ${transaction.purpose}`, 40, yPosition);
     
-    // Payment months (if available)
-    if (transaction.payment_months && transaction.payment_months.length > 0) {
-      yPosition += 10;
-      doc.setFontSize(12);
-      doc.setTextColor(...COLORS.textLight);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Payment Months: ${transaction.payment_months.join(', ')}`, 40, yPosition);
+    // INVOICE Title - Large and centered
+    doc.setFontSize(48);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 16;
+    
+    // Receipt Number and Date - properly aligned with Receipt on left, Date on right
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    const leftMargin = 30;
+    const rightColumnStart = pageWidth - 80;
+    
+    // Receipt Number on the left - BOLD labels
+    doc.setFont('helvetica', 'bold');
+    doc.text('Receipt No:', leftMargin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(transaction.receiptNumber || 'N/A', leftMargin + 40, yPosition);
+    
+    // Date on the right - BOLD labels
+    doc.setFont('helvetica', 'bold');
+    doc.text('Date:', rightColumnStart, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text('12 October, 2025', pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    yPosition += 11;
+    
+    // Bill To section
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill to:', leftMargin, yPosition);
+    
+    yPosition += 8; // Increased spacing after "Bill to:"
+    
+    // Enhanced spacing between fields - increased line spacing
+    const lineSpacing = 6; // Increased from 3.5 to 6
+    
+    // Enhanced student data extraction with proper Roll No. and Father's Name syncing
+    const getStudentName = (student: any): string => {
+      return student.full_name || student.name || 'Student Name';
+    };
+
+    const getFatherName = (student: any): string => {
+      // Try multiple possible field names for father's name - proper syncing with Students page
+      return student.father_name || 
+             student.fatherName || 
+             student.father || 
+             'Father Name';
+    };
+    
+    const getRollNumber = (student: any): string => {
+      // Proper Roll No. syncing with Students page data
+      return student.roll_number?.toString() || 
+             student.rollNumber?.toString() || 
+             student.admission_number?.toString() ||
+             student.id?.slice(-6) || 
+             'N/A';
+    };
+    
+    const getClass = (student: any): string => {
+      return student.class?.toString() || '10';
+    };
+    
+    // Left column details - all left-aligned with increased spacing and proper data syncing
+    doc.setFont('helvetica', 'bold');
+    doc.text('Name:', leftMargin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    const studentName = getStudentName(student);
+    doc.text(studentName, leftMargin + 35, yPosition);
+    
+    yPosition += lineSpacing;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Father\'s Name:', leftMargin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    const fatherName = getFatherName(student);
+    doc.text(fatherName, leftMargin + 45, yPosition);
+    
+    yPosition += lineSpacing;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Admission No:', leftMargin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    const rollNumber = getRollNumber(student);
+    doc.text(rollNumber, leftMargin + 45, yPosition);
+    
+    yPosition += lineSpacing;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Class:', leftMargin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(getClass(student), leftMargin + 25, yPosition);
+    
+    // Right column details - properly right-aligned with increased spacing
+    yPosition -= lineSpacing * 3; // Reset to align with Name row
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Payment Mode:', rightColumnStart, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(transaction.paymentMode || 'Cash', pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    yPosition += lineSpacing;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Time:', rightColumnStart, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text('3:00 a.m.', pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    yPosition += lineSpacing * 2 + 8; // Move to next section with proper spacing
+    
+    // Table section with proper margins and adjusted positioning
+    const tableLeftMargin = 30;
+    const tableRightMargin = 30;
+    const col1X = tableLeftMargin;
+    const col2X = tableLeftMargin + 30;
+    const col3X = pageWidth - tableRightMargin;
+    
+    // Top dotted line
+    doc.setDrawColor(120, 120, 120);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(tableLeftMargin, yPosition, pageWidth - tableRightMargin, yPosition);
+    
+    yPosition += 5;
+    
+    // Table headers
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('S. No.', col1X, yPosition);
+    doc.text('Description', col2X, yPosition);
+    doc.text('Amount', col3X, yPosition, { align: 'right' });
+    
+    // Dotted line below headers
+    yPosition += 3;
+    doc.line(tableLeftMargin, yPosition, pageWidth - tableRightMargin, yPosition);
+    
+    yPosition += 5;
+    
+    // Dynamic table rows based on transaction purpose and amount - only include paid fees
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    
+    // Create dynamic table rows based on the actual transaction - only for paid amounts
+    const tableRows = [];
+    let serialNo = 1;
+    let totalAmount = 0;
+    
+    // Map transaction purpose to display names
+    const feeTypeMapping = {
+      'admission': 'Admission Fee',
+      'tuition': 'Tuition Fee', 
+      'test_series': 'Test Series',
+      'monthly_fee': 'Monthly Fee',
+      'registration': 'Registration Fee',
+      'other': transaction.purpose || 'Fee Payment'
+    };
+    
+    // Only include if transaction has a positive amount (i.e., fee is paid)
+    if (transaction.amount && transaction.amount > 0) {
+      const description = feeTypeMapping[transaction.purpose as keyof typeof feeTypeMapping] || 
+                         transaction.purpose || 'Fee Payment';
+      
+      tableRows.push({
+        sno: `${serialNo}.`,
+        description: description,
+        amount: transaction.amount.toString()
+      });
+      
+      totalAmount = transaction.amount;
+      serialNo++;
     }
     
-    yPosition += 35;
+    // If no specific rows were added, add a default fee payment row
+    if (tableRows.length === 0) {
+      tableRows.push({
+        sno: '1.',
+        description: 'Fee Payment',
+        amount: transaction.amount?.toString() || '0'
+      });
+      totalAmount = transaction.amount || 0;
+    }
     
-    // Amount section - highly prominent
-    doc.setFillColor(...COLORS.primary);
-    doc.roundedRect(25, yPosition, pageWidth - 50, 80, 12, 12, 'F');
+    const rowSpacing = 7;
+    tableRows.forEach((row) => {
+      doc.text(row.sno, col1X, yPosition);
+      doc.text(row.description, col2X, yPosition);
+      doc.text(row.amount, col3X, yPosition, { align: 'right' });
+      yPosition += rowSpacing;
+    });
     
-    yPosition += 25;
-    doc.setFontSize(18);
-    doc.setTextColor(...COLORS.white);
+    yPosition += 2;
+    
+    // Final dotted line before total
+    doc.line(tableLeftMargin, yPosition, pageWidth - tableRightMargin, yPosition);
+    
+    yPosition += 6;
+    
+    // Total section (properly aligned) - NO dotted line below
     doc.setFont('helvetica', 'bold');
-    doc.text('AMOUNT PAID', pageWidth / 2, yPosition, { align: 'center' });
-    
-    yPosition += 25;
-    doc.setFontSize(40);
-    doc.setFont('helvetica', 'bold');
-    
-    const amount = transaction.amount.toLocaleString('en-IN');
-    const rupeeText = `₹ ${amount}`;
-    doc.text(rupeeText, pageWidth / 2, yPosition, { align: 'center' });
-    
-    yPosition += 15;
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(240, 245, 255);
-    doc.text('(Amount in Indian Rupees)', pageWidth / 2, yPosition, { align: 'center' });
-    
-    yPosition += 40;
-    
-    // Professional thank you note
     doc.setFontSize(14);
-    doc.setTextColor(...COLORS.textLight);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Thank you for your payment. Please retain this receipt for your records.', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('Total', pageWidth - 100, yPosition);
+    doc.text(totalAmount.toString(), col3X, yPosition, { align: 'right' });
     
-    yPosition += 10;
-    doc.setFontSize(10);
+    // Footer message - always positioned at bottom with proper spacing
+    const footerMessageY = pageHeight - 35;
+    
+    // Dotted line above footer message
+    doc.setDrawColor(120, 120, 120);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(tableLeftMargin, footerMessageY - 8, pageWidth - tableRightMargin, footerMessageY - 8);
+    
+    // Footer message (properly centered within margins)
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
     doc.setFont('helvetica', 'normal');
-    doc.text('For any queries, please contact the administration office.', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('If you have any questions, please contact: theinfinityclasses1208@gmail.com', pageWidth / 2, footerMessageY, { align: 'center' });
     
-    addProfessionalFooter(doc);
+    // Reset line dash pattern
+    doc.setLineDashPattern([], 0);
     
-    const fileName = `fee-receipt-${(student.name || student.full_name).replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = `invoice-${studentName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
   } catch (error) {
     console.error('Error generating fee invoice PDF:', error);
@@ -755,140 +899,5 @@ export const exportTestToPDF = (data: TestPDFData) => {
   } catch (error) {
     console.error('Error generating test PDF:', error);
     throw new Error('Failed to generate test PDF');
-  }
-};
-
-// New Academic Records Report - professional and minimal
-export const exportAcademicRecordsPDF = (data: {
-  student: any;
-  academicYear: string;
-  subjects: any[];
-  overallGPA: number;
-  totalCredits: number;
-  attendance: {
-    percentage: number;
-    totalDays: number;
-    presentDays: number;
-  };
-}) => {
-  try {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    
-    // Add modern header
-    let yPosition = addProfessionalHeader(doc, 'Academic Records', `Comprehensive Academic Report - ${data.academicYear}`);
-    
-    // Student profile section
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(1);
-    doc.roundedRect(30, yPosition, pageWidth - 60, 55, 8, 8, 'FD');
-    
-    yPosition += 20;
-    doc.setFontSize(16);
-    doc.setTextColor(...COLORS.text);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${data.student.full_name || data.student.name}`, 45, yPosition);
-    
-    yPosition += 12;
-    doc.setFontSize(12);
-    doc.setTextColor(...COLORS.textLight);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Class: ${data.student.class} • Academic Year: ${data.academicYear}`, 45, yPosition);
-    
-    yPosition += 12;
-    doc.text(`Student ID: ${data.student.id?.slice(-6) || 'N/A'} • Overall GPA: ${data.overallGPA.toFixed(2)}`, 45, yPosition);
-    
-    yPosition += 40;
-    
-    // Academic summary cards
-    const summaryData = [
-      { label: 'Overall GPA', value: data.overallGPA.toFixed(2), color: COLORS.primary },
-      { label: 'Total Credits', value: data.totalCredits.toString(), color: COLORS.secondary },
-      { label: 'Attendance', value: `${data.attendance.percentage}%`, color: COLORS.success },
-      { label: 'Present Days', value: `${data.attendance.presentDays}/${data.attendance.totalDays}`, color: COLORS.warning }
-    ];
-    
-    const cardWidth = (pageWidth - 100) / 4;
-    
-    summaryData.forEach((item, index) => {
-      const x = 40 + (index * (cardWidth + 10));
-      
-      doc.setFillColor(...COLORS.white);
-      doc.setDrawColor(...COLORS.border);
-      doc.setLineWidth(1);
-      doc.roundedRect(x, yPosition, cardWidth, 40, 6, 6, 'FD');
-      
-      doc.setFillColor(...item.color);
-      doc.rect(x, yPosition, cardWidth, 4, 'F');
-      
-      doc.setTextColor(...COLORS.text);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text(item.value, x + cardWidth/2, yPosition + 22, { align: 'center' });
-      
-      doc.setFontSize(9);
-      doc.setTextColor(...COLORS.textLight);
-      doc.setFont('helvetica', 'normal');
-      doc.text(item.label, x + cardWidth/2, yPosition + 32, { align: 'center' });
-    });
-    
-    yPosition += 60;
-    
-    // Subject performance table
-    if (data.subjects && data.subjects.length > 0) {
-      doc.setFontSize(14);
-      doc.setTextColor(...COLORS.text);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Subject-wise Performance', 40, yPosition);
-      yPosition += 15;
-      
-      const tableData = data.subjects.map((subject, index) => [
-        (index + 1).toString(),
-        subject.name || 'Subject',
-        subject.totalMarks?.toString() || '100',
-        subject.obtainedMarks?.toString() || '0',
-        `${Math.round((subject.obtainedMarks / subject.totalMarks) * 100)}%`,
-        subject.grade || 'N/A'
-      ]);
-      
-      autoTable(doc, {
-        startY: yPosition,
-        head: [['S.No', 'Subject', 'Total Marks', 'Obtained', 'Percentage', 'Grade']],
-        body: tableData,
-        styles: {
-          fontSize: 11,
-          cellPadding: 8,
-          font: 'helvetica',
-          textColor: COLORS.text
-        },
-        headStyles: {
-          fillColor: COLORS.primary,
-          textColor: COLORS.white,
-          fontStyle: 'bold',
-          fontSize: 12
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252] as [number, number, number],
-        },
-        columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 50 },
-          2: { cellWidth: 25, halign: 'center' },
-          3: { cellWidth: 25, halign: 'center' },
-          4: { cellWidth: 25, halign: 'center' },
-          5: { cellWidth: 20, halign: 'center' },
-        }
-      });
-    }
-    
-    addProfessionalFooter(doc);
-    
-    const studentName = (data.student.full_name || data.student.name || 'student').replace(/\s+/g, '-').toLowerCase();
-    const fileName = `academic-records-${studentName}-${data.academicYear.replace(/\s+/g, '-')}.pdf`;
-    doc.save(fileName);
-  } catch (error) {
-    console.error('Error generating academic records PDF:', error);
-    throw new Error('Failed to generate academic records PDF');
   }
 };
